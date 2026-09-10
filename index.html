@@ -1,0 +1,2438 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VetDom — Veterinário a Domicílio</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Segoe UI',sans-serif;
+  color:#2C1A30;
+  min-height:100vh;
+  background:
+    linear-gradient(rgba(253,244,248,.62),rgba(253,244,248,.62)),
+    url('capa.png') center top / cover fixed no-repeat;
+  background-color:#FDF4F8;
+}
+
+/* ── Header ── */
+header{background:linear-gradient(135deg,#D4A8DC,#F0C0D0);color:#2C1A30;padding:16px 28px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(190,150,210,.18);cursor:pointer}
+header h1{font-size:1.45rem;font-weight:700}
+header .sub{font-size:.82rem;opacity:.7;margin-top:2px}
+header h1{color:#2C1A30}
+header:hover{opacity:.92}
+
+/* ── Nav ── */
+nav{background:rgba(255,255,255,.95);display:flex;border-bottom:3px solid #E8D0EB;box-shadow:0 1px 8px rgba(180,140,200,.15);overflow-x:auto;backdrop-filter:blur(4px)}
+nav button{flex:1;min-width:90px;padding:13px 8px;border:none;background:transparent;font-size:.82rem;font-weight:600;color:#718096;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-3px;transition:all .2s;white-space:nowrap}
+nav button:hover{background:#FDF0F8;color:#8B5E9A}
+nav button.active{color:#8B5E9A;border-bottom-color:#C4A0D4;background:#FDF0F8}
+
+/* ── Tabs ── */
+.tab{display:none;padding:28px;max-width:960px;margin:0 auto}
+.tab.active{display:block}
+h2{font-size:1.2rem;color:#8B5E9A;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+
+/* ── Card ── */
+.card{background:rgba(255,255,255,.96);border-radius:10px;padding:22px;box-shadow:0 4px 20px rgba(180,140,200,.18);margin-bottom:20px;backdrop-filter:blur(2px)}
+.section-title{font-size:.78rem;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #FDF4F8}
+
+/* ── Forms ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid .full{grid-column:1/-1}
+label{display:block;font-size:.8rem;font-weight:600;color:#4a5568;margin-bottom:4px}
+input,select,textarea{width:100%;padding:8px 11px;border:1.5px solid #E8D0EB;border-radius:7px;font-size:.9rem;background:#FFFFFF;transition:border-color .2s;font-family:inherit;color:#2d3748}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#C4A0D4;background:#fff;box-shadow:0 0 0 3px rgba(196,160,212,.12)}
+input[readonly]{background:#FAF0F8;color:#718096}
+textarea{resize:vertical;min-height:65px}
+.form-actions{margin-top:16px;display:flex;gap:8px;flex-wrap:wrap}
+
+/* ── Buttons ── */
+.btn{padding:9px 20px;border:none;border-radius:7px;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-primary{background:#C4A0D4;color:#fff}.btn-primary:hover{background:#A882BE}
+.btn-secondary{background:#F9EEF6;color:#6B4A78}.btn-secondary:hover{background:#EDD8EA}
+.btn-danger{background:#fc8181;color:#fff;font-size:.78rem;padding:5px 11px}.btn-danger:hover{background:#e53e3e}
+.btn-edit{background:#FDF4F8;color:#C4A0D4;font-size:.78rem;padding:5px 11px;border:1px solid #E8D0EB}.btn-edit:hover{background:#C4A0D4;color:#fff;border-color:#C4A0D4}
+.btn-back{background:#FFFFFF;color:#C4A0D4;border:1.5px solid #E8D0EB;display:inline-flex;align-items:center;gap:6px}.btn-back:hover{background:#FDF4F8}
+.btn-pago{background:#f0fdf4;color:#166534;font-size:.78rem;padding:5px 11px;border:1.5px solid #bbf7d0}.btn-pago:hover{background:#bbf7d0}
+.btn-link{background:none;border:none;color:#C4A0D4;font-weight:700;font-size:.88rem;cursor:pointer;padding:0;text-decoration:underline}.btn-link:hover{color:#2C1A30}
+
+/* ── Table ── */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th{background:#FDF0F8;color:#8B5E9A;text-align:left;padding:10px 13px;font-size:.76rem;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+td{padding:10px 13px;border-top:1px solid #FDF4F8;vertical-align:middle}
+tr:hover td{background:#FAF0F8}
+.td-actions{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ── Badges ── */
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.75rem;font-weight:600}
+.b-dog{background:#ebf8ff;color:#2b6cb0}.b-cat{background:#fef3c7;color:#92400e}
+.b-bird{background:#FDF4F8;color:#C4A0D4}.b-other{background:#FDF4F8;color:#6B7280}
+.b-green{background:#F5E8F4;color:#C4A0D4}.b-blue{background:#dbeafe;color:#1e40af}
+.b-gray{background:#FDF4F8;color:#6B7280}
+.b-pago{background:#c6f6d5;color:#276749}.b-pendente{background:#feebc8;color:#7b341e}
+
+/* ── Empty ── */
+.empty{text-align:center;padding:36px;color:#a0aec0}
+.empty-icon{font-size:2.4rem;display:block;margin-bottom:8px}
+
+/* ── Search ── */
+.search-bar{display:flex;gap:8px;margin-bottom:14px}
+.search-bar input{flex:1}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:24px;right:24px;padding:11px 20px;border-radius:8px;font-weight:600;font-size:.88rem;box-shadow:0 4px 14px rgba(0,0,0,.2);opacity:0;transform:translateY(8px);transition:all .3s;z-index:9999;pointer-events:none}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast.ok{background:#C4A0D4;color:#fff}
+#toast.err{background:#e53e3e;color:#fff}
+
+/* ── Select-list ── */
+.select-list{border:1.5px solid #E8D0EB;border-radius:7px;max-height:180px;overflow-y:auto;background:#FFFFFF}
+.select-list .item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #FDF4F8;font-size:.87rem}
+.select-list .item:last-child{border-bottom:none}
+.select-list .item input[type=checkbox]{width:16px;height:16px;accent-color:#C4A0D4;flex-shrink:0}
+.select-list .item .item-label{flex:1}
+.select-list .item .qty-input{width:64px;padding:4px 7px;font-size:.82rem}
+
+/* ── Total box ── */
+.total-box{background:#FAF0F8;border:2px solid #C7C7CC;border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;margin-top:16px}
+.total-box .total-label{font-size:.88rem;color:#4a5568;font-weight:600}
+.total-box .total-value{font-size:1.4rem;font-weight:800;color:#8B5E9A}
+
+/* ── Atendimento card ── */
+.atend-card{background:#FFFFFF;border-radius:10px;padding:18px;box-shadow:0 2px 6px rgba(190,150,210,.1);margin-bottom:12px;border-left:4px solid #C4A0D4}
+.atend-card .atend-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.atend-card h4{color:#2C1A30;font-size:1rem}
+.atend-card .meta{font-size:.8rem;color:#718096}
+.atend-card .tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.qty-warn{color:#e53e3e;font-weight:700}
+.qty-low{color:#d97706;font-weight:700}
+.stock-alert-box{background:#fffbeb;border:1.5px solid #fcd34d;border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;gap:12px;align-items:flex-start}
+.stock-alert-box .al-icon{font-size:1.4rem;flex-shrink:0;line-height:1.2}
+.stock-alert-box .al-body{flex:1}
+.stock-alert-box .al-title{font-size:.82rem;font-weight:700;color:#92400e;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.stock-alert-box .al-items{font-size:.87rem;color:#78350f;line-height:1.7}
+.stock-alert-box .al-item{display:inline-flex;align-items:center;gap:4px;background:#fef3c7;border-radius:6px;padding:2px 9px;margin:2px 3px 2px 0}
+.repor-row-tr td{padding:0!important;border:none}
+.repor-inline-form{display:flex;align-items:center;gap:10px;padding:10px 16px;background:#fdf5ff;border-top:1px dashed #E8D0EB;flex-wrap:wrap}
+.repor-inline-form .repor-label{font-size:.85rem;color:#6B4A78}
+.repor-inline-form input[type=number]{width:72px;padding:5px 9px;border:1.5px solid #E8D0EB;border-radius:6px;font-size:.87rem;background:#fff}
+.nav-badge{background:#f97316;color:#fff;border-radius:10px;padding:1px 6px;font-size:.62rem;font-weight:700;margin-left:4px;vertical-align:middle;display:inline-block}
+
+/* ── Card 24h ── */
+.atend-24h-card{display:flex;align-items:flex-start;gap:12px;padding:11px 14px;border-radius:9px;background:#FDF4F8;border:1px solid #EDD5E5;margin-bottom:8px;transition:border-color .2s}
+.atend-24h-card:hover{border-color:#C4A0D4}
+.atend-24h-card:last-child{margin-bottom:0}
+.atend-24h-hora{font-size:.82rem;font-weight:800;color:#8B5E9A;min-width:40px;padding-top:2px;flex-shrink:0;text-align:center}
+.atend-24h-hora small{display:block;font-size:.68rem;font-weight:400;color:#a0aec0}
+.atend-24h-info{flex:1}
+.atend-24h-info .pac{font-size:.92rem;font-weight:700;color:#2C1A30}
+.atend-24h-info .meta{font-size:.78rem;color:#718096;margin-top:2px}
+.atend-24h-info .tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+.atend-24h-total{font-size:.88rem;font-weight:800;color:#8B5E9A;flex-shrink:0;padding-top:2px}
+
+/* ════════ HOME / INÍCIO ════════ */
+#tab-inicio{max-width:100%;padding:0}
+
+/* Hero — transparente, deixa o bg do body aparecer */
+.home-hero-img{position:relative;min-height:280px;overflow:hidden;background:transparent;border-bottom:1px solid rgba(232,208,235,.4);display:flex;align-items:flex-end}
+.hero-overlay{position:relative;z-index:1;background:linear-gradient(to right,rgba(253,244,248,.88) 38%,rgba(253,244,248,.45) 65%,transparent);padding:38px 32px;width:100%;display:flex;align-items:center;gap:16px;min-height:280px}
+.home-hero-simple{background:transparent;color:#2C1A30;padding:40px 32px;display:flex;align-items:center;gap:20px;border-bottom:1px solid rgba(232,208,235,.4)}
+
+.home-body{max-width:960px;margin:0 auto;padding:28px}
+
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:28px}
+.stat-card{background:#FFFFFF;border-radius:10px;padding:16px 18px;box-shadow:0 2px 8px rgba(190,150,210,.12);text-align:center;cursor:pointer;transition:all .2s;border:2px solid transparent}
+.stat-card:hover{border-color:#2C1A30;transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.1)}
+.stat-card .stat-icon{font-size:1.8rem;margin-bottom:6px}
+.stat-card .stat-num{font-size:1.6rem;font-weight:800;color:#8B5E9A;line-height:1}
+.stat-card .stat-label{font-size:.78rem;color:#718096;margin-top:4px;font-weight:600}
+
+.nav-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}
+.nav-card{background:#FFFFFF;border-radius:12px;padding:22px 20px;box-shadow:0 2px 8px rgba(190,150,210,.12);cursor:pointer;transition:all .25s;border:2px solid transparent;display:flex;flex-direction:column;gap:10px}
+.nav-card:hover{border-color:#2C1A30;transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
+.nav-card .nc-icon{font-size:2.2rem}
+.nav-card h3{font-size:1rem;font-weight:700;color:#8B5E9A}
+.nav-card p{font-size:.82rem;color:#718096;line-height:1.45}
+.nav-card .nc-arrow{color:#C7C7CC;font-size:1.1rem;margin-top:auto;font-weight:700}
+
+/* ════════ PÁGINAS INTERNAS ════════ */
+.inner-page{display:none}
+.inner-page.ativa{display:block}
+.inner-header{background:rgba(255,255,255,.95);border-bottom:1px solid #E8D0EB;padding:16px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:0 1px 8px rgba(180,140,200,.15);backdrop-filter:blur(4px)}
+.inner-header-info h2{font-size:1.2rem;color:#8B5E9A;margin:0 0 2px}
+.inner-header-info p{font-size:.84rem;color:#718096}
+
+/* Abas internas */
+.pac-tabs{background:#FFFFFF;border-bottom:2px solid #E8D0EB;display:flex;overflow-x:auto;padding:0 20px}
+.pac-tabs button{padding:11px 16px;border:none;background:transparent;font-size:.85rem;font-weight:600;color:#718096;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .2s}
+.pac-tabs button:hover{color:#2C1A30;background:#FAF0F8}
+.pac-tabs button.active{color:#8B5E9A;border-bottom-color:#C4A0D4}
+.pac-tab-content{display:none;max-width:900px;margin:0 auto;padding:24px 28px}
+.pac-tab-content.active{display:block}
+
+/* Ficha */
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.info-item label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#a0aec0}
+.info-item p{font-size:.92rem;color:#2d3748;margin-top:2px}
+
+/* Anamnese */
+.anamnese-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.anamnese-grid .full{grid-column:1/-1}
+.radio-group{display:flex;gap:14px;margin-top:4px;flex-wrap:wrap}
+.radio-group label{display:flex;align-items:center;gap:5px;font-size:.88rem;font-weight:400;cursor:pointer;color:#4a5568}
+.radio-group input[type=radio]{width:15px;height:15px;accent-color:#C4A0D4;cursor:pointer}
+
+/* ── Avaliação Física ── */
+.aval-section-title{font-size:.78rem;font-weight:700;color:#8B5E9A;text-transform:uppercase;letter-spacing:.06em;margin:18px 0 10px;padding-bottom:6px;border-bottom:2px solid #EDD5E5;display:flex;align-items:center;gap:7px}
+.aval-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #FAF0F8}
+.aval-row:last-child{border-bottom:none}
+.aval-icon{font-size:1.15rem;width:28px;text-align:center;flex-shrink:0}
+.aval-label{font-size:.83rem;font-weight:700;color:#6B4A78;width:160px;flex-shrink:0}
+.aval-input{flex:1}
+.aval-input input{padding:6px 10px;font-size:.88rem}
+.aval-unit{font-size:.75rem;color:#a0aec0;white-space:nowrap;margin-left:4px;flex-shrink:0}
+.linf-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.linf-item{display:flex;align-items:center;gap:8px;background:#FAF0F8;border-radius:7px;padding:7px 10px}
+.linf-item label{font-size:.78rem;font-weight:600;color:#8B5E9A;white-space:nowrap;flex-shrink:0;width:120px}
+.linf-item input{font-size:.83rem;padding:5px 8px}
+
+/* Fotos */
+.foto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:14px}
+.foto-item{position:relative;border-radius:8px;overflow:hidden;border:1.5px solid #E8D0EB;aspect-ratio:1;background:#FAF0F8}
+.foto-item img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;transition:transform .2s}
+.foto-item img:hover{transform:scale(1.04)}
+.foto-item .del-btn{position:absolute;top:5px;right:5px;background:rgba(229,62,62,.85);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* PDFs */
+.pdf-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.pdf-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1.5px solid #E8D0EB;border-radius:8px;background:#FFFFFF;transition:border-color .2s}
+.pdf-item:hover{border-color:#C4A0D4;background:#FAF0F8}
+.pdf-item .pdf-icon{font-size:1.5rem;flex-shrink:0}
+.pdf-item .pdf-info{flex:1}
+.pdf-item .pdf-info strong{font-size:.9rem;display:block}
+.pdf-item .pdf-info small{color:#a0aec0;font-size:.78rem}
+.pdf-item a{color:#C4A0D4;font-size:.82rem;font-weight:600;text-decoration:none;white-space:nowrap}
+.pdf-item a:hover{text-decoration:underline}
+.pdf-item .del-btn{background:#fc8181;color:#fff;border:none;border-radius:6px;padding:4px 9px;font-size:.75rem;cursor:pointer;font-weight:600;flex-shrink:0}
+
+/* Upload */
+.upload-label{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#FDF4F8;border-radius:7px;cursor:pointer;font-size:.85rem;font-weight:600;color:#4a5568;border:1.5px dashed #C7C7CC;transition:background .2s}
+.upload-label:hover{background:#E8D0EB;border-color:#C4A0D4}
+.upload-label input[type=file]{display:none}
+
+/* Cobrança */
+.cobr-resumo{background:#FAF0F8;border-radius:8px;padding:14px;margin-bottom:16px}
+.cobr-resumo .linha{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px dashed #E8D0EB;font-size:.87rem}
+.cobr-resumo .linha:last-child{border-bottom:none}
+.cobr-card{background:#FFFFFF;border:1.5px solid #E8D0EB;border-radius:10px;padding:16px;margin-bottom:12px;border-left:4px solid #f6ad55}
+.cobr-card.pago{border-left-color:#C4A0D4}
+.cobr-card .cobr-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.cobr-card .cobr-valor{font-size:1.1rem;font-weight:800;color:#2C1A30}
+.cobr-card .cobr-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+
+/* Tutor page – animal cards */
+.animal-card{display:flex;align-items:center;gap:14px;padding:14px;border:1.5px solid #E8D0EB;border-radius:10px;background:#FFFFFF;margin-bottom:10px;transition:border-color .2s,box-shadow .2s;cursor:pointer}
+.animal-card:hover{border-color:#C4A0D4;box-shadow:0 2px 10px rgba(190,150,210,.18)}
+.animal-card .animal-icon{font-size:2rem;flex-shrink:0}
+.animal-card .animal-info{flex:1}
+.animal-card .animal-info h4{font-size:.97rem;color:#2C1A30;font-weight:700}
+.animal-card .animal-info p{font-size:.82rem;color:#718096;margin-top:2px}
+.animal-card .arrow{color:#C7C7CC;font-size:1.2rem}
+
+/* Tutor banner no paciente */
+.tutor-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#FAF0F8;border:1.5px solid #C7C7CC;border-radius:10px;padding:14px 18px;flex-wrap:wrap}
+.tutor-banner .tinfo h4{font-size:.92rem;font-weight:700;color:#2C1A30}
+.tutor-banner .tinfo p{font-size:.82rem;color:#4a5568;margin-top:2px}
+
+/* Lightbox */
+#lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2000;align-items:center;justify-content:center;cursor:zoom-out}
+#lightbox.open{display:flex}
+#lightbox img{max-width:92vw;max-height:92vh;border-radius:8px}
+#lightbox .lb-close{position:absolute;top:18px;right:22px;color:#fff;font-size:1.8rem;cursor:pointer;opacity:.8}
+#lightbox .lb-close:hover{opacity:1}
+
+/* ── Histórico de Anamneses ── */
+.hist-entry{border:1.5px solid #E8D0EB;border-radius:10px;margin-bottom:10px;overflow:hidden;background:#FFFFFF}
+.hist-entry-header{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;transition:background .2s;flex-wrap:wrap}
+.hist-entry-header:hover{background:#FAF0F8}
+.hist-entry-header .hist-date{font-size:.85rem;font-weight:700;color:#2C1A30;flex:1}
+.hist-entry-header .hist-tags{display:flex;gap:5px;flex-wrap:wrap}
+.hist-entry-header .hist-toggle{color:#a0aec0;font-size:.9rem;transition:transform .2s;flex-shrink:0}
+.hist-entry-header.open .hist-toggle{transform:rotate(180deg)}
+.hist-body{display:none;padding:16px;border-top:1px solid #FDF4F8;background:#fff}
+.hist-body.open{display:block}
+.hist-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px}
+.hist-detail-item label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#a0aec0}
+.hist-detail-item p{font-size:.88rem;color:#2d3748;margin-top:2px}
+.hist-detail-item.full{grid-column:1/-1}
+
+/* ── Anotações ── */
+.nota-card{background:#FFFFFF;border:1.5px solid #E8D0EB;border-radius:10px;padding:16px;margin-bottom:12px;border-left:4px solid #C7C7CC;transition:border-color .2s}
+.nota-card:hover{border-color:#C4A0D4}
+.nota-card .nota-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}
+.nota-card .nota-titulo{font-size:.95rem;font-weight:700;color:#2C1A30}
+.nota-card .nota-data{font-size:.75rem;color:#a0aec0;white-space:nowrap}
+.nota-card .nota-conteudo{font-size:.88rem;color:#4a5568;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.nota-card .nota-actions{display:flex;gap:6px;margin-top:10px}
+
+/* ── Edição de ficha inline ── */
+.section-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #FDF4F8}
+.section-title-row .st-label{font-size:.78rem;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em}
+
+/* ── Foto de perfil ── */
+.avatar-circle{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #C7C7CC;flex-shrink:0;background:#FDF4F8;display:flex;align-items:center;justify-content:center;font-size:2.2rem;overflow:hidden}
+.avatar-circle img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.avatar-lg{width:110px;height:110px;font-size:3rem}
+.avatar-sm{width:48px;height:48px;font-size:1.3rem;border-width:2px}
+.ficha-photo-row{display:flex;align-items:center;gap:20px;margin-bottom:20px;padding:16px;background:#FAF0F8;border-radius:10px}
+.ficha-photo-row .photo-info{flex:1}
+.ficha-photo-row .photo-info p{font-size:.82rem;color:#718096;margin-top:4px}
+/* Preview no formulário de cadastro */
+.form-photo-row{display:flex;align-items:center;gap:16px;padding:14px;background:#FAF0F8;border-radius:10px;margin-bottom:4px}
+.form-photo-row .avatar-circle{flex-shrink:0}
+/* Sub-páginas dentro da aba pacientes */
+.pac-subpage-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.pac-subpage-header h2{margin-bottom:0}
+
+/* ════════ AGENDA ════════ */
+.cal-wrap{background:#FFFFFF;border-radius:10px;padding:18px;box-shadow:0 2px 8px rgba(190,150,210,.12);margin-bottom:20px}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-nav span{font-size:1rem;font-weight:700;color:#8B5E9A;text-transform:capitalize}
+.cal-nav button{background:#F9EEF6;border:none;border-radius:7px;width:32px;height:32px;font-size:1.1rem;cursor:pointer;color:#8B5E9A;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.cal-nav button:hover{background:#E8D0EB}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-label{text-align:center;font-size:.7rem;font-weight:700;color:#a0aec0;padding:4px 0;text-transform:uppercase}
+.cal-day{min-height:38px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:.88rem;color:#4a5568;transition:background .15s;position:relative;padding:2px;gap:2px}
+.cal-day:hover{background:#FAF0F8}
+.cal-day.today{background:#FDE8F2;font-weight:700;color:#8B5E9A}
+.cal-day.selected{background:#C4A0D4!important;color:#fff!important;font-weight:700}
+.cal-day.other-month{color:#ccc;pointer-events:none}
+.ev-dot{width:6px;height:6px;border-radius:50%;background:#C7C7CC;display:block}
+.cal-day.selected .ev-dot{background:rgba(255,255,255,.7)}
+.cal-day.today .ev-dot{background:#C4A0D4}
+/* Agenda appointment card */
+.ag-card{border-radius:10px;padding:14px 16px;margin-bottom:10px;border-left:4px solid #C7C7CC;background:#FFFFFF;box-shadow:0 1px 4px rgba(190,150,210,.08)}
+.ag-card.confirmado{border-left-color:#C4A0D4}
+.ag-card.realizado{border-left-color:#68d391}
+.ag-card.cancelado{border-left-color:#fc8181;opacity:.7}
+.ag-card-header{display:flex;gap:12px;align-items:flex-start}
+.ag-hora{font-size:1rem;font-weight:800;color:#2C1A30;min-width:44px;padding-top:2px}
+.ag-card-info{flex:1}
+.ag-pac-name{font-size:.95rem;font-weight:700;color:#2C1A30}
+.ag-tutor-name,.ag-queixa,.ag-servicos{font-size:.8rem;color:#718096;margin-top:3px}
+.ag-obs{font-size:.82rem;color:#a0aec0;margin-top:8px;padding-top:8px;border-top:1px dashed #FDF4F8}
+/* Status badges for agenda */
+.b-agendado{background:#bee3f8;color:#2c5282}
+.b-confirmado{background:#F5E8F4;color:#2C1A30}
+.b-realizado{background:#c6f6d5;color:#276749}
+.b-cancelado{background:#fed7d7;color:#c53030}
+/* Pac selection toggle */
+.pac-tipo-toggle{display:flex;gap:16px;margin-bottom:8px}
+.pac-tipo-toggle label{display:flex;align-items:center;gap:5px;font-size:.86rem;font-weight:500;cursor:pointer;color:#4a5568}
+.pac-tipo-toggle input[type=radio]{accent-color:#C4A0D4;width:15px;height:15px}
+
+/* ── Timeline hora-a-hora ── */
+.timeline-scroll{max-height:600px;overflow-y:auto;padding-right:2px}
+.tl-no-time{background:#fffbf0;border:1.5px dashed #f6ad55;border-radius:8px;padding:10px 14px;margin-bottom:10px}
+.tl-no-time-label{font-size:.7rem;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.timeline-wrap{display:flex;flex-direction:column}
+.tl-hour-row{display:flex;align-items:stretch;min-height:54px;position:relative}
+.tl-hour-label{width:46px;font-size:.7rem;font-weight:700;color:#a0aec0;padding-top:7px;text-align:right;padding-right:8px;flex-shrink:0;border-right:2px solid #FDF4F8;user-select:none}
+.tl-hour-body{flex:1;padding:4px 0 4px 10px;min-height:54px;border-top:1px solid #FDF4F8;position:relative}
+.tl-hour-row.current-hour .tl-hour-label{color:#2C1A30;font-weight:800}
+.tl-hour-row.current-hour .tl-hour-body{border-top-color:#C4A0D4}
+/* Current time line */
+.now-line{position:absolute;left:-12px;right:0;height:2px;background:#C4A0D4;z-index:3;pointer-events:none}
+.now-line::before{content:'';position:absolute;left:-4px;top:-4px;width:10px;height:10px;border-radius:50%;background:#C4A0D4}
+/* Appointment cards inside timeline */
+.tl-appt{background:#fff;border-radius:8px;padding:10px 12px;margin-bottom:6px;border-left:3px solid #C7C7CC;box-shadow:0 1px 6px rgba(190,150,210,.12);transition:border-color .2s}
+.tl-appt[data-status=confirmado]{border-left-color:#C4A0D4}
+.tl-appt[data-status=realizado]{border-left-color:#68d391;opacity:.8}
+.tl-appt[data-status=cancelado]{border-left-color:#fc8181;opacity:.55}
+.tl-appt-top{display:flex;gap:10px;align-items:flex-start}
+.tl-hora{font-size:.82rem;font-weight:800;color:#8B5E9A;min-width:34px;padding-top:2px;flex-shrink:0}
+.tl-body{flex:1;min-width:0}
+.tl-pac{font-size:.92rem;font-weight:700;color:#2C1A30;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl-sub{font-size:.76rem;color:#718096;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Quick action buttons */
+.tl-qa{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.qa-btn{border:none;border-radius:20px;padding:4px 11px;font-size:.72rem;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap}
+.qa-ok{background:#c6f6d5;color:#276749}.qa-ok:hover{background:#9ae6b4}
+.qa-cancel{background:#fed7d7;color:#c53030}.qa-cancel:hover{background:#fc8181;color:#fff}
+.qa-reag{background:#F5E8F4;color:#2C1A30}.qa-reag:hover{background:#C7C7CC}
+.qa-edit{background:#FDF4F8;color:#4a5568}.qa-edit:hover{background:#E8D0EB}
+/* Reagendar inline form */
+.reag-inline{display:none;background:#FAF0F8;border-radius:8px;padding:10px 12px;margin-top:8px;border:1.5px solid #C7C7CC}
+.reag-inline.open{display:block}
+.reag-inline label{font-size:.76rem;font-weight:700;color:#2C1A30;margin-bottom:4px}
+.reag-inline input{padding:6px 10px;border:1.5px solid #C7C7CC;border-radius:6px;font-size:.87rem;background:#fff;width:100%}
+.reag-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+
+@media(max-width:640px){
+  .form-grid,.anamnese-grid{grid-template-columns:1fr}
+  .tab{padding:14px}
+  nav button{font-size:.68rem;padding:11px 3px}
+  .pac-tab-content{padding:14px 16px}
+  .inner-header{padding:12px 16px}
+  .foto-grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr))}
+  .pac-tabs button{font-size:.76rem;padding:10px 8px}
+  .nav-cards{grid-template-columns:1fr 1fr}
+  .stats-row{grid-template-columns:repeat(3,1fr)}
+  .cal-day{min-height:32px;font-size:.8rem}
+  .ag-card-header{flex-wrap:wrap}
+  #tab-agenda > div[style*="grid"]{grid-template-columns:1fr!important}
+}
+</style>
+</head>
+<body>
+
+<header onclick="goToHome()" title="Ir para o início">
+  <div style="font-size:2rem;flex-shrink:0">🐾</div>
+  <div>
+    <h1>VetDom</h1>
+    <div class="sub">Sistema de Atendimento Veterinário a Domicílio</div>
+  </div>
+</header>
+
+<nav id="nav-principal">
+  <button id="nav-inicio" class="active" onclick="showTab('inicio',this)">🏠 Início</button>
+  <button id="nav-pacientes" onclick="showTab('pacientes',this)">🐶 Pacientes</button>
+  <button id="nav-tutores" onclick="showTab('tutores',this)">👤 Tutores</button>
+  <button id="nav-servicos" onclick="showTab('servicos',this)">💉 Serviços</button>
+  <button id="nav-insumos" onclick="showTab('insumos',this)">📦 Insumos</button>
+  <button id="nav-agenda" onclick="showTab('agenda',this)">📅 Agenda</button>
+  <button id="nav-atendimentos" onclick="showTab('atendimentos',this)">📋 Atendimentos</button>
+</nav>
+
+<div id="abas-principais">
+
+  <!-- ═══ INÍCIO ═══ -->
+  <div id="tab-inicio" class="tab active">
+    <div class="home-hero-img">
+      <div class="hero-overlay">
+        <div style="font-size:2.6rem;line-height:1;flex-shrink:0">🐾</div>
+        <div>
+          <h1 style="font-size:2rem;font-weight:800;color:#2C1A30;margin-bottom:5px">VetDom</h1>
+          <p style="font-size:.96rem;color:#5a3a60;font-weight:500">Sistema de Atendimento Veterinário a Domicílio</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="home-body">
+      <!-- Alerta de estoque baixo -->
+      <div class="stock-alert-box" id="stock-alert-box" style="display:none">
+        <div class="al-icon">⚠️</div>
+        <div class="al-body">
+          <div class="al-title">Atenção — Estoque baixo</div>
+          <div class="al-items" id="stock-alert-items"></div>
+        </div>
+      </div>
+
+      <!-- Últimas 24h -->
+      <div class="card" style="margin-bottom:20px">
+        <div class="section-title-row" style="margin-bottom:12px">
+          <span class="st-label">🕐 Atendimentos nas últimas 24h</span>
+          <button class="btn btn-secondary" style="font-size:.75rem;padding:4px 12px" onclick="goTo('atendimentos')">Ver todos →</button>
+        </div>
+        <div id="hist-24h"></div>
+      </div>
+
+      <!-- Stats -->
+      <p style="font-size:.78rem;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Resumo do sistema</p>
+      <div class="stats-row">
+        <div class="stat-card" onclick="goTo('tutores')">
+          <div class="stat-icon">👤</div>
+          <div class="stat-num" id="stat-tutores">0</div>
+          <div class="stat-label">Tutores</div>
+        </div>
+        <div class="stat-card" onclick="goTo('pacientes')">
+          <div class="stat-icon">🐶</div>
+          <div class="stat-num" id="stat-pacientes">0</div>
+          <div class="stat-label">Pacientes</div>
+        </div>
+        <div class="stat-card" onclick="goTo('servicos')">
+          <div class="stat-icon">💉</div>
+          <div class="stat-num" id="stat-servicos">0</div>
+          <div class="stat-label">Serviços</div>
+        </div>
+        <div class="stat-card" onclick="goTo('insumos')">
+          <div class="stat-icon">📦</div>
+          <div class="stat-num" id="stat-insumos">0</div>
+          <div class="stat-label">Insumos</div>
+        </div>
+        <div class="stat-card" onclick="goTo('atendimentos')">
+          <div class="stat-icon">📋</div>
+          <div class="stat-num" id="stat-atendimentos">0</div>
+          <div class="stat-label">Atendimentos</div>
+        </div>
+        <div class="stat-card" onclick="goTo('agenda')">
+          <div class="stat-icon">📅</div>
+          <div class="stat-num" id="stat-agenda">0</div>
+          <div class="stat-label">Agendados</div>
+        </div>
+      </div>
+
+      <!-- Nav cards -->
+      <p style="font-size:.78rem;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Acesso rápido</p>
+      <div class="nav-cards">
+        <div class="nav-card" onclick="goTo('tutores')">
+          <div class="nc-icon">👤</div>
+          <h3>Tutores</h3>
+          <p>Cadastre os responsáveis pelos animais. Cada tutor pode ter múltiplos pets vinculados.</p>
+          <div class="nc-arrow">→</div>
+        </div>
+        <div class="nav-card" onclick="goTo('pacientes')">
+          <div class="nc-icon">🐶</div>
+          <h3>Pacientes</h3>
+          <p>Gerencie os animais atendidos. Acesse a ficha completa com anamnese, exames e fotos.</p>
+          <div class="nc-arrow">→</div>
+        </div>
+        <div class="nav-card" onclick="goTo('servicos')">
+          <div class="nc-icon">💉</div>
+          <h3>Serviços</h3>
+          <p>Cadastre os serviços oferecidos e seus valores para usar nas cobranças.</p>
+          <div class="nc-arrow">→</div>
+        </div>
+        <div class="nav-card" onclick="goTo('insumos')">
+          <div class="nc-icon">📦</div>
+          <h3>Insumos</h3>
+          <p>Controle o estoque de materiais e medicamentos utilizados nos atendimentos.</p>
+          <div class="nc-arrow">→</div>
+        </div>
+        <div class="nav-card" onclick="goTo('agenda')">
+          <div class="nc-icon">📅</div>
+          <h3>Agenda</h3>
+          <p>Agende consultas no calendário. Selecione pacientes cadastrados ou digite livremente.</p>
+          <div class="nc-arrow">→</div>
+        </div>
+        <div class="nav-card" onclick="goTo('atendimentos')">
+          <div class="nc-icon">📋</div>
+          <h3>Atendimentos</h3>
+          <p>Registre atendimentos vinculando paciente, serviços realizados e insumos utilizados.</p>
+          <div class="nc-arrow">→</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PACIENTES ═══ -->
+  <div id="tab-pacientes" class="tab" style="padding-top:20px">
+
+    <!-- SUB-PÁGINA: LISTA -->
+    <div id="pac-list-view">
+      <div class="pac-subpage-header">
+        <h2 style="flex:1">🐶 Pacientes Cadastrados</h2>
+        <button class="btn btn-primary" onclick="showPacienteForm(null)">+ Novo Paciente</button>
+      </div>
+      <div class="card">
+        <div class="search-bar"><input id="p-busca" placeholder="Buscar por animal ou tutor..." oninput="renderPacientes()"></div>
+        <div class="table-wrap" id="lista-pacientes"></div>
+      </div>
+    </div>
+
+    <!-- SUB-PÁGINA: FORMULÁRIO (oculto por padrão) -->
+    <div id="pac-form-view" style="display:none">
+      <div class="pac-subpage-header">
+        <button class="btn btn-back" onclick="showPacienteList()">← Voltar para lista</button>
+        <h2 id="p-form-title">Novo Paciente</h2>
+      </div>
+      <div class="card">
+        <!-- Foto de perfil -->
+        <div class="form-photo-row">
+          <div class="avatar-circle avatar-lg" id="p-foto-preview">🐾</div>
+          <div>
+            <label class="upload-label" style="margin-bottom:6px;display:inline-flex">
+              📷 Escolher foto de perfil
+              <input type="file" accept="image/*" onchange="previewFotoPerfil(this)">
+            </label>
+            <p style="font-size:.78rem;color:#a0aec0;margin-top:4px">Formatos: JPG, PNG · Máx. 3 MB</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div><label>Nome do Animal *</label><input id="p-nome" placeholder="Ex: Thor"></div>
+          <div><label>Espécie *</label>
+            <select id="p-especie"><option value="">Selecione...</option>
+              <option>Cachorro</option><option>Gato</option><option>Ave</option>
+              <option>Roedor</option><option>Réptil</option><option>Outro</option>
+            </select>
+          </div>
+          <div><label>Raça</label><input id="p-raca" placeholder="Ex: Golden Retriever"></div>
+          <div><label>Peso (kg)</label><input id="p-peso" type="number" step="0.1" min="0" placeholder="Ex: 8.5"></div>
+          <div><label>Idade</label><input id="p-idade" placeholder="Ex: 3 anos"></div>
+          <div class="full">
+            <label>Tutor * <span style="font-weight:400;color:#a0aec0">— cadastre em 👤 Tutores</span></label>
+            <select id="p-tutorId"><option value="">Selecione o tutor...</option></select>
+          </div>
+          <div class="full"><label>Observações</label><textarea id="p-obs" placeholder="Condições especiais, alergias..."></textarea></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="salvarPaciente()">💾 Salvar Paciente</button>
+          <button class="btn btn-secondary" onclick="showPacienteList()">Cancelar</button>
+        </div>
+        <input type="hidden" id="p-id">
+        <input type="hidden" id="p-foto-data">
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ TUTORES ═══ -->
+  <div id="tab-tutores" class="tab">
+    <h2>👤 Tutores</h2>
+    <div class="card">
+      <div class="section-title" id="t-form-title">Novo Tutor</div>
+      <div class="form-grid">
+        <div><label>Nome completo *</label><input id="t-nome" placeholder="Ex: João Silva"></div>
+        <div><label>Telefone / WhatsApp *</label><input id="t-tel" placeholder="(51) 99999-0000"></div>
+        <div><label>E-mail</label><input id="t-email" type="email" placeholder="joao@email.com"></div>
+        <div><label>CPF</label><input id="t-cpf" placeholder="000.000.000-00"></div>
+        <div class="full"><label>Endereço</label><input id="t-end" placeholder="Rua, número, bairro, cidade"></div>
+        <div class="full"><label>Observações</label><textarea id="t-obs" placeholder="Informações adicionais..."></textarea></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="salvarTutor()">Salvar Tutor</button>
+        <button class="btn btn-secondary" onclick="cancelarTutor()">Cancelar</button>
+      </div>
+      <input type="hidden" id="t-id">
+    </div>
+    <div class="card">
+      <div class="section-title">Tutores Cadastrados</div>
+      <div class="search-bar"><input id="t-busca" placeholder="Buscar por nome ou telefone..." oninput="renderTutores()"></div>
+      <div class="table-wrap" id="lista-tutores"></div>
+    </div>
+  </div>
+
+  <!-- ═══ SERVIÇOS ═══ -->
+  <div id="tab-servicos" class="tab">
+    <h2>💉 Serviços</h2>
+    <div class="card">
+      <div class="section-title" id="s-form-title">Novo Serviço</div>
+      <div class="form-grid">
+        <div><label>Nome do Serviço *</label><input id="s-nome" placeholder="Ex: Consulta domiciliar"></div>
+        <div><label>Valor (R$) *</label><input id="s-valor" type="number" step="0.01" min="0" placeholder="0,00"></div>
+        <div class="full"><label>Descrição</label><textarea id="s-desc" placeholder="Descreva o serviço..."></textarea></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="salvarServico()">Salvar Serviço</button>
+        <button class="btn btn-secondary" onclick="cancelarServico()">Cancelar</button>
+      </div>
+      <input type="hidden" id="s-id">
+    </div>
+    <div class="card">
+      <div class="section-title">Serviços Cadastrados</div>
+      <div class="table-wrap" id="lista-servicos"></div>
+    </div>
+
+    <!-- Procedimentos Cirúrgicos -->
+    <h2 style="margin-top:28px">🔪 Procedimentos Cirúrgicos</h2>
+    <div class="card">
+      <div class="section-title" id="ccat-form-title">Novo Procedimento Cirúrgico</div>
+      <div class="form-grid">
+        <div class="full"><label>Nome do Procedimento *</label><input id="ccat-nome" placeholder="Ex: Castração, Mastectomia, OSH..."></div>
+        <div><label>⚖️ Valor — até 10 kg (R$)</label><input id="ccat-valor-p" type="number" step="0.01" min="0" placeholder="0,00"></div>
+        <div><label>⚖️ Valor — 10 a 25 kg (R$)</label><input id="ccat-valor-m" type="number" step="0.01" min="0" placeholder="0,00"></div>
+        <div><label>⚖️ Valor — acima de 25 kg (R$)</label><input id="ccat-valor-g" type="number" step="0.01" min="0" placeholder="0,00"></div>
+        <div class="full"><label>Descrição</label><textarea id="ccat-desc" placeholder="Descreva o procedimento..."></textarea></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="salvarCirurgiaCat()">Salvar Procedimento</button>
+        <button class="btn btn-secondary" onclick="cancelarCirurgiaCat()">Cancelar</button>
+      </div>
+      <input type="hidden" id="ccat-id">
+    </div>
+    <div class="card">
+      <div class="section-title">Procedimentos Cirúrgicos Cadastrados</div>
+      <div class="table-wrap" id="lista-cirurgias-cat"></div>
+    </div>
+  </div>
+
+  <!-- ═══ INSUMOS ═══ -->
+  <div id="tab-insumos" class="tab">
+    <h2>📦 Insumos / Estoque</h2>
+    <div class="card">
+      <div class="section-title" id="i-form-title">Novo Insumo</div>
+      <div class="form-grid">
+        <div><label>Nome do Insumo *</label><input id="i-nome" placeholder="Ex: Seringa 5ml"></div>
+        <div><label>Categoria</label>
+          <select id="i-cat"><option value="">Selecione...</option>
+            <option>Medicamento</option><option>Material descartável</option>
+            <option>Equipamento</option><option>Higiene</option><option>Outro</option>
+          </select>
+        </div>
+        <div><label>Valor Unitário (R$) *</label><input id="i-valor" type="number" step="0.01" min="0" placeholder="0,00"></div>
+        <div><label>Quantidade em Estoque</label><input id="i-qtd" type="number" min="0" placeholder="0"></div>
+        <div class="full"><label>Observações</label><textarea id="i-obs" placeholder="Fabricante, validade..."></textarea></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="salvarInsumo()">Salvar Insumo</button>
+        <button class="btn btn-secondary" onclick="cancelarInsumo()">Cancelar</button>
+      </div>
+      <input type="hidden" id="i-id">
+    </div>
+    <div class="card">
+      <div class="section-title">Estoque</div>
+      <div class="table-wrap" id="lista-insumos"></div>
+    </div>
+  </div>
+
+  <!-- ═══ AGENDA ═══ -->
+  <div id="tab-agenda" class="tab">
+    <h2>📅 Agenda</h2>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+
+      <!-- Calendário -->
+      <div>
+        <div class="cal-wrap">
+          <div class="cal-nav">
+            <button onclick="calPrev()">‹</button>
+            <span id="cal-month">—</span>
+            <button onclick="calNext()">›</button>
+          </div>
+          <div id="cal-grid" class="cal-grid"></div>
+        </div>
+
+        <!-- Agendamentos do dia selecionado -->
+        <div class="card">
+          <div class="section-title-row" style="margin-bottom:12px">
+            <span class="st-label" id="day-label">Selecione um dia</span>
+            <button class="btn btn-primary" style="font-size:.78rem;padding:6px 12px" onclick="document.getElementById('ag-form-card').scrollIntoView({behavior:'smooth'})">+ Agendar</button>
+          </div>
+          <div class="timeline-scroll" id="day-appts"></div>
+        </div>
+      </div>
+
+      <!-- Formulário de agendamento -->
+      <div>
+        <div class="card" id="ag-form-card">
+          <div class="section-title" id="ag-form-title">Novo Agendamento</div>
+
+          <div class="form-grid">
+            <div>
+              <label>Data *</label>
+              <input id="ag-data" type="date">
+            </div>
+            <div>
+              <label>Horário</label>
+              <input id="ag-hora" type="time">
+            </div>
+
+            <!-- Seleção de paciente -->
+            <div class="full">
+              <label>Paciente *</label>
+              <div class="pac-tipo-toggle">
+                <label><input type="radio" name="ag-pac-tipo" value="livre" checked onchange="agTipoPac()"> Digitar nome</label>
+                <label><input type="radio" name="ag-pac-tipo" value="cadastrado" onchange="agTipoPac()"> Selecionar cadastrado</label>
+              </div>
+              <!-- Modo livre -->
+              <div id="ag-modo-livre">
+                <input id="ag-pac-nome" placeholder="Nome do animal / paciente *">
+              </div>
+              <!-- Modo cadastrado (oculto) -->
+              <div id="ag-modo-cadastrado" style="display:none">
+                <select id="ag-pacienteId" onchange="agSelectPaciente()">
+                  <option value="">Selecione o paciente...</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label>Nome do Tutor</label>
+              <input id="ag-tutor-nome" placeholder="Ex: João Silva">
+            </div>
+            <div>
+              <label>Telefone do Tutor</label>
+              <input id="ag-tutor-tel" placeholder="(xx) xxxxx-xxxx">
+            </div>
+
+            <div class="full">
+              <label>Queixa principal</label>
+              <textarea id="ag-queixa" placeholder="Motivo do atendimento, sintomas observados..." style="min-height:80px"></textarea>
+            </div>
+
+            <div class="full">
+              <label>Serviços previstos <span style="font-weight:400;color:#a0aec0">(cadastrados)</span></label>
+              <div class="select-list" id="ag-servicos-list"></div>
+            </div>
+
+            <div class="full">
+              <label>Outros serviços <span style="font-weight:400;color:#a0aec0">(texto livre)</span></label>
+              <input id="ag-servicos-livre" placeholder="Ex: vacinação antirrábica, microchipagem...">
+            </div>
+
+            <div>
+              <label>Status</label>
+              <select id="ag-status">
+                <option value="agendado">📌 Agendado</option>
+                <option value="confirmado">✅ Confirmado</option>
+                <option value="realizado">✔ Realizado</option>
+                <option value="cancelado">✕ Cancelado</option>
+              </select>
+            </div>
+
+            <div class="full">
+              <label>Observações</label>
+              <textarea id="ag-obs" placeholder="Observações adicionais..."></textarea>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="salvarAgendamento()">💾 Salvar Agendamento</button>
+            <button class="btn btn-secondary" onclick="limparAgendamento()">Limpar</button>
+          </div>
+          <input type="hidden" id="ag-id">
+        </div>
+
+        <!-- Próximos agendamentos -->
+        <div class="card">
+          <div class="section-title">Próximos Agendamentos</div>
+          <div id="proximos-appts"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ ATENDIMENTOS ═══ -->
+  <div id="tab-atendimentos" class="tab">
+    <h2>📋 Atendimentos</h2>
+    <div class="card">
+      <div class="section-title">Registrar Atendimento</div>
+      <div class="form-grid">
+        <div><label>Paciente *</label><select id="a-paciente" onchange="atualizarTutorAtend()"><option value="">Selecione...</option></select></div>
+        <div><label>Tutor</label><input id="a-tutor" readonly></div>
+        <div><label>Data *</label><input id="a-data" type="date"></div>
+        <div><label>Horário</label><input id="a-hora" type="time"></div>
+        <div class="full"><label>Serviços Realizados</label><div class="select-list" id="a-servicos-list"></div></div>
+        <div class="full">
+          <div style="background:#FAF0F8;border:1.5px solid #EDD5E5;border-radius:9px;padding:12px 16px;margin-top:6px">
+            <div style="font-size:.78rem;font-weight:700;color:#8B5E9A;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Tipo de atendimento</div>
+            <div class="radio-group">
+              <label><input type="radio" name="a-plantao-tipo" value="normal" checked onchange="recalcAtend()"> Normal</label>
+              <label><input type="radio" name="a-plantao-tipo" value="plantao" onchange="recalcAtend()"> 🌙 Plantão <span style="font-size:.82rem;color:#8B5E9A;font-weight:600">(+50% nos serviços)</span></label>
+            </div>
+          </div>
+        </div>
+        <div class="full"><label>Insumos Utilizados</label><div class="select-list" id="a-insumos-list"></div></div>
+        <div class="full"><label>Observações</label><textarea id="a-obs" placeholder="Anotações..."></textarea></div>
+      </div>
+      <div class="total-box">
+        <span class="total-label">Total do atendimento:</span>
+        <span class="total-value" id="a-total">R$ 0,00</span>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="salvarAtendimento()">Registrar Atendimento</button>
+        <button class="btn btn-secondary" onclick="limparAtendimento()">Limpar</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">Histórico de Atendimentos</div>
+      <div id="lista-atendimentos"></div>
+    </div>
+  </div>
+
+</div><!-- /abas-principais -->
+
+<!-- ════════ PÁGINA PACIENTE ════════ -->
+<div id="pagina-paciente" class="inner-page">
+  <div class="inner-header">
+    <button class="btn btn-back" onclick="voltarDePaciente()">← Voltar</button>
+    <div class="avatar-circle avatar-sm" id="pac-header-avatar" style="border-color:#C7C7CC">🐾</div>
+    <div class="inner-header-info"><h2 id="pp-titulo">—</h2><p id="pp-subtitulo">—</p></div>
+  </div>
+  <div class="pac-tabs">
+    <button class="active" onclick="showPacTab('ficha',this)">📋 Ficha</button>
+    <button onclick="showPacTab('anamnese',this)">🩺 Atendimento</button>
+    <button onclick="showPacTab('cirurgias',this)">🔪 Cirurgias</button>
+    <button onclick="showPacTab('exames',this)">🔬 Exames</button>
+    <button onclick="showPacTab('fotos',this)">📷 Fotos</button>
+    <button onclick="showPacTab('anotacoes',this)">📝 Anotações</button>
+    <button onclick="showPacTab('cobranca',this)">💰 Cobrança</button>
+  </div>
+
+  <!-- ── Ficha (com edição inline) ── -->
+  <div id="pactab-ficha" class="pac-tab-content active">
+    <!-- Modo visualização -->
+    <div class="card" id="ficha-view-card">
+      <!-- Foto de perfil grande -->
+      <div class="ficha-photo-row" id="ficha-photo-row">
+        <div class="avatar-circle avatar-lg" id="ficha-avatar-display">🐾</div>
+        <div class="photo-info">
+          <strong style="color:#2C1A30;font-size:.95rem" id="ficha-nome-display">—</strong>
+          <p id="ficha-especie-display">—</p>
+          <label class="upload-label" style="margin-top:8px;font-size:.78rem;padding:6px 12px">
+            📷 Alterar foto
+            <input type="file" accept="image/*" onchange="atualizarFotoPerfil(this)">
+          </label>
+        </div>
+      </div>
+      <div class="section-title-row">
+        <span class="st-label">Dados do Animal</span>
+        <button class="btn btn-edit" onclick="toggleEditFicha(true)">✏️ Editar Ficha</button>
+      </div>
+      <div class="info-grid" id="pp-ficha"></div>
+    </div>
+    <!-- Modo edição (oculto por padrão) -->
+    <div class="card" id="ficha-edit-card" style="display:none">
+      <div class="section-title-row">
+        <span class="st-label">Editar Dados do Paciente</span>
+        <button class="btn btn-secondary" onclick="toggleEditFicha(false)" style="font-size:.78rem;padding:5px 11px">✕ Cancelar</button>
+      </div>
+      <div class="form-grid">
+        <div><label>Nome do Animal *</label><input id="pe-nome" placeholder="Ex: Thor"></div>
+        <div><label>Espécie *</label>
+          <select id="pe-especie">
+            <option value="">Selecione...</option>
+            <option>Cachorro</option><option>Gato</option><option>Ave</option>
+            <option>Roedor</option><option>Réptil</option><option>Outro</option>
+          </select>
+        </div>
+        <div><label>Raça</label><input id="pe-raca" placeholder="Ex: Golden Retriever"></div>
+        <div><label>Peso (kg)</label><input id="pe-peso" type="number" step="0.1" min="0" placeholder="Ex: 8.5"></div>
+        <div><label>Idade</label><input id="pe-idade" placeholder="Ex: 3 anos"></div>
+        <div class="full"><label>Tutor *</label><select id="pe-tutorId"><option value="">Selecione...</option></select></div>
+        <div class="full"><label>Observações</label><textarea id="pe-obs" placeholder="Condições especiais..."></textarea></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="salvarEdicaoPaciente()">💾 Salvar Alterações</button>
+        <button class="btn btn-secondary" onclick="toggleEditFicha(false)">Cancelar</button>
+      </div>
+    </div>
+    <div class="card"><div class="section-title">Tutor Responsável</div><div id="pp-tutor-banner"></div></div>
+  </div>
+
+  <!-- ── Atendimento (com histórico) ── -->
+  <div id="pactab-anamnese" class="pac-tab-content">
+    <div class="card">
+      <div class="section-title">Novo Registro de Atendimento</div>
+      <div class="anamnese-grid">
+        <div class="full"><label>Queixa principal / Motivo da consulta</label><textarea id="an-queixa" placeholder="Descreva o motivo..."></textarea></div>
+        <div class="full"><label>Histórico clínico anterior</label><textarea id="an-historico" placeholder="Doenças, cirurgias, internações..."></textarea></div>
+        <div class="full"><label>Medicamentos em uso</label><textarea id="an-medicamentos" placeholder="Nome, dose, frequência..."></textarea></div>
+        <div><label>Vacinação</label>
+          <div class="radio-group">
+            <label><input type="radio" name="an-vacina" value="Em dia"> Em dia</label>
+            <label><input type="radio" name="an-vacina" value="Atrasada"> Atrasada</label>
+            <label><input type="radio" name="an-vacina" value="Não vacinado"> Não vacinado</label>
+            <label><input type="radio" name="an-vacina" value="Desconhecido" checked> Desconhecido</label>
+          </div>
+        </div>
+        <div><label>Vermifugação</label>
+          <div class="radio-group">
+            <label><input type="radio" name="an-verme" value="Em dia"> Em dia</label>
+            <label><input type="radio" name="an-verme" value="Atrasada"> Atrasada</label>
+            <label><input type="radio" name="an-verme" value="Não realizada"> Não realizada</label>
+            <label><input type="radio" name="an-verme" value="Desconhecido" checked> Desconhecido</label>
+          </div>
+        </div>
+        <div><label>Alimentação</label>
+          <select id="an-alimentacao"><option value="">Selecione...</option>
+            <option>Ração seca</option><option>Ração úmida</option><option>Ração seca + úmida</option>
+            <option>Comida natural</option><option>Misto</option><option>Outro</option>
+          </select>
+        </div>
+        <div><label>Acesso à rua</label>
+          <div class="radio-group">
+            <label><input type="radio" name="an-rua" value="Sim"> Sim</label>
+            <label><input type="radio" name="an-rua" value="Não" checked> Não</label>
+            <label><input type="radio" name="an-rua" value="Controlado"> Controlado</label>
+          </div>
+        </div>
+        <div><label>Convive com outros animais</label>
+          <div class="radio-group">
+            <label><input type="radio" name="an-convive" value="Sim"> Sim</label>
+            <label><input type="radio" name="an-convive" value="Não" checked> Não</label>
+          </div>
+        </div>
+        <div class="full"><label>Alergias conhecidas</label><input id="an-alergias" placeholder="Ex: dipirona, pulgas..."></div>
+        <div class="full"><label>Observações adicionais</label><textarea id="an-obs-add" placeholder="Outras informações relevantes..."></textarea></div>
+      </div>
+
+      <!-- Avaliação Física -->
+      <div class="aval-section-title">🔬 Avaliação Física</div>
+      <div class="aval-row">
+        <span class="aval-icon">💓</span>
+        <span class="aval-label">FC</span>
+        <div class="aval-input"><input id="av-fc" placeholder="Ex: 80"></div>
+        <span class="aval-unit">bpm</span>
+      </div>
+      <div class="aval-row">
+        <span class="aval-icon">🫁</span>
+        <span class="aval-label">FR</span>
+        <div class="aval-input"><input id="av-fr" placeholder="Ex: 20"></div>
+        <span class="aval-unit">mpm</span>
+      </div>
+      <div class="aval-row">
+        <span class="aval-icon">🩺</span>
+        <span class="aval-label">PA</span>
+        <div class="aval-input"><input id="av-pa" placeholder="Ex: 120/80"></div>
+        <span class="aval-unit">mmHg</span>
+      </div>
+      <div class="aval-row">
+        <span class="aval-icon">🌡️</span>
+        <span class="aval-label">T°C</span>
+        <div class="aval-input"><input id="av-temp" placeholder="Ex: 38.5"></div>
+        <span class="aval-unit">°C</span>
+      </div>
+      <div class="aval-row">
+        <span class="aval-icon">💧</span>
+        <span class="aval-label">Hidratação</span>
+        <div class="aval-input"><input id="av-hidratacao" placeholder="Ex: Normal, 5%, 10%..."></div>
+      </div>
+      <div class="aval-row">
+        <span class="aval-icon">👄</span>
+        <span class="aval-label">Mucosas</span>
+        <div class="aval-input"><input id="av-mucosas" placeholder="Ex: Rosadas, pálidas, ictéricas..."></div>
+      </div>
+      <div class="aval-row" style="flex-direction:column;align-items:flex-start">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+          <span class="aval-icon">🔵</span>
+          <span class="aval-label" style="width:auto">Linfonodos</span>
+        </div>
+        <div class="linf-grid" style="width:100%">
+          <div class="linf-item"><label>Submandibulares</label><input id="av-linf-sub" placeholder="Ex: Normal"></div>
+          <div class="linf-item"><label>Subescapulares</label><input id="av-linf-sube" placeholder="Ex: Normal"></div>
+          <div class="linf-item"><label>Inguinais</label><input id="av-linf-ing" placeholder="Ex: Normal"></div>
+          <div class="linf-item"><label>Poplíteos</label><input id="av-linf-pop" placeholder="Ex: Normal"></div>
+        </div>
+      </div>
+      <div class="aval-row" style="align-items:flex-start">
+        <span class="aval-icon" style="padding-top:6px">📝</span>
+        <span class="aval-label" style="padding-top:6px">Demais Informações</span>
+        <div class="aval-input"><textarea id="av-demais" placeholder="Outras observações do exame físico..." style="min-height:70px"></textarea></div>
+      </div>
+
+      <!-- Serviços e Insumos -->
+      <div class="aval-section-title" style="margin-top:20px">🧾 O que foi feito / utilizado</div>
+      <div style="background:#FAF0F8;border:1.5px solid #EDD5E5;border-radius:9px;padding:12px 16px;margin-bottom:14px">
+        <div style="font-size:.78rem;font-weight:700;color:#8B5E9A;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Tipo de atendimento</div>
+        <div class="radio-group">
+          <label><input type="radio" name="an-plantao-tipo" value="normal" checked onchange="recalcAtendimento()"> Normal</label>
+          <label><input type="radio" name="an-plantao-tipo" value="plantao" onchange="recalcAtendimento()"> 🌙 Plantão <span style="font-size:.82rem;color:#8B5E9A;font-weight:600">(+50% nos serviços)</span></label>
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <h4 style="font-size:.83rem;font-weight:700;color:#4a5568;margin-bottom:6px">💉 Serviços realizados</h4>
+        <input id="an-serv-busca" placeholder="🔍 Buscar serviço..." style="margin-bottom:5px;font-size:.85rem;padding:6px 10px" oninput="filtrarLista('an-serv-busca','an-serv-list')">
+        <div class="select-list" id="an-serv-list"><div style="padding:12px;color:#a0aec0;font-size:.85rem">Carregando...</div></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <h4 style="font-size:.83rem;font-weight:700;color:#4a5568;margin-bottom:6px">📦 Insumos utilizados <small style="font-weight:400;color:#a0aec0">— quantidade</small></h4>
+        <input id="an-ins-busca" placeholder="🔍 Buscar insumo..." style="margin-bottom:5px;font-size:.85rem;padding:6px 10px" oninput="filtrarLista('an-ins-busca','an-ins-list')">
+        <div class="select-list" id="an-ins-list"><div style="padding:12px;color:#a0aec0;font-size:.85rem">Carregando...</div></div>
+      </div>
+      <div id="an-cobr-resumo" class="cobr-resumo" style="display:none"><div id="an-cobr-linhas"></div></div>
+      <div class="total-box">
+        <div><div class="total-label">Total do atendimento</div><div style="font-size:.75rem;color:#a0aec0;margin-top:2px">Cobrança gerada automaticamente ao salvar</div></div>
+        <div class="total-value" id="an-total">R$ 0,00</div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="salvarAnamnese()">💾 Registrar Atendimento</button>
+        <button class="btn btn-secondary" onclick="limparFormAnamnese()">Limpar</button>
+      </div>
+    </div>
+    <!-- Histórico de atendimentos -->
+    <div class="card">
+      <div class="section-title">Histórico de Atendimentos</div>
+      <div id="hist-anamnese"></div>
+    </div>
+  </div>
+  <!-- ── Cirurgias ── -->
+  <div id="pactab-cirurgias" class="pac-tab-content">
+    <div class="card">
+      <div class="section-title">Novo Procedimento Cirúrgico</div>
+      <div class="anamnese-grid">
+        <div class="full"><label>Procedimento / Tipo *</label><input id="cp-proc" placeholder="Ex: Castração, Mastectomia, OSH..."></div>
+        <div><label>Clínica / Local</label><input id="cp-clinica" placeholder="Nome da clínica ou hospital..."></div>
+        <div><label>Anestesista</label><input id="cp-anestesista" placeholder="Nome do anestesista..."></div>
+        <div><label>Data</label><input id="cp-data" type="date"></div>
+        <div><label>Horário</label><input id="cp-hora" type="time"></div>
+      </div>
+
+      <!-- Tipo de atendimento — visível e destacado -->
+      <div style="background:#FAF0F8;border:1.5px solid #EDD5E5;border-radius:9px;padding:14px 16px;margin-top:16px">
+        <div style="font-size:.78rem;font-weight:700;color:#8B5E9A;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Tipo de atendimento</div>
+        <div class="radio-group">
+          <label><input type="radio" name="cp-plantao-tipo" value="normal" checked onchange="recalcCirurgiaPac()"> Normal</label>
+          <label><input type="radio" name="cp-plantao-tipo" value="plantao" onchange="recalcCirurgiaPac()"> 🌙 Plantão <span style="font-size:.82rem;color:#8B5E9A;font-weight:600">(+50% nos procedimentos)</span></label>
+        </div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px dashed #EDD5E5">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem;font-weight:500;color:#4a5568">
+            <input type="checkbox" id="cp-outra-cidade" onchange="recalcCirurgiaPac()" style="width:15px;height:15px;accent-color:#C4A0D4">
+            📍 Em outra cidade <span style="font-size:.82rem;color:#718096">(+R$ 50,00)</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="aval-section-title" style="margin-top:18px">🧾 Procedimentos e Insumos</div>
+      <div style="margin-bottom:14px">
+        <h4 style="font-size:.83rem;font-weight:700;color:#4a5568;margin-bottom:6px">🔪 Procedimentos cirúrgicos realizados</h4>
+        <input id="cp-proc-busca" placeholder="🔍 Buscar procedimento..." style="margin-bottom:5px;font-size:.85rem;padding:6px 10px" oninput="filtrarLista('cp-proc-busca','cp-proc-list')">
+        <div class="select-list" id="cp-proc-list"><div style="padding:12px;color:#a0aec0;font-size:.85rem">Carregando...</div></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <h4 style="font-size:.83rem;font-weight:700;color:#4a5568;margin-bottom:6px">📦 Insumos utilizados <small style="font-weight:400;color:#a0aec0">— quantidade</small></h4>
+        <input id="cp-ins-busca" placeholder="🔍 Buscar insumo..." style="margin-bottom:5px;font-size:.85rem;padding:6px 10px" oninput="filtrarLista('cp-ins-busca','cp-ins-list')">
+        <div class="select-list" id="cp-ins-list"><div style="padding:12px;color:#a0aec0;font-size:.85rem">Carregando...</div></div>
+      </div>
+      <div id="cp-resumo" class="cobr-resumo" style="display:none"><div id="cp-resumo-linhas"></div></div>
+      <div class="total-box">
+        <div><div class="total-label">Total do procedimento</div><div style="font-size:.75rem;color:#a0aec0;margin-top:2px">Cobrança gerada automaticamente ao salvar</div></div>
+        <div class="total-value" id="cp-total">R$ 0,00</div>
+      </div>
+
+      <div class="aval-section-title" style="margin-top:18px">📋 Descrição e Pós-operatório</div>
+      <div class="anamnese-grid">
+        <div class="full"><label>Descrição Cirúrgica</label><textarea id="cp-desc-cir" placeholder="Técnica utilizada, achados trans-cirúrgicos, intercorrências..." style="min-height:100px"></textarea></div>
+        <div class="full"><label>Pós-operatório</label><textarea id="cp-pos-op" placeholder="Prescrições, cuidados, prazo de retorno, restrições..." style="min-height:80px"></textarea></div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="salvarCirurgiaPac()">💾 Registrar Cirurgia</button>
+        <button class="btn btn-secondary" onclick="limparFormCirurgiaPac()">Limpar</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">Histórico Cirúrgico</div>
+      <div id="hist-cirurgias"></div>
+    </div>
+  </div>
+
+  <div id="pactab-exames" class="pac-tab-content">
+    <div class="card">
+      <div class="section-title">Laudos e Resultados de Exames</div>
+      <label class="upload-label">📄 Anexar PDF de exame<input type="file" accept=".pdf" multiple onchange="anexarExame(this)"></label>
+      <div id="lista-exames"></div>
+    </div>
+  </div>
+  <div id="pactab-fotos" class="pac-tab-content">
+    <div class="card">
+      <div class="section-title">Registro Fotográfico</div>
+      <label class="upload-label">🖼️ Adicionar fotos<input type="file" accept="image/*" multiple onchange="anexarFoto(this)"></label>
+      <div class="foto-grid" id="galeria-fotos"></div>
+    </div>
+  </div>
+  <!-- ── Anotações ── -->
+  <div id="pactab-anotacoes" class="pac-tab-content">
+    <div class="card">
+      <div class="section-title" id="nota-form-title">Nova Anotação</div>
+      <div class="form-grid">
+        <div class="full">
+          <label>Título <span style="font-weight:400;color:#a0aec0">(opcional)</span></label>
+          <input id="nota-titulo" placeholder="Ex: Retorno pós-cirurgia, Receita, Observação importante...">
+        </div>
+        <div class="full">
+          <label>Conteúdo</label>
+          <textarea id="nota-conteudo" style="min-height:160px" placeholder="Escreva aqui qualquer observação, prescrição, acompanhamento, documento ou anotação livre..."></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="salvarNota()">💾 Salvar Anotação</button>
+        <button class="btn btn-secondary" onclick="cancelarNota()">Cancelar</button>
+      </div>
+      <input type="hidden" id="nota-edit-id">
+    </div>
+    <div class="card">
+      <div class="section-title">Anotações Salvas</div>
+      <div id="lista-notas"></div>
+    </div>
+  </div>
+
+  <div id="pactab-cobranca" class="pac-tab-content">
+    <div class="card">
+      <div class="section-title">Nova Cobrança</div>
+      <div style="margin-bottom:16px"><h4 style="font-size:.85rem;font-weight:700;color:#4a5568;margin-bottom:8px">💉 Serviços realizados</h4><div class="select-list" id="cobr-servicos-list"></div></div>
+      <div style="margin-bottom:16px"><h4 style="font-size:.85rem;font-weight:700;color:#4a5568;margin-bottom:8px">📦 Insumos utilizados <small style="font-weight:400;color:#a0aec0">— quantidade</small></h4><div class="select-list" id="cobr-insumos-list"></div></div>
+      <div id="cobr-resumo-live" class="cobr-resumo" style="display:none"><div id="cobr-resumo-linhas"></div></div>
+      <div class="total-box">
+        <div><div class="total-label">Total a pagar</div><div style="font-size:.78rem;color:#a0aec0;margin-top:2px" id="pp-tutor-cobr">—</div></div>
+        <div class="total-value" id="cobr-total">R$ 0,00</div>
+      </div>
+      <div style="margin-top:12px"><label>Observação</label><input id="cobr-obs" placeholder="Ex: retorno em 7 dias..."></div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="salvarCobranca()">💾 Salvar Cobrança</button>
+        <button class="btn btn-secondary" onclick="limparCobranca()">Limpar</button>
+      </div>
+    </div>
+    <div class="card"><div class="section-title">Histórico de Cobranças</div><div id="hist-cobrancas"></div></div>
+  </div>
+</div>
+
+<!-- ════════ PÁGINA TUTOR ════════ -->
+<div id="pagina-tutor" class="inner-page">
+  <div class="inner-header">
+    <button class="btn btn-back" onclick="voltarDeTutor()">← Voltar</button>
+    <div class="inner-header-info"><h2 id="tp-titulo">—</h2><p id="tp-subtitulo">—</p></div>
+  </div>
+  <div style="max-width:900px;margin:0 auto;padding:24px 28px">
+    <div class="card"><div class="section-title">Dados do Tutor</div><div class="info-grid" id="tp-ficha"></div></div>
+    <div class="card"><div class="section-title">Animais Cadastrados</div><div id="tp-animais"></div></div>
+  </div>
+</div>
+
+<div id="lightbox" onclick="fecharLightbox()"><span class="lb-close">✕</span><img id="lb-img" src=""></div>
+<div id="toast"></div>
+
+<script>
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2)
+const db={get:k=>JSON.parse(localStorage.getItem(k)||'[]'),getObj:k=>JSON.parse(localStorage.getItem(k)||'{}'),set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))}
+const fmt=v=>Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+const val=id=>(document.getElementById(id)?.value||'').trim()
+const getTutor=id=>db.get('tutores').find(t=>t.id===id)||null
+let toastTimer
+function toast(msg,ok=true){const el=document.getElementById('toast');el.textContent=msg;el.className='toast show '+(ok?'ok':'err');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.className='toast',2800)}
+
+// ── Navegação ──
+let pacienteAtualId=null,tutorAtualId=null,backDestino='inicio'
+
+function goToHome(){
+  // Fecha páginas internas se abertas
+  if(pacienteAtualId||tutorAtualId){
+    pacienteAtualId=null;tutorAtualId=null
+    document.getElementById('pagina-paciente').classList.remove('ativa')
+    document.getElementById('pagina-tutor').classList.remove('ativa')
+    showMain()
+  }
+  goTo('inicio')
+}
+
+function showTab(name,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'))
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'))
+  document.getElementById('tab-'+name).classList.add('active')
+  btn.classList.add('active')
+  if(name==='inicio')renderInicio()
+  if(name==='pacientes')atualizarSelectTutor()
+  if(name==='tutores')renderTutores()
+  if(name==='agenda')initAgenda()
+  if(name==='atendimentos')popularAtendimentoForm()
+}
+
+function goTo(name){document.getElementById('nav-'+name).click()}
+
+function hideMain(){document.getElementById('abas-principais').style.display='none';document.getElementById('nav-principal').style.display='none'}
+function showMain(){document.getElementById('abas-principais').style.display='';document.getElementById('nav-principal').style.display=''}
+
+// ── Início ──
+function renderUltimas24h(){
+  const el=document.getElementById('hist-24h'); if(!el) return
+  const hoje=new Date().toISOString().slice(0,10)
+  const ontem=new Date(Date.now()-24*60*60*1000).toISOString().slice(0,10)
+  const pacientes=db.get('pacientes'); const tutores=db.get('tutores')
+
+  // Converte data pt-BR (dd/mm/yyyy) para ISO (yyyy-mm-dd)
+  const ptBrToIso=d=>{const p=d.split('/');return p.length===3?`${p[2]}-${p[1]}-${p[0]}`:null}
+
+  // 1. Atendimentos do módulo principal (data já em ISO)
+  const deModulo=db.get('atendimentos')
+    .filter(a=>a.data>=ontem&&a.data<=hoje)
+    .map(a=>({...a,_tipo:'modulo'}))
+
+  // 2. Atendimentos da ficha do paciente (data em pt-BR)
+  const deFicha=[]
+  pacientes.forEach(p=>{
+    const t=tutores.find(x=>x.id===p.tutorId)
+    db.get('anamnese_hist_'+p.id).forEach(a=>{
+      const iso=ptBrToIso(a.data); if(!iso||iso<ontem||iso>hoje) return
+      deFicha.push({...a,data:iso,pacNome:p.nome,pacEspecie:p.especie,tutorNome:t?.nome||'',tutorTel:t?.tel||'',_tipo:'ficha-atend',_pacId:p.id})
+    })
+  })
+
+  // 3. Cirurgias da ficha do paciente (data em pt-BR)
+  const deCirurgia=[]
+  pacientes.forEach(p=>{
+    const t=tutores.find(x=>x.id===p.tutorId)
+    db.get('cirurgias_hist_'+p.id).forEach(c=>{
+      const iso=ptBrToIso(c.data); if(!iso||iso<ontem||iso>hoje) return
+      deCirurgia.push({...c,data:iso,pacNome:p.nome,pacEspecie:p.especie,tutorNome:t?.nome||'',tutorTel:t?.tel||'',_tipo:'cirurgia',_pacId:p.id})
+    })
+  })
+
+  const todos=[...deModulo,...deFicha,...deCirurgia]
+    .sort((a,b)=>(b.data+(b.hora||'99:99')).localeCompare(a.data+(a.hora||'99:99')))
+
+  if(!todos.length){
+    el.innerHTML='<p style="color:#a0aec0;text-align:center;padding:18px;font-size:.87rem">Nenhum atendimento registrado nas últimas 24 horas.</p>'
+    return
+  }
+
+  el.innerHTML=todos.map(a=>{
+    const dataLabel=a.data===hoje?'Hoje':`${a.data.split('-').reverse().slice(0,2).join('/')}`
+    const isCir=a._tipo==='cirurgia'
+    const isFicha=a._tipo==='ficha-atend'
+    const tipoLabel=isCir?'<span class="badge b-gray">🔪 Cirurgia</span>':isFicha?'<span class="badge b-gray">🩺 Atendimento</span>':''
+
+    let badges=''
+    if(isCir){
+      if(a.proc) badges+=`<span class="badge" style="background:#F3E8FF;color:#6B21A8">${esc(a.proc)}</span>`;
+      (a.procedimentos||[]).forEach(s=>{badges+=`<span class="badge b-green">${esc(s.nome)}</span>`});
+      (a.insumos||[]).forEach(i=>{badges+=`<span class="badge b-blue">${esc(i.nome)}</span>`})
+    } else {
+      (a.servicos||[]).forEach(s=>{badges+=`<span class="badge b-green">${esc(s.nome)}</span>`});
+      (a.insumos||[]).forEach(i=>{badges+=`<span class="badge b-blue">${esc(i.nome)}</span>`});
+      if(isFicha&&a.queixa&&!badges) badges+=`<span class="badge b-gray">${esc(a.queixa.slice(0,40))}${a.queixa.length>40?'…':''}</span>`
+    }
+
+    return `<div class="atend-24h-card">
+      <div class="atend-24h-hora">${a.hora||'—'}<small>${dataLabel}</small></div>
+      <div class="atend-24h-info">
+        <div class="pac">🐾 ${esc(a.pacNome||'—')} <span style="font-weight:400;color:#718096">(${esc(a.pacEspecie||'')})</span></div>
+        <div class="meta">👤 ${esc(a.tutorNome||'—')}${a.tutorTel?' · '+esc(a.tutorTel):''}</div>
+        <div class="tags">${tipoLabel}${badges}</div>
+      </div>
+      <div class="atend-24h-total">${fmt(a.total||0)}</div>
+    </div>`
+  }).join('')
+}
+
+function renderInicio(){
+  const insumos=db.get('insumos')
+  document.getElementById('stat-tutores').textContent=db.get('tutores').length
+  document.getElementById('stat-pacientes').textContent=db.get('pacientes').length
+  document.getElementById('stat-servicos').textContent=db.get('servicos').length
+  document.getElementById('stat-insumos').textContent=insumos.length
+  document.getElementById('stat-atendimentos').textContent=db.get('atendimentos').length
+  const hoje=new Date().toISOString().slice(0,10)
+  document.getElementById('stat-agenda').textContent=db.get('agendamentos').filter(a=>a.data>=hoje&&a.status!=='cancelado').length
+
+  // Alerta de estoque baixo
+  const alertBox=document.getElementById('stock-alert-box')
+  const alertItems=document.getElementById('stock-alert-items')
+  const zerados=insumos.filter(i=>i.qtd<=0)
+  const baixos=insumos.filter(i=>i.qtd>0&&i.qtd<3)
+  if(alertBox&&alertItems){
+    if(zerados.length||baixos.length){
+      alertBox.style.display='flex'
+      let html=''
+      if(zerados.length) html+=`<div style="margin-bottom:4px"><strong>⛔ Sem estoque:</strong> ${zerados.map(i=>`<span class="al-item">${esc(i.nome)}</span>`).join('')}</div>`
+      if(baixos.length) html+=`<div><strong>⚠️ Estoque baixo (menos de 3):</strong> ${baixos.map(i=>`<span class="al-item">${esc(i.nome)} — ${i.qtd} un.</span>`).join('')}</div>`
+      alertItems.innerHTML=html
+    } else {
+      alertBox.style.display='none'
+    }
+  }
+  atualizarBadgeInsumos()
+  renderUltimas24h()
+}
+
+// ── Tutores ──
+function salvarTutor(){
+  const nome=val('t-nome'),tel=val('t-tel');if(!nome||!tel){toast('Preencha nome e telefone.',false);return}
+  const id=val('t-id');const lista=db.get('tutores')
+  const obj={id:id||uid(),nome,tel,email:val('t-email'),cpf:val('t-cpf'),end:val('t-end'),obs:val('t-obs'),criado:''}
+  if(id){const idx=lista.findIndex(t=>t.id===id);if(idx!==-1){obj.criado=lista[idx].criado;lista[idx]=obj}}
+  else{obj.criado=new Date().toLocaleDateString('pt-BR');lista.unshift(obj)}
+  db.set('tutores',lista);cancelarTutor();renderTutores();atualizarSelectTutor();toast(id?'Tutor atualizado!':'Tutor cadastrado!')
+}
+function cancelarTutor(){['t-nome','t-tel','t-email','t-cpf','t-end','t-obs'].forEach(i=>document.getElementById(i).value='');document.getElementById('t-id').value='';document.getElementById('t-form-title').textContent='Novo Tutor'}
+function editarTutor(id){const t=getTutor(id);if(!t)return;document.getElementById('t-nome').value=t.nome;document.getElementById('t-tel').value=t.tel;document.getElementById('t-email').value=t.email||'';document.getElementById('t-cpf').value=t.cpf||'';document.getElementById('t-end').value=t.end||'';document.getElementById('t-obs').value=t.obs||'';document.getElementById('t-id').value=id;document.getElementById('t-form-title').textContent='Editar Tutor';document.getElementById('tab-tutores').querySelector('.card').scrollIntoView({behavior:'smooth'})}
+function excluirTutor(id){const a=db.get('pacientes').filter(p=>p.tutorId===id);if(!confirm(a.length?`Tutor com ${a.length} animal(is). Excluir?`:'Excluir este tutor?'))return;db.set('tutores',db.get('tutores').filter(t=>t.id!==id));renderTutores();atualizarSelectTutor();toast('Tutor removido.')}
+function abrirTutor(id){
+  const t=getTutor(id);if(!t)return;tutorAtualId=id;hideMain()
+  document.getElementById('pagina-tutor').classList.add('ativa')
+  document.getElementById('tp-titulo').textContent='👤 '+t.nome
+  document.getElementById('tp-subtitulo').textContent=t.tel+(t.email?'  ·  '+t.email:'')
+  const campos=[['Nome',t.nome],['Telefone',t.tel],['E-mail',t.email||'—'],['CPF',t.cpf||'—'],['Endereço',t.end||'—'],['Cadastro',t.criado||'—']]
+  document.getElementById('tp-ficha').innerHTML=campos.map(([l,v])=>`<div class="info-item"><label>${l}</label><p>${esc(v)}</p></div>`).join('')+(t.obs?`<div class="info-item" style="grid-column:1/-1"><label>Observações</label><p>${esc(t.obs)}</p></div>`:'')
+  renderAnimaisDoTutor();window.scrollTo(0,0)
+}
+function voltarDeTutor(){
+  tutorAtualId=null;document.getElementById('pagina-tutor').classList.remove('ativa');showMain()
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'))
+  document.getElementById('tab-tutores').classList.add('active');document.getElementById('nav-tutores').classList.add('active')
+}
+function renderAnimaisDoTutor(){
+  const pac=db.get('pacientes').filter(p=>p.tutorId===tutorAtualId);const el=document.getElementById('tp-animais')
+  if(!pac.length){el.innerHTML='<div class="empty"><span class="empty-icon">🐾</span>Nenhum animal cadastrado para este tutor.</div>';return}
+  const ic={Cachorro:'🐶',Gato:'🐱',Ave:'🐦',Roedor:'🐹',Réptil:'🦎'}
+  el.innerHTML=pac.map(p=>`<div class="animal-card" onclick="abrirPaciente('${p.id}','tutor')"><div class="animal-icon">${ic[p.especie]||'🐾'}</div><div class="animal-info"><h4>${esc(p.nome)}</h4><p>${esc(p.especie)}${p.raca?' · '+esc(p.raca):''}${p.idade?' · '+esc(p.idade):''}</p></div><div class="arrow">›</div></div>`).join('')
+}
+function renderTutores(){
+  const busca=document.getElementById('t-busca')?.value.toLowerCase()||''
+  const lista=db.get('tutores').filter(t=>t.nome.toLowerCase().includes(busca)||t.tel.includes(busca))
+  const el=document.getElementById('lista-tutores')
+  if(!lista.length){el.innerHTML='<div class="empty"><span class="empty-icon">👤</span>Nenhum tutor cadastrado.</div>';return}
+  el.innerHTML=`<table><thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>Animais</th><th>Ações</th></tr></thead><tbody>${lista.map(t=>{const q=db.get('pacientes').filter(p=>p.tutorId===t.id).length;return`<tr><td><strong style="cursor:pointer;color:#2C1A30;text-decoration:underline" onclick="abrirTutor('${t.id}')">${esc(t.nome)}</strong></td><td>${esc(t.tel)}</td><td>${esc(t.email||'—')}</td><td><span class="badge b-green">${q} animal${q!==1?'is':''}</span></td><td><div class="td-actions"><button class="btn btn-primary" style="font-size:.78rem;padding:5px 11px" onclick="abrirTutor('${t.id}')">Ver Animais</button><button class="btn btn-edit" onclick="editarTutor('${t.id}')">Editar</button><button class="btn btn-danger" onclick="excluirTutor('${t.id}')">Excluir</button></div></td></tr>`}).join('')}</tbody></table>`
+}
+function atualizarSelectTutor(){const sel=document.getElementById('p-tutorId');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">Selecione o tutor...</option>'+db.get('tutores').map(t=>`<option value="${t.id}" ${t.id===cur?'selected':''}>${esc(t.nome)} — ${esc(t.tel)}</option>`).join('')}
+
+// ── Sub-navegação da aba Pacientes ──
+function showPacienteList(){
+  document.getElementById('pac-list-view').style.display='block'
+  document.getElementById('pac-form-view').style.display='none'
+  renderPacientes()
+}
+function showPacienteForm(editId){
+  atualizarSelectTutor()
+  document.getElementById('pac-list-view').style.display='none'
+  document.getElementById('pac-form-view').style.display='block'
+  // Reset form
+  ;['p-nome','p-especie','p-raca','p-peso','p-idade','p-tutorId','p-obs'].forEach(i=>document.getElementById(i).value='')
+  document.getElementById('p-id').value=''
+  document.getElementById('p-foto-data').value=''
+  document.getElementById('p-foto-preview').innerHTML='🐾'
+  document.getElementById('p-form-title').textContent='Novo Paciente'
+  if(editId){
+    const p=db.get('pacientes').find(x=>x.id===editId); if(!p) return
+    document.getElementById('p-nome').value=p.nome
+    document.getElementById('p-especie').value=p.especie
+    document.getElementById('p-raca').value=p.raca||''
+    document.getElementById('p-peso').value=p.peso||''
+    document.getElementById('p-idade').value=p.idade||''
+    document.getElementById('p-tutorId').value=p.tutorId||''
+    document.getElementById('p-obs').value=p.obs||''
+    document.getElementById('p-id').value=editId
+    document.getElementById('p-form-title').textContent='Editar Paciente'
+    // Carrega foto atual como preview
+    const foto=localStorage.getItem('foto_perfil_'+editId)
+    if(foto){
+      document.getElementById('p-foto-preview').innerHTML=`<img src="${foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+      document.getElementById('p-foto-data').value=foto
+    }
+  }
+  window.scrollTo(0,0)
+}
+function previewFotoPerfil(input){
+  const file=input.files[0]; if(!file) return
+  if(file.size>3*1024*1024){toast('Imagem excede 3 MB.',false);return}
+  const r=new FileReader()
+  r.onload=e=>{
+    document.getElementById('p-foto-preview').innerHTML=`<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+    document.getElementById('p-foto-data').value=e.target.result
+  }
+  r.readAsDataURL(file)
+}
+function atualizarFotoPerfil(input){
+  if(!pacienteAtualId) return
+  const file=input.files[0]; if(!file) return
+  if(file.size>3*1024*1024){toast('Imagem excede 3 MB.',false);return}
+  const r=new FileReader()
+  r.onload=e=>{
+    localStorage.setItem('foto_perfil_'+pacienteAtualId, e.target.result)
+    renderAvatarPaciente(pacienteAtualId)
+    toast('Foto atualizada!')
+  }
+  r.readAsDataURL(file)
+}
+function renderAvatarPaciente(id){
+  const foto=localStorage.getItem('foto_perfil_'+id)
+  const imgHtml=foto?`<img src="${foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:''
+  const placeholder=foto?'':getEspecieEmoji(db.get('pacientes').find(x=>x.id===id)?.especie||'')
+  const setEl=(elId,inner)=>{const el=document.getElementById(elId);if(el)el.innerHTML=inner||(foto?imgHtml:placeholder)}
+  // Header small avatar
+  const hdr=document.getElementById('pac-header-avatar'); if(hdr) hdr.innerHTML=foto?imgHtml:getEspecieEmoji(db.get('pacientes').find(x=>x.id===id)?.especie||'')
+  // Ficha large avatar
+  const fav=document.getElementById('ficha-avatar-display'); if(fav) fav.innerHTML=foto?imgHtml:getEspecieEmoji(db.get('pacientes').find(x=>x.id===id)?.especie||'')
+}
+function getEspecieEmoji(e){return{Cachorro:'🐶',Gato:'🐱',Ave:'🐦',Roedor:'🐹',Réptil:'🦎'}[e]||'🐾'}
+
+// ── Pacientes ──
+function abrirPaciente(id,origem='inicio'){
+  const p=db.get('pacientes').find(x=>x.id===id);if(!p)return
+  pacienteAtualId=id;backDestino=origem;hideMain()
+  document.getElementById('pagina-paciente').classList.add('ativa')
+  const t=getTutor(p.tutorId)
+  document.getElementById('pp-titulo').textContent=p.nome+' — '+p.especie
+  document.getElementById('pp-subtitulo').textContent=t?'Tutor: '+t.nome+'  ·  '+t.tel:'Sem tutor vinculado'
+  // Avatar
+  renderAvatarPaciente(id)
+  // Ficha photo row
+  const el_nome=document.getElementById('ficha-nome-display'); if(el_nome) el_nome.textContent=p.nome
+  const el_esp=document.getElementById('ficha-especie-display'); if(el_esp) el_esp.textContent=p.especie+(p.raca?' · '+p.raca:'')+(p.idade?' · '+p.idade:'')
+  const campos=[['Espécie',p.especie],['Raça',p.raca||'—'],['Peso',p.peso?p.peso+' kg':'—'],['Idade',p.idade||'—'],['Cadastro',p.criado||'—']]
+  document.getElementById('pp-ficha').innerHTML=campos.map(([l,v])=>`<div class="info-item"><label>${l}</label><p>${esc(v)}</p></div>`).join('')+(p.obs?`<div class="info-item" style="grid-column:1/-1"><label>Observações</label><p>${esc(p.obs)}</p></div>`:'')
+  document.getElementById('pp-tutor-banner').innerHTML=t?`<div class="tutor-banner"><div class="tinfo"><h4>👤 ${esc(t.nome)}</h4><p>${esc(t.tel)}${t.email?' · '+esc(t.email):''}${t.end?'<br>📍 '+esc(t.end):''}</p></div><button class="btn btn-secondary" onclick="abrirTutorDoPaciente('${t.id}')">Ver perfil do tutor</button></div>`:'<p style="color:#a0aec0;font-size:.87rem">Nenhum tutor vinculado.</p>'
+  document.getElementById('pp-tutor-cobr').textContent=t?'Tutor: '+t.nome:''
+  toggleEditFicha(false)
+  showPacTab('ficha',document.querySelector('.pac-tabs button'))
+  carregarAnamnese();carregarCirurgiasPac();renderExames();renderFotos();renderNotas();popularCobrancaForm();renderHistCobrancas()
+  window.scrollTo(0,0)
+}
+function abrirTutorDoPaciente(tid){voltarDePaciente();setTimeout(()=>abrirTutor(tid),50)}
+function voltarDePaciente(){
+  pacienteAtualId=null;document.getElementById('pagina-paciente').classList.remove('ativa')
+  if(backDestino==='tutor'){document.getElementById('pagina-tutor').classList.add('ativa');renderAnimaisDoTutor()}
+  else showMain()
+}
+function showPacTab(name,btn){document.querySelectorAll('.pac-tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.pac-tabs button').forEach(b=>b.classList.remove('active'));document.getElementById('pactab-'+name).classList.add('active');if(btn)btn.classList.add('active')}
+function salvarPaciente(){
+  const nome=val('p-nome'),especie=val('p-especie'),tutorId=val('p-tutorId');if(!nome||!especie||!tutorId){toast('Preencha nome, espécie e tutor.',false);return}
+  const id=val('p-id')||uid(); const lista=db.get('pacientes')
+  const obj={id,nome,especie,raca:val('p-raca'),peso:parseFloat(document.getElementById('p-peso')?.value)||null,idade:val('p-idade'),tutorId,obs:val('p-obs'),criado:''}
+  const idx=lista.findIndex(p=>p.id===id)
+  if(idx!==-1){obj.criado=lista[idx].criado;lista[idx]=obj}else{obj.criado=new Date().toLocaleDateString('pt-BR');lista.unshift(obj)}
+  // Salva foto de perfil se houver
+  const fotoData=document.getElementById('p-foto-data').value
+  if(fotoData) localStorage.setItem('foto_perfil_'+id, fotoData)
+  db.set('pacientes',lista); showPacienteList(); toast(idx!==-1?'Paciente atualizado!':'Paciente cadastrado!')
+}
+function editarPaciente(id){ showPacienteForm(id) }
+function excluirPaciente(id){if(!confirm('Excluir este paciente e todos os seus dados?'))return;db.set('pacientes',db.get('pacientes').filter(p=>p.id!==id));['anamnese_hist_','cirurgias_hist_','exames_','fotos_','cobrancas_','notas_','foto_perfil_'].forEach(k=>localStorage.removeItem(k+id));renderPacientes();toast('Paciente removido.')}
+function badgeEspecie(e){const m={Cachorro:'b-dog',Gato:'b-cat',Ave:'b-bird'};return`<span class="badge ${m[e]||'b-other'}">${esc(e)}</span>`}
+function renderPacientes(){
+  atualizarSelectTutor();const busca=document.getElementById('p-busca').value.toLowerCase();const tutores=db.get('tutores')
+  const lista=db.get('pacientes').filter(p=>{const t=tutores.find(x=>x.id===p.tutorId);return p.nome.toLowerCase().includes(busca)||(t&&t.nome.toLowerCase().includes(busca))})
+  const el=document.getElementById('lista-pacientes')
+  if(!lista.length){el.innerHTML='<div class="empty"><span class="empty-icon">🐾</span>Nenhum paciente encontrado.</div>';return}
+  el.innerHTML=`<table><thead><tr><th></th><th>Animal</th><th>Espécie</th><th>Tutor</th><th>Telefone</th><th>Cadastro</th><th>Ações</th></tr></thead><tbody>${lista.map(p=>{const t=tutores.find(x=>x.id===p.tutorId);const foto=localStorage.getItem('foto_perfil_'+p.id);const avHtml=foto?`<img src="${foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:getEspecieEmoji(p.especie);return`<tr><td><div class="avatar-circle" style="width:38px;height:38px;font-size:1.1rem;cursor:pointer" onclick="abrirPaciente('${p.id}')">${avHtml}</div></td><td><strong style="cursor:pointer;color:#2C1A30;text-decoration:underline" onclick="abrirPaciente('${p.id}')">${esc(p.nome)}</strong>${p.idade?`<br><small style="color:#a0aec0">${esc(p.idade)}</small>`:''}</td><td>${badgeEspecie(p.especie)}${p.raca?`<br><small>${esc(p.raca)}</small>`:''}</td><td>${t?`<button class="btn-link" onclick="abrirTutor('${t.id}')">${esc(t.nome)}</button>`:'<span style="color:#e53e3e">Sem tutor</span>'}</td><td>${t?esc(t.tel):'—'}</td><td>${p.criado||'—'}</td><td><div class="td-actions"><button class="btn btn-primary" style="font-size:.78rem;padding:5px 11px" onclick="abrirPaciente('${p.id}')">Abrir Ficha</button><button class="btn btn-edit" onclick="editarPaciente('${p.id}')">Editar</button><button class="btn btn-danger" onclick="excluirPaciente('${p.id}')">Excluir</button></div></td></tr>`}).join('')}</tbody></table>`
+}
+
+// ── Edição inline da ficha ──
+function toggleEditFicha(editing){
+  document.getElementById('ficha-view-card').style.display = editing ? 'none' : 'block'
+  document.getElementById('ficha-edit-card').style.display = editing ? 'block' : 'none'
+  if(editing){
+    const p = db.get('pacientes').find(x=>x.id===pacienteAtualId); if(!p) return
+    // Popula select de tutores
+    const sel = document.getElementById('pe-tutorId')
+    sel.innerHTML = '<option value="">Selecione...</option>' + db.get('tutores').map(t=>`<option value="${t.id}" ${t.id===p.tutorId?'selected':''}>${esc(t.nome)} — ${esc(t.tel)}</option>`).join('')
+    document.getElementById('pe-nome').value    = p.nome
+    document.getElementById('pe-especie').value = p.especie
+    document.getElementById('pe-raca').value    = p.raca||''
+    document.getElementById('pe-peso').value    = p.peso||''
+    document.getElementById('pe-idade').value   = p.idade||''
+    document.getElementById('pe-obs').value     = p.obs||''
+  }
+}
+function salvarEdicaoPaciente(){
+  const nome=val('pe-nome'),especie=val('pe-especie'),tutorId=val('pe-tutorId')
+  if(!nome||!especie||!tutorId){toast('Preencha nome, espécie e tutor.',false);return}
+  const lista=db.get('pacientes')
+  const idx=lista.findIndex(p=>p.id===pacienteAtualId); if(idx===-1) return
+  lista[idx]={...lista[idx],nome,especie,raca:val('pe-raca'),peso:parseFloat(document.getElementById('pe-peso')?.value)||null,idade:val('pe-idade'),tutorId,obs:val('pe-obs')}
+  db.set('pacientes',lista)
+  const dest=backDestino
+  abrirPaciente(pacienteAtualId, dest) // recarrega tudo com novos dados
+  toast('Ficha atualizada!')
+}
+
+// ── Busca em listas de seleção ──
+function filtrarLista(buscaId,listaId){
+  const termo=(document.getElementById(buscaId)?.value||'').toLowerCase().trim()
+  document.querySelectorAll('#'+listaId+' .item').forEach(item=>{
+    const checked=item.querySelector('input[type=checkbox]')?.checked||false
+    const label=item.querySelector('.item-label')?.textContent.toLowerCase()||''
+    // Sem busca: mostra só os já selecionados; com busca: mostra os que batem + os selecionados
+    item.style.display=(checked||(termo&&label.includes(termo)))?'flex':'none'
+  })
+}
+
+// ── Atendimento (anamnese + serviços/insumos) ──
+function popularFormAtendimento(){
+  const serv=db.get('servicos')
+  document.getElementById('an-serv-list').innerHTML=serv.length
+    ?serv.map(s=>`<div class="item"><input type="checkbox" id="ans-${s.id}" onchange="recalcAtendimento();filtrarLista('an-serv-busca','an-serv-list')"><label for="ans-${s.id}" class="item-label">${esc(s.nome)}</label><span style="font-weight:700;color:#2C1A30;white-space:nowrap">${fmt(s.valor)}</span></div>`).join('')
+    :'<div style="padding:12px;color:#a0aec0;font-size:.85rem">Nenhum serviço cadastrado.</div>'
+  const ins=db.get('insumos')
+  document.getElementById('an-ins-list').innerHTML=ins.length
+    ?ins.map(i=>`<div class="item"><input type="checkbox" id="ani-${i.id}" onchange="recalcAtendimento();filtrarLista('an-ins-busca','an-ins-list')"><label for="ani-${i.id}" class="item-label">${esc(i.nome)} <span style="color:#2C1A30;font-weight:700">${fmt(i.valor)}/un.</span> <small style="color:#a0aec0">(est: ${i.qtd})</small></label><input class="qty-input" type="number" id="aniq-${i.id}" min="1" value="1" oninput="recalcAtendimento()"></div>`).join('')
+    :'<div style="padding:12px;color:#a0aec0;font-size:.85rem">Nenhum insumo cadastrado.</div>'
+  filtrarLista('an-serv-busca','an-serv-list')
+  filtrarLista('an-ins-busca','an-ins-list')
+  recalcAtendimento()
+}
+function recalcAtendimento(){
+  const plantao=document.querySelector('input[name="an-plantao-tipo"]:checked')?.value==='plantao'
+  let totalServ=0;let totalIns=0;const linhas=[]
+  db.get('servicos').forEach(s=>{const cb=document.getElementById('ans-'+s.id);if(!cb?.checked)return;totalServ+=s.valor;linhas.push(`<div class="linha"><span>${esc(s.nome)}</span><span style="font-weight:700">${fmt(s.valor)}</span></div>`)})
+  db.get('insumos').forEach(i=>{const cb=document.getElementById('ani-'+i.id);if(!cb?.checked)return;const qtd=parseInt(document.getElementById('aniq-'+i.id)?.value)||1;const sub=i.valor*qtd;totalIns+=sub;linhas.push(`<div class="linha"><span>${esc(i.nome)} ×${qtd}</span><span style="font-weight:700">${fmt(sub)}</span></div>`)})
+  let total=totalServ+totalIns
+  if(plantao&&totalServ>0){const ac=totalServ*0.5;total+=ac;linhas.push(`<div class="linha" style="color:#8B5E9A"><span>🌙 Plantão (+50% nos serviços)</span><span style="font-weight:700">+${fmt(ac)}</span></div>`)}
+  const totEl=document.getElementById('an-total');if(totEl)totEl.textContent=fmt(total)
+  const resumo=document.getElementById('an-cobr-resumo')
+  if(!resumo)return
+  if(linhas.length){resumo.style.display='block';document.getElementById('an-cobr-linhas').innerHTML=linhas.join('')+`<div class="linha" style="margin-top:6px;border-top:2px solid #E8D0EB;padding-top:8px"><span style="font-weight:700">Total</span><span style="font-weight:800;color:#2C1A30">${fmt(total)}</span></div>`}
+  else resumo.style.display='none'
+}
+
+function limparFormAnamnese(){
+  ;['an-queixa','an-historico','an-medicamentos','an-alergias','an-obs-add','av-fc','av-fr','av-pa','av-temp','av-hidratacao','av-mucosas','av-linf-sub','av-linf-sube','av-linf-ing','av-linf-pop','av-demais'].forEach(i=>document.getElementById(i).value='')
+  document.getElementById('an-alimentacao').value=''
+  ;['an-vacina','an-verme','an-rua','an-convive'].forEach(n=>{const el=document.querySelector(`input[name="${n}"][value="Desconhecido"]`)||document.querySelector(`input[name="${n}"][value="Não"]`);if(el)el.checked=true})
+  db.get('servicos').forEach(s=>{const el=document.getElementById('ans-'+s.id);if(el)el.checked=false})
+  db.get('insumos').forEach(i=>{const el=document.getElementById('ani-'+i.id);if(el)el.checked=false;const q=document.getElementById('aniq-'+i.id);if(q)q.value=1})
+  const radNormalAn=document.querySelector('input[name="an-plantao-tipo"][value="normal"]');if(radNormalAn)radNormalAn.checked=true
+  const bsA=document.getElementById('an-serv-busca');if(bsA)bsA.value=''
+  const biA=document.getElementById('an-ins-busca');if(biA)biA.value=''
+  filtrarLista('an-serv-busca','an-serv-list')
+  filtrarLista('an-ins-busca','an-ins-list')
+  const resumo=document.getElementById('an-cobr-resumo');if(resumo)resumo.style.display='none'
+  const tot=document.getElementById('an-total');if(tot)tot.textContent='R$ 0,00'
+}
+function carregarAnamnese(){
+  popularFormAtendimento()
+  limparFormAnamnese()
+  renderHistAnamnese()
+}
+function salvarAnamnese(){
+  if(!pacienteAtualId) return
+  const gR=n=>document.querySelector(`input[name="${n}"]:checked`)?.value||''
+
+  const plantaoAtend=document.querySelector('input[name="an-plantao-tipo"]:checked')?.value==='plantao'
+
+  // Coleta serviços selecionados
+  const servicosSel=[]; let totalServ=0
+  db.get('servicos').forEach(s=>{const cb=document.getElementById('ans-'+s.id);if(!cb?.checked)return;servicosSel.push({id:s.id,nome:s.nome,valor:s.valor});totalServ+=s.valor})
+
+  // Valida e coleta insumos selecionados
+  const estoqueAtual=db.get('insumos'); const insumosSel=[]; let erroEstoque=false; let totalIns=0
+  estoqueAtual.forEach(i=>{
+    const cb=document.getElementById('ani-'+i.id);if(!cb?.checked)return
+    const qtd=parseInt(document.getElementById('aniq-'+i.id)?.value)||1
+    if(qtd>(i.qtd||0)){toast(`Estoque insuficiente: "${i.nome}" (disponível: ${i.qtd||0})`,false);erroEstoque=true;return}
+    insumosSel.push({id:i.id,nome:i.nome,valor:i.valor,qtd});totalIns+=i.valor*qtd
+  })
+  if(erroEstoque) return
+
+  // Aplica plantão (+50% nos serviços)
+  const extraServCobr=[]
+  let totalAtend=totalServ+totalIns
+  if(plantaoAtend&&totalServ>0){const ac=totalServ*0.5;totalAtend+=ac;extraServCobr.push({id:uid(),nome:'🌙 Plantão (+50%)',valor:ac})}
+
+  const entrada={
+    id:uid(),
+    data:new Date().toLocaleDateString('pt-BR'),
+    hora:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+    queixa:val('an-queixa'),historico:val('an-historico'),medicamentos:val('an-medicamentos'),
+    alergias:val('an-alergias'),obsAdd:val('an-obs-add'),alimentacao:val('an-alimentacao'),
+    vacina:gR('an-vacina'),verme:gR('an-verme'),rua:gR('an-rua'),convive:gR('an-convive'),
+    avFc:val('av-fc'),avFr:val('av-fr'),avPa:val('av-pa'),avTemp:val('av-temp'),
+    avHidratacao:val('av-hidratacao'),avMucosas:val('av-mucosas'),
+    avLinfSub:val('av-linf-sub'),avLinfSube:val('av-linf-sube'),avLinfIng:val('av-linf-ing'),avLinfPop:val('av-linf-pop'),
+    avDemais:val('av-demais'),
+    servicos:servicosSel,insumos:insumosSel,plantao:plantaoAtend,total:totalAtend
+  }
+
+  const key='anamnese_hist_'+pacienteAtualId
+  const hist=db.get(key); hist.unshift(entrada); db.set(key,hist)
+
+  // Se houve itens, desconta estoque e gera cobrança automaticamente
+  if(servicosSel.length||insumosSel.length||extraServCobr.length){
+    const estoqueAtt=estoqueAtual.map(i=>{const usado=insumosSel.find(x=>x.id===i.id);return usado?{...i,qtd:i.qtd-usado.qtd}:i})
+    db.set('insumos',estoqueAtt)
+    const p=db.get('pacientes').find(x=>x.id===pacienteAtualId);const t=getTutor(p?.tutorId)
+    const cobr={id:uid(),data:entrada.data,hora:entrada.hora,servicos:[...servicosSel,...extraServCobr],insumos:insumosSel,obs:'',total:totalAtend,status:'pendente',tutorNome:t?.nome||''}
+    const kc='cobrancas_'+pacienteAtualId;const lc=db.get(kc);lc.unshift(cobr);db.set(kc,lc)
+    verificarEstoqueBaixo(estoqueAtt)
+  }
+
+  limparFormAnamnese(); renderHistAnamnese(); renderInicio()
+  toast('Atendimento registrado!'+(servicosSel.length||insumosSel.length?' Cobrança gerada automaticamente.':''))
+}
+function excluirAnamnese(id){
+  if(!confirm('Excluir este registro de atendimento?')) return
+  const key='anamnese_hist_'+pacienteAtualId
+  db.set(key,db.get(key).filter(a=>a.id!==id)); renderHistAnamnese(); toast('Registro removido.')
+}
+function toggleHistEntry(id){
+  const h=document.getElementById('hh-'+id); const btn=document.getElementById('ht-'+id)
+  h.classList.toggle('open'); btn.classList.toggle('open')
+}
+function toggleEntry(hId,bId){
+  const h=document.getElementById(hId);const b=document.getElementById(bId)
+  if(h)h.classList.toggle('open');if(b)b.classList.toggle('open')
+}
+function renderHistAnamnese(){
+  const hist=db.get('anamnese_hist_'+(pacienteAtualId||'')); const el=document.getElementById('hist-anamnese'); if(!el) return
+  if(!hist.length){el.innerHTML='<div class="empty"><span class="empty-icon">🩺</span>Nenhum atendimento registrado ainda.</div>';return}
+  el.innerHTML=hist.map(a=>{
+    const badges=[]
+    if(a.vacina) badges.push(`<span class="badge ${a.vacina==='Em dia'?'b-green':'b-pendente'}">${a.vacina==='Em dia'?'💉 Vacinado':a.vacina}</span>`)
+    if(a.verme)  badges.push(`<span class="badge ${a.verme==='Em dia'?'b-green':'b-pendente'}">${a.verme==='Em dia'?'✔ Vermifugado':a.verme}</span>`)
+    if(a.plantao) badges.push('<span class="badge" style="background:#FEF3C7;color:#92400E">🌙 Plantão</span>')
+    if(a.total>0) badges.push(`<span class="badge b-blue" style="font-weight:800">💰 ${fmt(a.total)}</span>`)
+    return `<div class="hist-entry">
+      <div class="hist-entry-header" id="ht-${a.id}" onclick="toggleHistEntry('${a.id}')">
+        <span class="hist-date">📅 ${a.data} às ${a.hora}</span>
+        <div class="hist-tags">${badges.join('')}${a.queixa?`<span class="badge b-gray" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(a.queixa)}">${esc(a.queixa.slice(0,40))}${a.queixa.length>40?'…':''}</span>`:''}</div>
+        <span class="hist-toggle">▾</span>
+      </div>
+      <div class="hist-body" id="hh-${a.id}">
+        <div class="hist-detail-grid">
+          ${a.queixa?`<div class="hist-detail-item full"><label>Queixa / Motivo</label><p>${esc(a.queixa)}</p></div>`:''}
+          ${a.historico?`<div class="hist-detail-item full"><label>Histórico Clínico</label><p>${esc(a.historico)}</p></div>`:''}
+          ${a.medicamentos?`<div class="hist-detail-item full"><label>Medicamentos em uso</label><p>${esc(a.medicamentos)}</p></div>`:''}
+          ${a.alergias?`<div class="hist-detail-item"><label>Alergias</label><p>${esc(a.alergias)}</p></div>`:''}
+          ${a.alimentacao?`<div class="hist-detail-item"><label>Alimentação</label><p>${esc(a.alimentacao)}</p></div>`:''}
+          ${a.vacina?`<div class="hist-detail-item"><label>Vacinação</label><p>${esc(a.vacina)}</p></div>`:''}
+          ${a.verme?`<div class="hist-detail-item"><label>Vermifugação</label><p>${esc(a.verme)}</p></div>`:''}
+          ${a.rua?`<div class="hist-detail-item"><label>Acesso à rua</label><p>${esc(a.rua)}</p></div>`:''}
+          ${a.convive?`<div class="hist-detail-item"><label>Convive com outros animais</label><p>${esc(a.convive)}</p></div>`:''}
+          ${a.obsAdd?`<div class="hist-detail-item full"><label>Observações</label><p>${esc(a.obsAdd)}</p></div>`:''}
+        </div>
+        ${(a.avFc||a.avFr||a.avPa||a.avTemp||a.avHidratacao||a.avMucosas||a.avLinfSub||a.avLinfSube||a.avLinfIng||a.avLinfPop||a.avDemais)?`
+        <div style="margin-top:14px;padding-top:12px;border-top:1px dashed #E8D0EB">
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#8B5E9A;margin-bottom:10px">🔬 Avaliação Física</div>
+          <div class="hist-detail-grid">
+            ${a.avFc?`<div class="hist-detail-item"><label>💓 FC</label><p>${esc(a.avFc)} bpm</p></div>`:''}
+            ${a.avFr?`<div class="hist-detail-item"><label>🫁 FR</label><p>${esc(a.avFr)} mpm</p></div>`:''}
+            ${a.avPa?`<div class="hist-detail-item"><label>🩺 PA</label><p>${esc(a.avPa)} mmHg</p></div>`:''}
+            ${a.avTemp?`<div class="hist-detail-item"><label>🌡️ T°C</label><p>${esc(a.avTemp)} °C</p></div>`:''}
+            ${a.avHidratacao?`<div class="hist-detail-item"><label>💧 Hidratação</label><p>${esc(a.avHidratacao)}</p></div>`:''}
+            ${a.avMucosas?`<div class="hist-detail-item"><label>👄 Mucosas</label><p>${esc(a.avMucosas)}</p></div>`:''}
+            ${(a.avLinfSub||a.avLinfSube||a.avLinfIng||a.avLinfPop)?`<div class="hist-detail-item full"><label>🔵 Linfonodos</label><p>${[a.avLinfSub?'Submandibulares: '+esc(a.avLinfSub):'',a.avLinfSube?'Subescapulares: '+esc(a.avLinfSube):'',a.avLinfIng?'Inguinais: '+esc(a.avLinfIng):'',a.avLinfPop?'Poplíteos: '+esc(a.avLinfPop):''].filter(Boolean).join(' · ')}</p></div>`:''}
+            ${a.avDemais?`<div class="hist-detail-item full"><label>📝 Demais Informações</label><p>${esc(a.avDemais)}</p></div>`:''}
+          </div>
+        </div>`:''}
+        ${(a.servicos?.length||a.insumos?.length)?`
+        <div style="margin-top:14px;padding-top:12px;border-top:1px dashed #E8D0EB">
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#8B5E9A;margin-bottom:10px">🧾 Serviços e Insumos</div>
+          ${a.servicos?.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><strong style="font-size:.78rem;color:#4a5568;align-self:center">Serviços:</strong>${a.servicos.map(s=>`<span class="badge b-green">${esc(s.nome)} · ${fmt(s.valor)}</span>`).join('')}</div>`:''}
+          ${a.insumos?.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><strong style="font-size:.78rem;color:#4a5568;align-self:center">Insumos:</strong>${a.insumos.map(i=>`<span class="badge b-blue">${esc(i.nome)} ×${i.qtd} · ${fmt(i.valor*i.qtd)}</span>`).join('')}</div>`:''}
+          <div style="font-size:.9rem;font-weight:800;color:#8B5E9A;text-align:right">Total: ${fmt(a.total)}</div>
+        </div>`:''}
+        <div style="margin-top:12px"><button class="btn btn-danger" onclick="excluirAnamnese('${a.id}')">Excluir este registro</button></div>
+      </div>
+    </div>`
+  }).join('')
+}
+
+// ── Cirurgias do paciente ──
+function carregarCirurgiasPac(){
+  popularFormCirurgiaPac();limparFormCirurgiaPac();renderHistCirurgiasPac()
+}
+function popularFormCirurgiaPac(){
+  const pac=db.get('pacientes').find(x=>x.id===pacienteAtualId)
+  const peso=parseFloat(pac?.peso)||0
+  const faixaLabel=peso<=0?'Sem peso cadastrado':peso<10?`⚖️ Faixa: até 10 kg (${peso} kg)`:peso<=25?`⚖️ Faixa: 10–25 kg (${peso} kg)`:`⚖️ Faixa: acima de 25 kg (${peso} kg)`
+
+  const cirurgias=db.get('cirurgias_cat')
+  document.getElementById('cp-proc-list').innerHTML=cirurgias.length
+    ?`<div style="padding:7px 12px 4px;font-size:.76rem;color:#8B5E9A;font-weight:700;background:#FAF0F8;border-bottom:1px solid #EDD5E5">${faixaLabel}</div>`+
+      cirurgias.map(s=>{
+        const v=valorPorPeso(s,peso)
+        const temFaixas=s.valorP!=null||s.valorM!=null||s.valorG!=null
+        const subInfo=temFaixas&&peso>0?`<small style="color:#a0aec0;font-size:.7rem;display:block">
+          ${s.valorP!=null?`até 10kg: ${fmt(s.valorP)}`:''}
+          ${s.valorM!=null?` · 10-25kg: ${fmt(s.valorM)}`:''}
+          ${s.valorG!=null?` · >25kg: ${fmt(s.valorG)}`:''}
+        </small>`:''
+        return `<div class="item"><input type="checkbox" id="cps-${s.id}" onchange="recalcCirurgiaPac();filtrarLista('cp-proc-busca','cp-proc-list')"><label for="cps-${s.id}" class="item-label">${esc(s.nome)}${subInfo}</label><span style="font-weight:800;color:#8B5E9A;white-space:nowrap">${fmt(v)}</span></div>`
+      }).join('')
+    :'<div style="padding:12px;color:#a0aec0;font-size:.85rem">Nenhum procedimento cadastrado. Acesse 💉 Serviços para cadastrar.</div>'
+
+  const ins=db.get('insumos')
+  document.getElementById('cp-ins-list').innerHTML=ins.length
+    ?ins.map(i=>`<div class="item"><input type="checkbox" id="cpi-${i.id}" onchange="recalcCirurgiaPac();filtrarLista('cp-ins-busca','cp-ins-list')"><label for="cpi-${i.id}" class="item-label">${esc(i.nome)} <span style="color:#2C1A30;font-weight:700">${fmt(i.valor)}/un.</span> <small style="color:#a0aec0">(est: ${i.qtd})</small></label><input class="qty-input" type="number" id="cpiq-${i.id}" min="1" value="1" oninput="recalcCirurgiaPac()"></div>`).join('')
+    :'<div style="padding:12px;color:#a0aec0;font-size:.85rem">Nenhum insumo cadastrado.</div>'
+  filtrarLista('cp-proc-busca','cp-proc-list')
+  filtrarLista('cp-ins-busca','cp-ins-list')
+  recalcCirurgiaPac()
+}
+function recalcCirurgiaPac(){
+  const pac=db.get('pacientes').find(x=>x.id===pacienteAtualId)
+  const peso=parseFloat(pac?.peso)||0
+  const plantao=document.querySelector('input[name="cp-plantao-tipo"]:checked')?.value==='plantao'
+  const outraCidade=document.getElementById('cp-outra-cidade')?.checked||false
+  let totalProc=0;let totalIns=0;const linhas=[]
+  db.get('cirurgias_cat').forEach(s=>{const cb=document.getElementById('cps-'+s.id);if(!cb?.checked)return;const v=valorPorPeso(s,peso);totalProc+=v;linhas.push(`<div class="linha"><span>${esc(s.nome)}</span><span style="font-weight:700">${fmt(v)}</span></div>`)})
+  db.get('insumos').forEach(i=>{const cb=document.getElementById('cpi-'+i.id);if(!cb?.checked)return;const qtd=parseInt(document.getElementById('cpiq-'+i.id)?.value)||1;const sub=i.valor*qtd;totalIns+=sub;linhas.push(`<div class="linha"><span>${esc(i.nome)} ×${qtd}</span><span style="font-weight:700">${fmt(sub)}</span></div>`)})
+  let total=totalProc+totalIns
+  if(plantao&&totalProc>0){const ac=totalProc*0.5;total+=ac;linhas.push(`<div class="linha" style="color:#8B5E9A"><span>🌙 Plantão (+50% nos procedimentos)</span><span style="font-weight:700">+${fmt(ac)}</span></div>`)}
+  if(outraCidade){total+=50;linhas.push(`<div class="linha" style="color:#8B5E9A"><span>📍 Deslocamento (outra cidade)</span><span style="font-weight:700">+${fmt(50)}</span></div>`)}
+  const totEl=document.getElementById('cp-total');if(totEl)totEl.textContent=fmt(total)
+  const resumo=document.getElementById('cp-resumo');if(!resumo)return
+  if(linhas.length){resumo.style.display='block';document.getElementById('cp-resumo-linhas').innerHTML=linhas.join('')+`<div class="linha" style="margin-top:6px;border-top:2px solid #E8D0EB;padding-top:8px"><span style="font-weight:700">Total</span><span style="font-weight:800;color:#2C1A30">${fmt(total)}</span></div>`}
+  else resumo.style.display='none'
+}
+function limparFormCirurgiaPac(){
+  ;['cp-proc','cp-clinica','cp-anestesista','cp-desc-cir','cp-pos-op'].forEach(i=>{const el=document.getElementById(i);if(el)el.value=''})
+  ;['cp-data','cp-hora'].forEach(i=>{const el=document.getElementById(i);if(el)el.value=''})
+  db.get('cirurgias_cat').forEach(s=>{const el=document.getElementById('cps-'+s.id);if(el)el.checked=false})
+  db.get('insumos').forEach(i=>{const el=document.getElementById('cpi-'+i.id);if(el)el.checked=false;const q=document.getElementById('cpiq-'+i.id);if(q)q.value=1})
+  const radNormal=document.querySelector('input[name="cp-plantao-tipo"][value="normal"]');if(radNormal)radNormal.checked=true
+  const outraCidEl=document.getElementById('cp-outra-cidade');if(outraCidEl)outraCidEl.checked=false
+  const bsC=document.getElementById('cp-proc-busca');if(bsC)bsC.value=''
+  const biC=document.getElementById('cp-ins-busca');if(biC)biC.value=''
+  filtrarLista('cp-proc-busca','cp-proc-list')
+  filtrarLista('cp-ins-busca','cp-ins-list')
+  const resumo=document.getElementById('cp-resumo');if(resumo)resumo.style.display='none'
+  const tot=document.getElementById('cp-total');if(tot)tot.textContent='R$ 0,00'
+}
+function salvarCirurgiaPac(){
+  if(!pacienteAtualId)return
+  const proc=val('cp-proc');if(!proc){toast('Informe o nome do procedimento.',false);return}
+
+  const pac_dados=db.get('pacientes').find(x=>x.id===pacienteAtualId)
+  const pesoPac=parseFloat(pac_dados?.peso)||0
+  const plantao=document.querySelector('input[name="cp-plantao-tipo"]:checked')?.value==='plantao'
+  const outraCidade=document.getElementById('cp-outra-cidade')?.checked||false
+
+  const procSel=[];let totalProc=0
+  db.get('cirurgias_cat').forEach(s=>{const cb=document.getElementById('cps-'+s.id);if(!cb?.checked)return;const v=valorPorPeso(s,pesoPac);procSel.push({id:s.id,nome:s.nome,valor:v});totalProc+=v})
+
+  const estoqueAtual=db.get('insumos');const insumosSel=[];let erroEstoque=false;let totalIns=0
+  estoqueAtual.forEach(i=>{
+    const cb=document.getElementById('cpi-'+i.id);if(!cb?.checked)return
+    const qtd=parseInt(document.getElementById('cpiq-'+i.id)?.value)||1
+    if(qtd>(i.qtd||0)){toast(`Estoque insuficiente: "${i.nome}" (disponível: ${i.qtd||0})`,false);erroEstoque=true;return}
+    insumosSel.push({id:i.id,nome:i.nome,valor:i.valor,qtd});totalIns+=i.valor*qtd
+  })
+  if(erroEstoque)return
+
+  // Extras para cobrança (plantão e deslocamento aparecem como itens)
+  const extrasServ=[]
+  let totalCir=totalProc+totalIns
+  if(plantao&&totalProc>0){const ac=totalProc*0.5;totalCir+=ac;extrasServ.push({id:uid(),nome:'🌙 Plantão (+50%)',valor:ac})}
+  if(outraCidade){totalCir+=50;extrasServ.push({id:uid(),nome:'📍 Deslocamento (outra cidade)',valor:50})}
+
+  const dataCir=document.getElementById('cp-data').value
+  const horaCir=document.getElementById('cp-hora').value
+  const entrada={
+    id:uid(),
+    data:dataCir?new Date(dataCir+'T12:00').toLocaleDateString('pt-BR'):new Date().toLocaleDateString('pt-BR'),
+    hora:horaCir||new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+    proc,clinica:val('cp-clinica'),anestesista:val('cp-anestesista'),
+    procedimentos:procSel,insumos:insumosSel,total:totalCir,
+    plantao,outraCidade,
+    descCir:val('cp-desc-cir'),posOp:val('cp-pos-op')
+  }
+
+  const key='cirurgias_hist_'+pacienteAtualId
+  const hist=db.get(key);hist.unshift(entrada);db.set(key,hist)
+
+  if(procSel.length||insumosSel.length||extrasServ.length){
+    const estoqueAtt=estoqueAtual.map(i=>{const usado=insumosSel.find(x=>x.id===i.id);return usado?{...i,qtd:i.qtd-usado.qtd}:i})
+    db.set('insumos',estoqueAtt)
+    const p=db.get('pacientes').find(x=>x.id===pacienteAtualId);const t=getTutor(p?.tutorId)
+    const cobr={id:uid(),data:entrada.data,hora:entrada.hora,servicos:[...procSel,...extrasServ],insumos:insumosSel,obs:`Cirurgia: ${proc}`,total:totalCir,status:'pendente',tutorNome:t?.nome||''}
+    const kc='cobrancas_'+pacienteAtualId;const lc=db.get(kc);lc.unshift(cobr);db.set(kc,lc)
+    verificarEstoqueBaixo(estoqueAtt)
+  }
+
+  limparFormCirurgiaPac();renderHistCirurgiasPac();renderInicio()
+  toast('Cirurgia registrada!'+(procSel.length||insumosSel.length?' Cobrança gerada automaticamente.':''))
+}
+function excluirCirurgiaPac(id){
+  if(!confirm('Excluir este registro cirúrgico?'))return
+  const key='cirurgias_hist_'+pacienteAtualId
+  db.set(key,db.get(key).filter(c=>c.id!==id));renderHistCirurgiasPac();toast('Registro removido.')
+}
+function renderHistCirurgiasPac(){
+  const hist=db.get('cirurgias_hist_'+(pacienteAtualId||''));const el=document.getElementById('hist-cirurgias');if(!el)return
+  if(!hist.length){el.innerHTML='<div class="empty"><span class="empty-icon">🔪</span>Nenhuma cirurgia registrada.</div>';return}
+  el.innerHTML=hist.map(c=>`<div class="hist-entry">
+    <div class="hist-entry-header" id="cht-${c.id}" onclick="toggleEntry('cht-${c.id}','chb-${c.id}')">
+      <span class="hist-date">📅 ${c.data} às ${c.hora}</span>
+      <div class="hist-tags">
+        <span class="badge b-gray">${esc(c.proc)}</span>
+        ${c.clinica?`<span class="badge b-blue">${esc(c.clinica)}</span>`:''}
+        ${c.plantao?'<span class="badge" style="background:#FEF3C7;color:#92400E">🌙 Plantão</span>':''}
+        ${c.outraCidade?'<span class="badge" style="background:#DBEAFE;color:#1E40AF">📍 Outra cidade</span>':''}
+        ${c.total>0?`<span class="badge b-blue" style="font-weight:800">💰 ${fmt(c.total)}</span>`:''}
+      </div>
+      <span class="hist-toggle">▾</span>
+    </div>
+    <div class="hist-body" id="chb-${c.id}">
+      <div class="hist-detail-grid">
+        <div class="hist-detail-item full"><label>Procedimento</label><p>${esc(c.proc)}</p></div>
+        ${c.clinica?`<div class="hist-detail-item"><label>Clínica / Local</label><p>${esc(c.clinica)}</p></div>`:''}
+        ${c.anestesista?`<div class="hist-detail-item"><label>Anestesista</label><p>${esc(c.anestesista)}</p></div>`:''}
+      </div>
+      ${(c.procedimentos?.length||c.insumos?.length)?`
+      <div style="margin-top:12px;padding-top:10px;border-top:1px dashed #E8D0EB">
+        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#8B5E9A;margin-bottom:8px">🧾 Procedimentos e Insumos</div>
+        ${c.procedimentos?.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px"><strong style="font-size:.78rem;color:#4a5568;align-self:center">Procedimentos:</strong>${c.procedimentos.map(s=>`<span class="badge b-green">${esc(s.nome)} · ${fmt(s.valor)}</span>`).join('')}</div>`:''}
+        ${c.insumos?.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px"><strong style="font-size:.78rem;color:#4a5568;align-self:center">Insumos:</strong>${c.insumos.map(i=>`<span class="badge b-blue">${esc(i.nome)} ×${i.qtd} · ${fmt(i.valor*i.qtd)}</span>`).join('')}</div>`:''}
+        <div style="font-size:.9rem;font-weight:800;color:#8B5E9A;text-align:right">Total: ${fmt(c.total)}</div>
+      </div>`:''}
+      ${c.descCir?`<div style="margin-top:12px;padding-top:10px;border-top:1px dashed #E8D0EB"><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#8B5E9A;margin-bottom:6px">📋 Descrição Cirúrgica</div><p style="font-size:.88rem;color:#4a5568;white-space:pre-wrap">${esc(c.descCir)}</p></div>`:''}
+      ${c.posOp?`<div style="margin-top:12px;padding-top:10px;border-top:1px dashed #E8D0EB"><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#8B5E9A;margin-bottom:6px">🏥 Pós-operatório</div><p style="font-size:.88rem;color:#4a5568;white-space:pre-wrap">${esc(c.posOp)}</p></div>`:''}
+      <div style="margin-top:12px"><button class="btn btn-danger" onclick="excluirCirurgiaPac('${c.id}')">Excluir este registro</button></div>
+    </div>
+  </div>`).join('')
+}
+
+// ── Anotações ──
+function salvarNota(){
+  if(!pacienteAtualId) return
+  const conteudo=val('nota-conteudo'); if(!conteudo){toast('Escreva o conteúdo da anotação.',false);return}
+  const editId=val('nota-edit-id')
+  const key='notas_'+pacienteAtualId; const lista=db.get(key)
+  if(editId){
+    const idx=lista.findIndex(n=>n.id===editId)
+    if(idx!==-1) lista[idx]={...lista[idx],titulo:val('nota-titulo'),conteudo,editado:new Date().toLocaleDateString('pt-BR')+' às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
+  } else {
+    lista.unshift({id:uid(),titulo:val('nota-titulo'),conteudo,data:new Date().toLocaleDateString('pt-BR'),hora:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})})
+  }
+  db.set(key,lista); cancelarNota(); renderNotas(); toast(editId?'Anotação atualizada!':'Anotação salva!')
+}
+function cancelarNota(){
+  document.getElementById('nota-titulo').value=''
+  document.getElementById('nota-conteudo').value=''
+  document.getElementById('nota-edit-id').value=''
+  document.getElementById('nota-form-title').textContent='Nova Anotação'
+}
+function editarNota(id){
+  const n=db.get('notas_'+pacienteAtualId).find(x=>x.id===id); if(!n) return
+  document.getElementById('nota-titulo').value=n.titulo||''
+  document.getElementById('nota-conteudo').value=n.conteudo
+  document.getElementById('nota-edit-id').value=id
+  document.getElementById('nota-form-title').textContent='Editar Anotação'
+  document.getElementById('pactab-anotacoes').querySelector('.card').scrollIntoView({behavior:'smooth'})
+}
+function excluirNota(id){
+  if(!confirm('Excluir esta anotação?')) return
+  const key='notas_'+pacienteAtualId; db.set(key,db.get(key).filter(n=>n.id!==id)); renderNotas(); toast('Anotação removida.')
+}
+function renderNotas(){
+  const lista=db.get('notas_'+(pacienteAtualId||'')); const el=document.getElementById('lista-notas'); if(!el) return
+  if(!lista.length){el.innerHTML='<div class="empty"><span class="empty-icon">📝</span>Nenhuma anotação registrada.</div>';return}
+  el.innerHTML=lista.map(n=>`<div class="nota-card">
+    <div class="nota-header">
+      <div>
+        ${n.titulo?`<div class="nota-titulo">${esc(n.titulo)}</div>`:'<div class="nota-titulo" style="color:#a0aec0;font-style:italic">Sem título</div>'}
+        <div class="nota-data">📅 ${n.data} às ${n.hora}${n.editado?` · editado em ${n.editado}`:''}</div>
+      </div>
+    </div>
+    <div class="nota-conteudo">${esc(n.conteudo)}</div>
+    <div class="nota-actions">
+      <button class="btn btn-edit" onclick="editarNota('${n.id}')">✏️ Editar</button>
+      <button class="btn btn-danger" onclick="excluirNota('${n.id}')">Excluir</button>
+    </div>
+  </div>`).join('')
+}
+
+// ── Exames ──
+function anexarExame(input){const files=Array.from(input.files);if(!files.length||!pacienteAtualId)return;const key='exames_'+pacienteAtualId;const lista=db.get(key);let p=files.length;files.forEach(file=>{if(!file.name.toLowerCase().endsWith('.pdf')){toast(`"${file.name}" não é PDF.`,false);if(!--p)renderExames();return}if(file.size>5*1024*1024){toast(`"${file.name}" excede 5 MB.`,false);if(!--p)renderExames();return}const r=new FileReader();r.onload=e=>{lista.push({id:uid(),nome:file.name,tamanho:file.size,data:e.target.result,adicionado:new Date().toLocaleDateString('pt-BR')});if(!--p){db.set(key,lista);renderExames();toast('Exame(s) anexado(s)!')}};r.readAsDataURL(file)});input.value=''}
+function excluirExame(id){if(!pacienteAtualId||!confirm('Remover?'))return;const key='exames_'+pacienteAtualId;db.set(key,db.get(key).filter(e=>e.id!==id));renderExames();toast('Exame removido.')}
+function renderExames(){const lista=db.get('exames_'+(pacienteAtualId||''));const el=document.getElementById('lista-exames');if(!el)return;if(!lista.length){el.innerHTML='<p style="color:#a0aec0;font-size:.85rem;margin-top:12px">Nenhum exame anexado.</p>';return}el.innerHTML='<div class="pdf-list">'+lista.map(e=>`<div class="pdf-item"><div class="pdf-icon">📄</div><div class="pdf-info"><strong>${esc(e.nome)}</strong><small>${e.adicionado} · ${(e.tamanho/1024).toFixed(0)} KB</small></div><a href="${e.data}" target="_blank">Abrir</a><button class="del-btn" onclick="excluirExame('${e.id}')">Remover</button></div>`).join('')+'</div>'}
+
+// ── Fotos ──
+function anexarFoto(input){const files=Array.from(input.files);if(!files.length||!pacienteAtualId)return;const key='fotos_'+pacienteAtualId;const lista=db.get(key);let p=files.length;files.forEach(file=>{if(!file.type.startsWith('image/')){if(!--p)renderFotos();return}if(file.size>4*1024*1024){toast(`"${file.name}" excede 4 MB.`,false);if(!--p)renderFotos();return}const r=new FileReader();r.onload=e=>{lista.push({id:uid(),nome:file.name,data:e.target.result,adicionado:new Date().toLocaleDateString('pt-BR')});if(!--p){db.set(key,lista);renderFotos();toast('Foto(s) adicionada(s)!')}};r.readAsDataURL(file)});input.value=''}
+function excluirFoto(id){if(!pacienteAtualId||!confirm('Remover?'))return;db.set('fotos_'+pacienteAtualId,db.get('fotos_'+pacienteAtualId).filter(f=>f.id!==id));renderFotos();toast('Foto removida.')}
+function renderFotos(){const lista=db.get('fotos_'+(pacienteAtualId||''));const el=document.getElementById('galeria-fotos');if(!el)return;if(!lista.length){el.innerHTML='<p style="color:#a0aec0;font-size:.85rem;margin-top:12px">Nenhuma foto adicionada.</p>';return}el.innerHTML=lista.map(f=>`<div class="foto-item"><img src="${f.data}" title="${esc(f.nome)}" onclick="abrirLightbox('${f.id}')"><button class="del-btn" onclick="excluirFoto('${f.id}')">✕</button></div>`).join('')}
+function abrirLightbox(id){const f=db.get('fotos_'+pacienteAtualId).find(x=>x.id===id);if(!f)return;document.getElementById('lb-img').src=f.data;document.getElementById('lightbox').classList.add('open')}
+function fecharLightbox(){document.getElementById('lightbox').classList.remove('open')}
+
+// ── Cobrança ──
+function popularCobrancaForm(){
+  const serv=db.get('servicos');document.getElementById('cobr-servicos-list').innerHTML=serv.length?serv.map(s=>`<div class="item"><input type="checkbox" id="cs-${s.id}" onchange="recalcCobranca()"><label for="cs-${s.id}" class="item-label">${esc(s.nome)}</label><span style="font-weight:700;color:#2C1A30;white-space:nowrap">${fmt(s.valor)}</span></div>`).join(''):'<div style="padding:12px;color:#a0aec0;font-size:.85rem">Nenhum serviço cadastrado.</div>'
+  const ins=db.get('insumos');document.getElementById('cobr-insumos-list').innerHTML=ins.length?ins.map(i=>`<div class="item"><input type="checkbox" id="ci-${i.id}" onchange="recalcCobranca()"><label for="ci-${i.id}" class="item-label">${esc(i.nome)} <span style="color:#2C1A30;font-weight:700">${fmt(i.valor)}/un.</span> <small style="color:#a0aec0">(est: ${i.qtd})</small></label><input class="qty-input" type="number" id="ciq-${i.id}" min="1" value="1" oninput="recalcCobranca()"></div>`).join(''):'<div style="padding:12px;color:#a0aec0;font-size:.85rem">Nenhum insumo cadastrado.</div>'
+  recalcCobranca()
+}
+function recalcCobranca(){let total=0;const linhas=[];db.get('servicos').forEach(s=>{const cb=document.getElementById('cs-'+s.id);if(!cb?.checked)return;total+=s.valor;linhas.push(`<div class="linha"><span>${esc(s.nome)}</span><span style="font-weight:700">${fmt(s.valor)}</span></div>`)});db.get('insumos').forEach(i=>{const cb=document.getElementById('ci-'+i.id);if(!cb?.checked)return;const qtd=parseInt(document.getElementById('ciq-'+i.id)?.value)||1;const sub=i.valor*qtd;total+=sub;linhas.push(`<div class="linha"><span>${esc(i.nome)} ×${qtd}</span><span style="font-weight:700">${fmt(sub)}</span></div>`)});document.getElementById('cobr-total').textContent=fmt(total);const resumo=document.getElementById('cobr-resumo-live');if(linhas.length){resumo.style.display='block';document.getElementById('cobr-resumo-linhas').innerHTML=linhas.join('')+`<div class="linha" style="margin-top:6px;border-top:2px solid #E8D0EB;padding-top:8px"><span style="font-weight:700">Total</span><span style="font-weight:800;color:#2C1A30">${fmt(total)}</span></div>`}else resumo.style.display='none'}
+function salvarCobranca(){
+  if(!pacienteAtualId){toast('Nenhum paciente aberto.',false);return}
+  const servicosSel=[],insumosSel=[];let total=0
+  db.get('servicos').forEach(s=>{const cb=document.getElementById('cs-'+s.id);if(!cb?.checked)return;servicosSel.push({id:s.id,nome:s.nome,valor:s.valor});total+=s.valor})
+
+  // Verifica disponibilidade em estoque antes de prosseguir
+  const estoqueAtual=db.get('insumos')
+  let erroEstoque=false
+  db.get('insumos').forEach(i=>{
+    const cb=document.getElementById('ci-'+i.id);if(!cb?.checked)return
+    const qtd=parseInt(document.getElementById('ciq-'+i.id)?.value)||1
+    const estItem=estoqueAtual.find(x=>x.id===i.id)
+    if(qtd>(estItem?.qtd||0)){toast(`Estoque insuficiente: "${i.nome}" (disponível: ${estItem?.qtd||0})`,false);erroEstoque=true;return}
+    insumosSel.push({id:i.id,nome:i.nome,valor:i.valor,qtd});total+=i.valor*qtd
+  })
+  if(erroEstoque)return
+  if(!servicosSel.length&&!insumosSel.length){toast('Selecione ao menos um item.',false);return}
+
+  // Desconta do estoque
+  const estoqueAtt=estoqueAtual.map(i=>{const usado=insumosSel.find(x=>x.id===i.id);return usado?{...i,qtd:i.qtd-usado.qtd}:i})
+  db.set('insumos',estoqueAtt)
+
+  const p=db.get('pacientes').find(x=>x.id===pacienteAtualId);const t=getTutor(p?.tutorId)
+  const cobr={id:uid(),data:new Date().toLocaleDateString('pt-BR'),hora:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),servicos:servicosSel,insumos:insumosSel,obs:val('cobr-obs'),total,status:'pendente',tutorNome:t?.nome||''}
+  const key='cobrancas_'+pacienteAtualId;const lista=db.get(key);lista.unshift(cobr);db.set(key,lista)
+  limparCobranca();renderHistCobrancas();popularCobrancaForm()
+  verificarEstoqueBaixo(estoqueAtt)
+  toast('Cobrança salva! Estoque atualizado.')
+}
+function limparCobranca(){db.get('servicos').forEach(s=>{const el=document.getElementById('cs-'+s.id);if(el)el.checked=false});db.get('insumos').forEach(i=>{const el=document.getElementById('ci-'+i.id);if(el)el.checked=false;const q=document.getElementById('ciq-'+i.id);if(q)q.value=1});document.getElementById('cobr-obs').value='';recalcCobranca()}
+function marcarPago(id){const key='cobrancas_'+pacienteAtualId;db.set(key,db.get(key).map(c=>c.id===id?{...c,status:'pago'}:c));renderHistCobrancas();toast('Marcado como pago!')}
+function excluirCobranca(id){if(!confirm('Excluir?'))return;const key='cobrancas_'+pacienteAtualId;db.set(key,db.get(key).filter(c=>c.id!==id));renderHistCobrancas();toast('Cobrança removida.')}
+function renderHistCobrancas(){const lista=db.get('cobrancas_'+(pacienteAtualId||''));const el=document.getElementById('hist-cobrancas');if(!el)return;if(!lista.length){el.innerHTML='<div class="empty"><span class="empty-icon">💰</span>Nenhuma cobrança registrada.</div>';return}el.innerHTML=lista.map(c=>`<div class="cobr-card ${c.status==='pago'?'pago':''}"><div class="cobr-top"><div><h4 style="font-size:.95rem;color:#2d3748">${c.data} às ${c.hora} <span class="badge ${c.status==='pago'?'b-pago':'b-pendente'}">${c.status==='pago'?'✔ Pago':'⏳ Pendente'}</span></h4>${c.tutorNome?`<div style="font-size:.8rem;color:#718096;margin-top:3px">Tutor: ${esc(c.tutorNome)}</div>`:''}</div><div class="cobr-valor">${fmt(c.total)}</div></div>${c.servicos.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px"><strong style="font-size:.78rem;color:#4a5568;align-self:center">Serviços:</strong>${c.servicos.map(s=>`<span class="badge b-green">${esc(s.nome)} · ${fmt(s.valor)}</span>`).join('')}</div>`:''} ${c.insumos.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px"><strong style="font-size:.78rem;color:#4a5568;align-self:center">Insumos:</strong>${c.insumos.map(i=>`<span class="badge b-blue">${esc(i.nome)} ×${i.qtd} · ${fmt(i.valor*i.qtd)}</span>`).join('')}</div>`:''} ${c.obs?`<div style="font-size:.83rem;color:#718096;margin-top:4px">📝 ${esc(c.obs)}</div>`:''}<div class="cobr-actions">${c.status==='pendente'?`<button class="btn btn-pago" onclick="marcarPago('${c.id}')">✔ Marcar como Pago</button>`:'<span style="font-size:.82rem;color:#276749;font-weight:600">✔ Pagamento confirmado</span>'}<button class="btn btn-danger" onclick="excluirCobranca('${c.id}')">Excluir</button></div></div>`).join('')}
+
+// ── Serviços ──
+function salvarServico(){const nome=val('s-nome'),valor=val('s-valor');if(!nome||!valor){toast('Preencha nome e valor.',false);return}const id=val('s-id');const lista=db.get('servicos');const obj={id:id||uid(),nome,valor:parseFloat(valor),desc:val('s-desc')};if(id){const idx=lista.findIndex(s=>s.id===id);if(idx!==-1)lista[idx]=obj}else lista.unshift(obj);db.set('servicos',lista);cancelarServico();renderServicos();toast(id?'Serviço atualizado!':'Serviço cadastrado!')}
+function cancelarServico(){['s-nome','s-valor','s-desc'].forEach(i=>document.getElementById(i).value='');document.getElementById('s-id').value='';document.getElementById('s-form-title').textContent='Novo Serviço'}
+function editarServico(id){const s=db.get('servicos').find(x=>x.id===id);if(!s)return;document.getElementById('s-nome').value=s.nome;document.getElementById('s-valor').value=s.valor;document.getElementById('s-desc').value=s.desc||'';document.getElementById('s-id').value=id;document.getElementById('s-form-title').textContent='Editar Serviço';document.getElementById('tab-servicos').querySelector('.card').scrollIntoView({behavior:'smooth'})}
+function excluirServico(id){if(!confirm('Excluir?'))return;db.set('servicos',db.get('servicos').filter(s=>s.id!==id));renderServicos();toast('Serviço removido.')}
+function renderServicos(){const lista=db.get('servicos');const el=document.getElementById('lista-servicos');if(!lista.length){el.innerHTML='<div class="empty"><span class="empty-icon">💉</span>Nenhum serviço cadastrado.</div>';return}el.innerHTML=`<table><thead><tr><th>Serviço</th><th>Valor</th><th>Descrição</th><th>Ações</th></tr></thead><tbody>${lista.map(s=>`<tr><td><strong>${esc(s.nome)}</strong></td><td style="color:#2C1A30;font-weight:700">${fmt(s.valor)}</td><td style="color:#718096">${esc(s.desc||'—')}</td><td><div class="td-actions"><button class="btn btn-edit" onclick="editarServico('${s.id}')">Editar</button><button class="btn btn-danger" onclick="excluirServico('${s.id}')">Excluir</button></div></td></tr>`).join('')}</tbody></table>`}
+
+// ── Cirurgias (catálogo) ──
+function valorPorPeso(cir, peso){
+  const p=parseFloat(peso)||0
+  const temFaixas=cir.valorP!=null||cir.valorM!=null||cir.valorG!=null
+  if(!temFaixas) return parseFloat(cir.valor)||0
+  if(p>0&&p<10)  return parseFloat(cir.valorP)||0
+  if(p>=10&&p<=25) return parseFloat(cir.valorM)||0
+  if(p>25)       return parseFloat(cir.valorG)||0
+  return parseFloat(cir.valorP)||parseFloat(cir.valorM)||parseFloat(cir.valorG)||0
+}
+function salvarCirurgiaCat(){
+  const nome=val('ccat-nome')
+  const vp=document.getElementById('ccat-valor-p').value
+  const vm=document.getElementById('ccat-valor-m').value
+  const vg=document.getElementById('ccat-valor-g').value
+  if(!nome){toast('Preencha o nome do procedimento.',false);return}
+  if(!vp&&!vm&&!vg){toast('Informe pelo menos um valor por faixa de peso.',false);return}
+  const id=val('ccat-id');const lista=db.get('cirurgias_cat')
+  const obj={id:id||uid(),nome,valorP:vp?parseFloat(vp):null,valorM:vm?parseFloat(vm):null,valorG:vg?parseFloat(vg):null,desc:val('ccat-desc')}
+  if(id){const idx=lista.findIndex(s=>s.id===id);if(idx!==-1)lista[idx]=obj}else lista.unshift(obj)
+  db.set('cirurgias_cat',lista);cancelarCirurgiaCat();renderCirurgiasCat();toast(id?'Procedimento atualizado!':'Procedimento cadastrado!')
+}
+function cancelarCirurgiaCat(){
+  ;['ccat-nome','ccat-valor-p','ccat-valor-m','ccat-valor-g','ccat-desc'].forEach(i=>document.getElementById(i).value='')
+  document.getElementById('ccat-id').value=''
+  document.getElementById('ccat-form-title').textContent='Novo Procedimento Cirúrgico'
+}
+function editarCirurgiaCat(id){
+  const s=db.get('cirurgias_cat').find(x=>x.id===id);if(!s)return
+  document.getElementById('ccat-nome').value=s.nome
+  document.getElementById('ccat-valor-p').value=s.valorP??s.valor??''
+  document.getElementById('ccat-valor-m').value=s.valorM??s.valor??''
+  document.getElementById('ccat-valor-g').value=s.valorG??s.valor??''
+  document.getElementById('ccat-desc').value=s.desc||''
+  document.getElementById('ccat-id').value=id
+  document.getElementById('ccat-form-title').textContent='Editar Procedimento'
+  document.getElementById('tab-servicos').querySelectorAll('.card')[2].scrollIntoView({behavior:'smooth'})
+}
+function excluirCirurgiaCat(id){
+  if(!confirm('Excluir este procedimento?'))return
+  db.set('cirurgias_cat',db.get('cirurgias_cat').filter(s=>s.id!==id));renderCirurgiasCat();toast('Procedimento removido.')
+}
+function renderCirurgiasCat(){
+  const lista=db.get('cirurgias_cat');const el=document.getElementById('lista-cirurgias-cat');if(!el)return
+  if(!lista.length){el.innerHTML='<div class="empty"><span class="empty-icon">🔪</span>Nenhum procedimento cirúrgico cadastrado.</div>';return}
+  const fmtFaixa=s=>{
+    const temFaixas=s.valorP!=null||s.valorM!=null||s.valorG!=null
+    if(!temFaixas) return `<span style="color:#8B5E9A;font-weight:700">${fmt(s.valor||0)}</span>`
+    return `<div style="font-size:.82rem;line-height:1.7">
+      ${s.valorP!=null?`<div>⚖️ <span style="color:#a0aec0">até 10 kg:</span> <strong style="color:#8B5E9A">${fmt(s.valorP)}</strong></div>`:''}
+      ${s.valorM!=null?`<div>⚖️ <span style="color:#a0aec0">10–25 kg:</span> <strong style="color:#8B5E9A">${fmt(s.valorM)}</strong></div>`:''}
+      ${s.valorG!=null?`<div>⚖️ <span style="color:#a0aec0">> 25 kg:</span> <strong style="color:#8B5E9A">${fmt(s.valorG)}</strong></div>`:''}
+    </div>`
+  }
+  el.innerHTML=`<table><thead><tr><th>Procedimento</th><th>Valor por peso</th><th>Descrição</th><th>Ações</th></tr></thead><tbody>${lista.map(s=>`<tr><td><strong>${esc(s.nome)}</strong></td><td>${fmtFaixa(s)}</td><td style="color:#718096">${esc(s.desc||'—')}</td><td><div class="td-actions"><button class="btn btn-edit" onclick="editarCirurgiaCat('${s.id}')">Editar</button><button class="btn btn-danger" onclick="excluirCirurgiaCat('${s.id}')">Excluir</button></div></td></tr>`).join('')}</tbody></table>`
+}
+
+// ── Insumos ──
+function salvarInsumo(){const nome=val('i-nome'),valor=val('i-valor');if(!nome||!valor){toast('Preencha nome e valor.',false);return}const id=val('i-id');const lista=db.get('insumos');const obj={id:id||uid(),nome,cat:val('i-cat'),valor:parseFloat(valor),qtd:parseInt(document.getElementById('i-qtd').value)||0,obs:val('i-obs')};if(id){const idx=lista.findIndex(i=>i.id===id);if(idx!==-1)lista[idx]=obj}else lista.unshift(obj);db.set('insumos',lista);cancelarInsumo();renderInsumos();toast(id?'Insumo atualizado!':'Insumo cadastrado!')}
+function cancelarInsumo(){['i-nome','i-cat','i-valor','i-qtd','i-obs'].forEach(i=>document.getElementById(i).value='');document.getElementById('i-id').value='';document.getElementById('i-form-title').textContent='Novo Insumo'}
+function editarInsumo(id){const i=db.get('insumos').find(x=>x.id===id);if(!i)return;document.getElementById('i-nome').value=i.nome;document.getElementById('i-cat').value=i.cat||'';document.getElementById('i-valor').value=i.valor;document.getElementById('i-qtd').value=i.qtd;document.getElementById('i-obs').value=i.obs||'';document.getElementById('i-id').value=id;document.getElementById('i-form-title').textContent='Editar Insumo';document.getElementById('tab-insumos').querySelector('.card').scrollIntoView({behavior:'smooth'})}
+function excluirInsumo(id){if(!confirm('Excluir?'))return;db.set('insumos',db.get('insumos').filter(i=>i.id!==id));renderInsumos();toast('Insumo removido.')}
+
+// ── Repor estoque ──
+function mostrarRepor(id){
+  document.querySelectorAll('.repor-row-tr').forEach(r=>r.style.display='none')
+  const row=document.getElementById('repor-row-'+id); if(!row)return
+  row.style.display='table-row'
+  const inp=document.getElementById('repor-qtd-'+id); if(inp){inp.value=1;inp.focus()}
+}
+function cancelarRepor(id){const row=document.getElementById('repor-row-'+id);if(row)row.style.display='none'}
+function confirmarRepor(id){
+  const qtd=parseInt(document.getElementById('repor-qtd-'+id)?.value)||0
+  if(qtd<=0){toast('Informe uma quantidade válida.',false);return}
+  const lista=db.get('insumos');const idx=lista.findIndex(i=>i.id===id);if(idx===-1)return
+  lista[idx].qtd+=qtd; db.set('insumos',lista)
+  cancelarRepor(id); renderInsumos(); renderInicio()
+  toast(`✔ ${qtd} un. adicionada(s) ao estoque de "${esc(lista[idx].nome)}"!`)
+}
+
+// ── Badge e alerta de estoque baixo ──
+function atualizarBadgeInsumos(){
+  const baixo=db.get('insumos').filter(i=>i.qtd<3).length
+  const btn=document.getElementById('nav-insumos'); if(!btn)return
+  btn.innerHTML=baixo>0?`📦 Insumos <span class="nav-badge">${baixo}</span>`:'📦 Insumos'
+}
+function verificarEstoqueBaixo(insumos){
+  const zerados=insumos.filter(i=>i.qtd<=0)
+  const baixos=insumos.filter(i=>i.qtd>0&&i.qtd<3)
+  if(zerados.length||baixos.length){
+    const msgs=[]
+    if(zerados.length) msgs.push(`⛔ Sem estoque: ${zerados.map(i=>i.nome).join(', ')}`)
+    if(baixos.length) msgs.push(`⚠️ Estoque baixo: ${baixos.map(i=>`${i.nome} (${i.qtd})`).join(', ')}`)
+    toast(msgs.join(' | '),true)
+  }
+  renderInicio()
+}
+function renderInsumos(){
+  const lista=db.get('insumos');const el=document.getElementById('lista-insumos')
+  if(!lista.length){el.innerHTML='<div class="empty"><span class="empty-icon">📦</span>Nenhum insumo cadastrado.</div>';atualizarBadgeInsumos();return}
+  const qCls=q=>q<=0?'qty-warn':q<3?'qty-low':''
+  const qTxt=q=>q<=0?'⛔ Sem estoque':q<3?`⚠️ ${q} un.`:`${q} un.`
+  el.innerHTML=`<table><thead><tr><th>Insumo</th><th>Categoria</th><th>Valor Unit.</th><th>Estoque</th><th>Ações</th></tr></thead><tbody>
+  ${lista.map(i=>`
+    <tr>
+      <td><strong>${esc(i.nome)}</strong>${i.obs?`<br><small style="color:#a0aec0">${esc(i.obs)}</small>`:''}</td>
+      <td>${i.cat?`<span class="badge b-gray">${esc(i.cat)}</span>`:'—'}</td>
+      <td style="color:#8B5E9A;font-weight:700">${fmt(i.valor)}</td>
+      <td class="${qCls(i.qtd)}">${qTxt(i.qtd)}</td>
+      <td><div class="td-actions">
+        <button class="btn" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;font-size:.78rem;padding:5px 11px" onclick="mostrarRepor('${i.id}')">➕ Repor</button>
+        <button class="btn btn-edit" onclick="editarInsumo('${i.id}')">Editar</button>
+        <button class="btn btn-danger" onclick="excluirInsumo('${i.id}')">Excluir</button>
+      </div></td>
+    </tr>
+    <tr id="repor-row-${i.id}" class="repor-row-tr" style="display:none">
+      <td colspan="5"><div class="repor-inline-form">
+        <span class="repor-label">Adicionar ao estoque de <strong>${esc(i.nome)}</strong>:</span>
+        <input type="number" id="repor-qtd-${i.id}" min="1" value="1" placeholder="Qtd">
+        <button class="btn btn-primary" style="font-size:.78rem;padding:5px 14px" onclick="confirmarRepor('${i.id}')">✔ Confirmar</button>
+        <button class="btn btn-secondary" style="font-size:.78rem;padding:5px 10px" onclick="cancelarRepor('${i.id}')">✕</button>
+      </div></td>
+    </tr>`).join('')}
+  </tbody></table>`
+  atualizarBadgeInsumos()
+}
+
+// ── Atendimentos ──
+function popularAtendimentoForm(){const pac=db.get('pacientes');const tuts=db.get('tutores');const selP=document.getElementById('a-paciente');const cur=selP.value;selP.innerHTML='<option value="">Selecione...</option>'+pac.map(p=>{const t=tuts.find(x=>x.id===p.tutorId);return`<option value="${p.id}" ${p.id===cur?'selected':''}>${esc(p.nome)}${t?' ('+esc(t.nome)+')':''}</option>`}).join('');atualizarTutorAtend();const serv=db.get('servicos');document.getElementById('a-servicos-list').innerHTML=serv.length?serv.map(s=>`<div class="item"><input type="checkbox" id="sc-${s.id}" onchange="recalcAtend()"><label for="sc-${s.id}" class="item-label">${esc(s.nome)}</label><span style="font-weight:700;color:#2C1A30;white-space:nowrap">${fmt(s.valor)}</span></div>`).join(''):'<div style="padding:12px;color:#a0aec0;font-size:.85rem">Nenhum serviço cadastrado.</div>';const ins=db.get('insumos');document.getElementById('a-insumos-list').innerHTML=ins.length?ins.map(i=>`<div class="item"><input type="checkbox" id="ic-${i.id}" onchange="recalcAtend()"><label for="ic-${i.id}" class="item-label">${esc(i.nome)} <span style="color:#2C1A30;font-weight:700">${fmt(i.valor)}/un.</span> <small style="color:#a0aec0">(est: ${i.qtd})</small></label><input class="qty-input" type="number" id="iq-${i.id}" min="1" value="1" oninput="recalcAtend()"></div>`).join(''):'<div style="padding:12px;color:#a0aec0;font-size:.85rem">Nenhum insumo cadastrado.</div>'}
+function atualizarTutorAtend(){const id=document.getElementById('a-paciente').value;const p=db.get('pacientes').find(x=>x.id===id);const t=p?getTutor(p.tutorId):null;document.getElementById('a-tutor').value=t?t.nome+' — '+t.tel:''}
+function recalcAtend(){
+  const plantao=document.querySelector('input[name="a-plantao-tipo"]:checked')?.value==='plantao'
+  let tServ=0;let tIns=0
+  db.get('servicos').forEach(s=>{if(document.getElementById('sc-'+s.id)?.checked)tServ+=s.valor})
+  db.get('insumos').forEach(i=>{const cb=document.getElementById('ic-'+i.id);if(cb?.checked)tIns+=i.valor*(parseInt(document.getElementById('iq-'+i.id)?.value)||1)})
+  let t=tServ+tIns
+  if(plantao&&tServ>0) t+=tServ*0.5
+  document.getElementById('a-total').textContent=fmt(t)
+}
+function salvarAtendimento(){
+  const pacId=val('a-paciente'),data=val('a-data');if(!pacId||!data){toast('Selecione paciente e data.',false);return}
+  const p=db.get('pacientes').find(x=>x.id===pacId);const t=getTutor(p?.tutorId)
+  const plantao=document.querySelector('input[name="a-plantao-tipo"]:checked')?.value==='plantao'
+  const servicosSel=[],insumosSel=[];let totalServ=0,totalIns=0
+  db.get('servicos').forEach(s=>{if(document.getElementById('sc-'+s.id)?.checked){servicosSel.push({id:s.id,nome:s.nome,valor:s.valor});totalServ+=s.valor}})
+  let erro=false
+  const insAtT=db.get('insumos').map(i=>{const cb=document.getElementById('ic-'+i.id);if(!cb?.checked)return i;const qtd=parseInt(document.getElementById('iq-'+i.id)?.value)||1;if(qtd>i.qtd){toast(`Estoque insuficiente: "${i.nome}"`,false);erro=true;return i}insumosSel.push({id:i.id,nome:i.nome,valor:i.valor,qtd});totalIns+=i.valor*qtd;return{...i,qtd:i.qtd-qtd}})
+  if(erro)return
+  db.set('insumos',insAtT)
+  let total=totalServ+totalIns
+  const servicosCobranca=[...servicosSel]
+  if(plantao&&totalServ>0){const ac=totalServ*0.5;total+=ac;servicosCobranca.push({id:uid(),nome:'🌙 Plantão (+50%)',valor:ac})}
+  const atend={id:uid(),pacId,pacNome:p.nome,pacEspecie:p.especie,tutorNome:t?.nome||'',tutorTel:t?.tel||'',data,hora:val('a-hora'),servicos:servicosCobranca,insumos:insumosSel,plantao,obs:val('a-obs'),total,criado:new Date().toLocaleDateString('pt-BR')}
+  const lista=db.get('atendimentos');lista.unshift(atend);db.set('atendimentos',lista)
+  limparAtendimento();renderInsumos();renderAtendimentos();renderInicio();toast('Atendimento registrado!')
+}
+function limparAtendimento(){
+  document.getElementById('a-paciente').value='';document.getElementById('a-tutor').value=''
+  document.getElementById('a-data').value=new Date().toISOString().slice(0,10)
+  document.getElementById('a-hora').value='';document.getElementById('a-obs').value=''
+  document.getElementById('a-total').textContent='R$ 0,00'
+  const radNormalA=document.querySelector('input[name="a-plantao-tipo"][value="normal"]');if(radNormalA)radNormalA.checked=true
+  popularAtendimentoForm()
+}
+function excluirAtendimento(id){if(!confirm('Excluir?'))return;db.set('atendimentos',db.get('atendimentos').filter(a=>a.id!==id));renderAtendimentos();toast('Atendimento removido.')}
+function renderAtendimentos(){const lista=db.get('atendimentos');const el=document.getElementById('lista-atendimentos');if(!lista.length){el.innerHTML='<div class="empty"><span class="empty-icon">📋</span>Nenhum atendimento registrado.</div>';return}el.innerHTML=lista.map(a=>`<div class="atend-card"><div class="atend-header"><div><h4>🐾 ${esc(a.pacNome)} <span style="font-weight:400;color:#718096">(${esc(a.pacEspecie)})</span>${a.plantao?' <span class="badge" style="background:#FEF3C7;color:#92400E;font-size:.72rem">🌙 Plantão</span>':''}</h4><div class="meta">Tutor: ${esc(a.tutorNome||'—')}${a.tutorTel?' · '+esc(a.tutorTel):''}</div><div class="meta">${a.data}${a.hora?' às '+a.hora:''} · Registrado em ${a.criado}</div></div><div style="display:flex;gap:6px;align-items:flex-start"><span style="font-size:1.05rem;font-weight:800;color:#2C1A30">${fmt(a.total)}</span><button class="btn btn-danger" onclick="excluirAtendimento('${a.id}')">Excluir</button></div></div>${a.servicos.length?`<div class="atend-card tags"><strong style="font-size:.78rem;color:#4a5568">Serviços:</strong>${a.servicos.map(s=>`<span class="badge b-green">${esc(s.nome)} · ${fmt(s.valor)}</span>`).join('')}</div>`:''} ${a.insumos.length?`<div class="atend-card tags"><strong style="font-size:.78rem;color:#4a5568">Insumos:</strong>${a.insumos.map(i=>`<span class="badge b-blue">${esc(i.nome)} ×${i.qtd} · ${fmt(i.valor*i.qtd)}</span>`).join('')}</div>`:''} ${a.obs?`<div style="font-size:.84rem;color:#718096;margin-top:6px">📝 ${esc(a.obs)}</div>`:''}</div>`).join('')}
+
+// ════════════════════════════════
+// AGENDA
+// ════════════════════════════════
+let calDate    = new Date()
+let calSelected = new Date().toISOString().slice(0,10)
+
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+const MESES_ABR = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
+const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
+const STATUS_LABEL = {agendado:'Agendado',confirmado:'Confirmado',realizado:'Realizado',cancelado:'Cancelado'}
+const STATUS_BADGE = {agendado:'b-agendado',confirmado:'b-confirmado',realizado:'b-realizado',cancelado:'b-cancelado'}
+
+function initAgenda(){
+  calDate = new Date()
+  renderCalendar()
+  renderDayAppts()
+  renderProximos()
+  popularAgPacientes()
+  popularAgServicos()
+}
+
+function calPrev(){ calDate.setMonth(calDate.getMonth()-1); renderCalendar() }
+function calNext(){ calDate.setMonth(calDate.getMonth()+1); renderCalendar() }
+
+function renderCalendar(){
+  const y=calDate.getFullYear(), m=calDate.getMonth()
+  document.getElementById('cal-month').textContent = MESES[m]+' '+y
+
+  const agendamentos=db.get('agendamentos')
+  const mStr=`${y}-${String(m+1).padStart(2,'0')}`
+  const daysEv=new Set(agendamentos.filter(a=>a.data.startsWith(mStr)).map(a=>+a.data.split('-')[2]))
+
+  const firstDay=new Date(y,m,1).getDay()
+  const daysInMonth=new Date(y,m+1,0).getDate()
+  const todayStr=new Date().toISOString().slice(0,10)
+
+  let html = DIAS_SEMANA.map(d=>`<div class="cal-label">${d}</div>`).join('')
+  for(let i=0;i<firstDay;i++) html+='<div class="cal-day other-month"></div>'
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+    let cls='cal-day'
+    if(ds===todayStr) cls+=' today'
+    if(ds===calSelected) cls+=' selected'
+    const hasEv=daysEv.has(d)
+    html+=`<div class="${cls}" onclick="calSelectDay('${ds}')">${d}${hasEv?'<span class="ev-dot"></span>':''}</div>`
+  }
+  document.getElementById('cal-grid').innerHTML=html
+}
+
+function calSelectDay(ds){
+  calSelected=ds
+  document.getElementById('ag-data').value=ds
+  renderCalendar()
+  renderDayAppts()
+}
+
+const TL_START=7, TL_END=21
+
+function renderDayAppts(){
+  const el=document.getElementById('day-appts'); if(!el) return
+  if(!calSelected){ el.innerHTML=''; return }
+  const [y,m,d]=calSelected.split('-')
+  const dow=DIAS_SEMANA[new Date(calSelected+'T12:00').getDay()]
+  const label=document.getElementById('day-label')
+  if(label) label.textContent=`${dow}, ${d} de ${MESES_ABR[+m-1]}. de ${y}`
+
+  const todos=db.get('agendamentos').filter(a=>a.data===calSelected)
+  const comHora=todos.filter(a=>a.hora).sort((a,b)=>a.hora.localeCompare(b.hora))
+  const semHora=todos.filter(a=>!a.hora)
+  const isToday=calSelected===new Date().toISOString().slice(0,10)
+  const nowH=new Date().getHours(), nowM=new Date().getMinutes()
+
+  let html=''
+  if(semHora.length) html+=`<div class="tl-no-time"><div class="tl-no-time-label">⏱ Sem horário definido</div>${semHora.map(a=>tlCardHtml(a)).join('')}</div>`
+
+  html+='<div class="timeline-wrap">'
+  for(let h=TL_START;h<=TL_END;h++){
+    const hStr=String(h).padStart(2,'0')+':00'
+    const appts=comHora.filter(a=>parseInt(a.hora.split(':')[0])===h)
+    const isCurrent=isToday&&nowH===h
+    const nowPct=isCurrent?Math.round(nowM/60*100):-1
+    html+=`<div class="tl-hour-row${isCurrent?' current-hour':''}">`
+    html+=`<div class="tl-hour-label">${hStr}</div>`
+    html+=`<div class="tl-hour-body">`
+    if(nowPct>=0) html+=`<div class="now-line" style="top:${nowPct}%"></div>`
+    if(appts.length) html+=appts.map(a=>tlCardHtml(a)).join('')
+    html+=`</div></div>`
+  }
+  html+='</div>'
+  el.innerHTML=html
+
+  if(isToday){
+    const rows=el.querySelectorAll('.tl-hour-row')
+    const idx=Math.max(0,nowH-TL_START)
+    if(rows[idx]) setTimeout(()=>rows[idx].scrollIntoView({behavior:'smooth',block:'center'}),80)
+  }
+}
+
+function tlCardHtml(a){
+  const servN=[...(a.servicos||[]).map(s=>esc(s.nome)),a.servicosLivre?esc(a.servicosLivre):''].filter(Boolean)
+  return `<div class="tl-appt" id="tl-appt-${a.id}" data-status="${a.status}">
+    <div class="tl-appt-top">
+      ${a.hora?`<div class="tl-hora">${a.hora}</div>`:''}
+      <div class="tl-body">
+        <div class="tl-pac">${esc(a.pacNome)}</div>
+        ${a.tutorNome?`<div class="tl-sub">👤 ${esc(a.tutorNome)}${a.tutorTel?' · '+esc(a.tutorTel):''}</div>`:''}
+        ${a.queixa?`<div class="tl-sub">🩺 ${esc(a.queixa)}</div>`:''}
+        ${servN.length?`<div class="tl-sub">🔧 ${servN.join(' · ')}</div>`:''}
+        ${a.obs?`<div class="tl-sub" style="color:#b0aec0">📝 ${esc(a.obs)}</div>`:''}
+      </div>
+      <span class="badge ${STATUS_BADGE[a.status]||'b-gray'}" style="flex-shrink:0;align-self:flex-start">${STATUS_LABEL[a.status]||a.status}</span>
+    </div>
+    <div class="tl-qa">
+      ${a.status!=='realizado'?`<button class="qa-btn qa-ok"     onclick="qaRealizado('${a.id}')">✔ Realizado</button>`:''}
+      ${a.status!=='cancelado'?`<button class="qa-btn qa-cancel"  onclick="qaCancelado('${a.id}')">✕ Cancelar</button>`:''}
+      <button class="qa-btn qa-reag" onclick="qaToggleReagendar('${a.id}')">🔄 Reagendar</button>
+      <button class="qa-btn qa-edit" onclick="editarAgendamento('${a.id}')">✏ Editar</button>
+      <button class="qa-btn" style="background:#edf2f7;color:#718096" onclick="if(confirm('Excluir?'))excluirAgendamento('${a.id}')">🗑</button>
+    </div>
+    <div class="reag-inline" id="reag-${a.id}">
+      <div class="reag-row">
+        <div><label>Nova data</label><input type="date" id="reag-d-${a.id}" value="${a.data}"></div>
+        <div><label>Novo horário</label><input type="time" id="reag-h-${a.id}" value="${a.hora||''}"></div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-primary" style="font-size:.78rem;padding:5px 14px" onclick="qaConfirmarReagendar('${a.id}')">✔ Confirmar reagendamento</button>
+        <button class="btn btn-secondary" style="font-size:.78rem;padding:5px 10px" onclick="qaToggleReagendar('${a.id}')">✕</button>
+      </div>
+    </div>
+  </div>`
+}
+
+// ── Ações rápidas da timeline ──
+function qaRealizado(id){
+  const l=db.get('agendamentos');const i=l.findIndex(a=>a.id===id);if(i===-1)return
+  l[i].status='realizado';db.set('agendamentos',l)
+  renderCalendar();renderDayAppts();renderProximos();renderInicio();toast('Marcado como realizado! ✔')
+}
+function qaCancelado(id){
+  if(!confirm('Marcar como cancelado?'))return
+  const l=db.get('agendamentos');const i=l.findIndex(a=>a.id===id);if(i===-1)return
+  l[i].status='cancelado';db.set('agendamentos',l)
+  renderCalendar();renderDayAppts();renderProximos();renderInicio();toast('Atendimento cancelado.')
+}
+function qaToggleReagendar(id){
+  const el=document.getElementById('reag-'+id);if(el)el.classList.toggle('open')
+}
+function qaConfirmarReagendar(id){
+  const nd=document.getElementById('reag-d-'+id)?.value
+  const nh=document.getElementById('reag-h-'+id)?.value||''
+  if(!nd){toast('Informe a nova data.',false);return}
+  const l=db.get('agendamentos');const i=l.findIndex(a=>a.id===id);if(i===-1)return
+  l[i].data=nd;l[i].hora=nh;l[i].status='agendado';db.set('agendamentos',l)
+  calSelected=nd;calDate=new Date(nd+'T12:00:00')
+  renderCalendar();renderDayAppts();renderProximos();renderInicio()
+  toast(`Reagendado para ${nd.split('-').reverse().join('/')}${nh?' às '+nh:''}!`)
+}
+
+function renderProximos(){
+  const el=document.getElementById('proximos-appts'); if(!el) return
+  const hoje=new Date().toISOString().slice(0,10)
+  const lista=db.get('agendamentos')
+    .filter(a=>a.data>=hoje && a.status!=='cancelado')
+    .sort((a,b)=>a.data.localeCompare(b.data)||(a.hora||'').localeCompare(b.hora||''))
+    .slice(0,8)
+  if(!lista.length){ el.innerHTML='<p style="color:#a0aec0;text-align:center;padding:20px;font-size:.87rem">Nenhum próximo agendamento.</p>'; return }
+  el.innerHTML=lista.map(a=>{
+    const [y,m,d]=a.data.split('-')
+    const dateLabel=`${d}/${m}/${y}`
+    return `<div class="ag-card ${a.status}" style="cursor:pointer" onclick="calSelectDay('${a.data}')">
+      <div class="ag-card-header">
+        <div class="ag-hora" style="text-align:center;font-size:.8rem;min-width:36px">${dateLabel}<br><span style="font-size:.9rem">${a.hora||'—'}</span></div>
+        <div class="ag-card-info">
+          <div class="ag-pac-name">${esc(a.pacNome)}</div>
+          <div class="ag-tutor-name">👤 ${esc(a.tutorNome||'—')}</div>
+          ${a.queixa?`<div class="ag-queixa">🩺 ${esc(a.queixa.slice(0,60))}${a.queixa.length>60?'…':''}</div>`:''}
+        </div>
+        <span class="badge ${STATUS_BADGE[a.status]||'b-gray'}" style="flex-shrink:0">${STATUS_LABEL[a.status]||a.status}</span>
+      </div>
+    </div>`
+  }).join('')
+}
+
+// Usado em renderProximos (card compacto, sem ações rápidas)
+function agCardHtml(a){
+  const servN=[...(a.servicos||[]).map(s=>esc(s.nome)),a.servicosLivre?esc(a.servicosLivre):''].filter(Boolean)
+  return `<div class="ag-card ${a.status}">
+    <div class="ag-card-header">
+      <div class="ag-hora">${a.hora||'—'}</div>
+      <div class="ag-card-info">
+        <div class="ag-pac-name">${esc(a.pacNome)}</div>
+        <div class="ag-tutor-name">👤 ${esc(a.tutorNome||'—')}${a.tutorTel?' · '+esc(a.tutorTel):''}</div>
+        ${a.queixa?`<div class="ag-queixa">🩺 ${esc(a.queixa)}</div>`:''}
+        ${servN.length?`<div class="ag-servicos">🔧 ${servN.join(' · ')}</div>`:''}
+      </div>
+      <span class="badge ${STATUS_BADGE[a.status]||'b-gray'}" style="flex-shrink:0">${STATUS_LABEL[a.status]||a.status}</span>
+    </div>
+    ${a.obs?`<div class="ag-obs">📝 ${esc(a.obs)}</div>`:''}
+  </div>`
+}
+
+function popularAgPacientes(){
+  const sel=document.getElementById('ag-pacienteId'); if(!sel) return
+  const cur=sel.value
+  sel.innerHTML='<option value="">Selecione o paciente...</option>'+
+    db.get('pacientes').map(p=>{const t=getTutor(p.tutorId);return`<option value="${p.id}" ${p.id===cur?'selected':''}>${esc(p.nome)}${t?' ('+esc(t.nome)+')':''}</option>`}).join('')
+}
+
+function popularAgServicos(){
+  const el=document.getElementById('ag-servicos-list'); if(!el) return
+  const serv=db.get('servicos')
+  el.innerHTML=serv.length
+    ?serv.map(s=>`<div class="item"><input type="checkbox" id="ags-${s.id}"><label for="ags-${s.id}" class="item-label">${esc(s.nome)}</label><span style="font-size:.8rem;color:#C4A0D4;white-space:nowrap">${fmt(s.valor)}</span></div>`).join('')
+    :'<div style="padding:10px;color:#a0aec0;font-size:.85rem">Nenhum serviço cadastrado.</div>'
+}
+
+function agTipoPac(){
+  const tipo=document.querySelector('input[name="ag-pac-tipo"]:checked')?.value||'livre'
+  document.getElementById('ag-modo-livre').style.display     = tipo==='livre'?'block':'none'
+  document.getElementById('ag-modo-cadastrado').style.display= tipo==='cadastrado'?'block':'none'
+  if(tipo==='cadastrado') agSelectPaciente()
+}
+
+function agSelectPaciente(){
+  const id=val('ag-pacienteId'); if(!id) return
+  const p=db.get('pacientes').find(x=>x.id===id); if(!p) return
+  document.getElementById('ag-pac-nome').value=p.nome
+  const t=getTutor(p.tutorId)
+  if(t){
+    document.getElementById('ag-tutor-nome').value=t.nome
+    document.getElementById('ag-tutor-tel').value=t.tel||''
+  }
+}
+
+function salvarAgendamento(){
+  const data=val('ag-data'); if(!data){toast('Informe a data.',false);return}
+  const tipo=document.querySelector('input[name="ag-pac-tipo"]:checked')?.value||'livre'
+  const pacId=tipo==='cadastrado'?val('ag-pacienteId'):''
+  let pacNome=val('ag-pac-nome')
+  let tutorNome=val('ag-tutor-nome'), tutorTel=val('ag-tutor-tel')
+  if(tipo==='cadastrado'&&pacId){
+    const p=db.get('pacientes').find(x=>x.id===pacId); if(p) pacNome=p.nome
+    const t=p?getTutor(p.tutorId):null; if(t){tutorNome=t.nome;tutorTel=t.tel||''}
+  }
+  if(!pacNome){toast('Informe o nome do paciente.',false);return}
+  const servicosSel=db.get('servicos').filter(s=>document.getElementById('ags-'+s.id)?.checked).map(s=>({id:s.id,nome:s.nome,valor:s.valor}))
+  const id=val('ag-id')||uid()
+  const lista=db.get('agendamentos')
+  const obj={id,data,hora:val('ag-hora'),pacienteId:pacId||null,pacNome,tutorNome,tutorTel,queixa:val('ag-queixa'),servicos:servicosSel,servicosLivre:val('ag-servicos-livre'),status:val('ag-status')||'agendado',obs:val('ag-obs'),criado:new Date().toLocaleDateString('pt-BR')}
+  const idx=lista.findIndex(a=>a.id===id)
+  if(idx!==-1)lista[idx]=obj;else lista.unshift(obj)
+  db.set('agendamentos',lista)
+  if(data!==calSelected){calSelected=data;calDate=new Date(data+'T12:00:00')}
+  limparAgendamento()
+  renderCalendar();renderDayAppts();renderProximos();renderInicio()
+  toast(idx!==-1?'Agendamento atualizado!':'Agendamento salvo!')
+}
+
+function limparAgendamento(){
+  ;['ag-pac-nome','ag-tutor-nome','ag-tutor-tel','ag-queixa','ag-servicos-livre','ag-obs'].forEach(i=>{const el=document.getElementById(i);if(el)el.value=''})
+  const s=document.getElementById('ag-status');if(s)s.value='agendado'
+  const pid=document.getElementById('ag-pacienteId');if(pid)pid.value=''
+  document.getElementById('ag-id').value=''
+  db.get('servicos').forEach(s=>{const el=document.getElementById('ags-'+s.id);if(el)el.checked=false})
+  // Reset to tipo livre
+  const radLivre=document.querySelector('input[name="ag-pac-tipo"][value="livre"]');if(radLivre)radLivre.checked=true
+  agTipoPac()
+  document.getElementById('ag-form-title').textContent='Novo Agendamento'
+}
+
+function editarAgendamento(id){
+  const a=db.get('agendamentos').find(x=>x.id===id);if(!a)return
+  document.getElementById('ag-data').value=a.data
+  document.getElementById('ag-hora').value=a.hora||''
+  document.getElementById('ag-pac-nome').value=a.pacNome||''
+  document.getElementById('ag-tutor-nome').value=a.tutorNome||''
+  document.getElementById('ag-tutor-tel').value=a.tutorTel||''
+  document.getElementById('ag-queixa').value=a.queixa||''
+  document.getElementById('ag-servicos-livre').value=a.servicosLivre||''
+  document.getElementById('ag-status').value=a.status||'agendado'
+  document.getElementById('ag-obs').value=a.obs||''
+  document.getElementById('ag-id').value=id
+  document.getElementById('ag-form-title').textContent='Editar Agendamento'
+  // Define tipo
+  if(a.pacienteId){
+    const radCad=document.querySelector('input[name="ag-pac-tipo"][value="cadastrado"]');if(radCad)radCad.checked=true
+    agTipoPac()
+    const sel=document.getElementById('ag-pacienteId');if(sel)sel.value=a.pacienteId
+  } else {
+    const radLivre=document.querySelector('input[name="ag-pac-tipo"][value="livre"]');if(radLivre)radLivre.checked=true
+    agTipoPac()
+  }
+  // Marca serviços
+  db.get('servicos').forEach(s=>{const el=document.getElementById('ags-'+s.id);if(el)el.checked=!!(a.servicos||[]).find(x=>x.id===s.id)})
+  document.getElementById('ag-form-card').scrollIntoView({behavior:'smooth'})
+}
+
+function excluirAgendamento(id){
+  if(!confirm('Excluir este agendamento?'))return
+  db.set('agendamentos',db.get('agendamentos').filter(a=>a.id!==id))
+  renderCalendar();renderDayAppts();renderProximos();renderInicio();toast('Agendamento removido.')
+}
+
+// ── Init ──
+renderInicio()
+atualizarBadgeInsumos()
+renderPacientes();renderTutores();renderServicos();renderCirurgiasCat();renderInsumos();renderAtendimentos()
+document.getElementById('a-data').value=new Date().toISOString().slice(0,10)
+</script>
+</body>
+</html>
