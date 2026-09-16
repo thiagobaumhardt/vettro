@@ -2,16 +2,16 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 DEFAULT_JWT_SECRET = "troque-esta-chave-em-producao"
-DEFAULT_ADMIN_SENHA = "vetdom123"
+DEFAULT_ADMIN_SENHA = "vettro123"
 
 
 class Settings(BaseSettings):
-    database_url: str = "postgresql+psycopg://vetdom:vetdom@db:5432/vetdom"
+    database_url: str = "postgresql+psycopg://vettro:vettro@db:5432/vettro"
     cors_origins: str = "*"
     jwt_secret: str = DEFAULT_JWT_SECRET
     jwt_expira_horas: int = 8
     admin_nome: str = "Administrador"
-    admin_email: str = "admin@vetdom.local"
+    admin_email: str = "admin@vettro.local"
     admin_senha: str = DEFAULT_ADMIN_SENHA
 
     class Config:

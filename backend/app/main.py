@@ -26,9 +26,9 @@ from .routers import (
     usuarios,
 )
 
-logger = logging.getLogger("vetdom")
+logger = logging.getLogger("vettro")
 
-app = FastAPI(title="VetDom API")
+app = FastAPI(title="Vettro API")
 
 app.add_middleware(
     CORSMiddleware,

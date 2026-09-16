@@ -118,10 +118,10 @@ onMounted(carregar);
                 <td>
                   <strong>{{ i.nome }}</strong>
                   <br v-if="i.obs" />
-                  <small v-if="i.obs" style="color: #a0aec0">{{ i.obs }}</small>
+                  <small v-if="i.obs" style="color: #8c8a78">{{ i.obs }}</small>
                 </td>
                 <td><span v-if="i.categoria" class="badge b-gray">{{ i.categoria }}</span><span v-else>—</span></td>
-                <td style="color: #8b5e9a; font-weight: 700">{{ fmt(i.valor) }}</td>
+                <td style="color: #5c6b3c; font-weight: 700">{{ fmt(i.valor) }}</td>
                 <td :class="qCls(i.qtd)">{{ qTxt(i.qtd) }}</td>
                 <td>
                   <div class="td-actions">

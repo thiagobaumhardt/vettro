@@ -3,15 +3,15 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: vetdom
-      POSTGRES_PASSWORD: vetdom
-      POSTGRES_DB: vetdom
+      POSTGRES_USER: vettro
+      POSTGRES_PASSWORD: vettro
+      POSTGRES_DB: vettro
     ports:
       - "5432:5432"
     volumes:
-      - vetdom_pgdata:/var/lib/postgresql/data
+      - vettro_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vetdom"]
+      test: ["CMD-SHELL", "pg_isready -U vettro"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -21,13 +21,13 @@ services:
     restart: unless-stopped
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     environment:
-      DATABASE_URL: postgresql+psycopg://vetdom:vetdom@db:5432/vetdom
+      DATABASE_URL: postgresql+psycopg://vettro:vettro@db:5432/vettro
       CORS_ORIGINS: "*"
       JWT_SECRET: dev-secret-troque-em-producao
       JWT_EXPIRA_HORAS: "8"
       ADMIN_NOME: Administrador
-      ADMIN_EMAIL: admin@vetdom.local
-      ADMIN_SENHA: vetdom123
+      ADMIN_EMAIL: admin@vettro.local
+      ADMIN_SENHA: vettro123
     depends_on:
       db:
         condition: service_healthy
@@ -50,8 +50,8 @@ services:
       - "5173:5173"
     volumes:
       - ./frontend:/app
-      - vetdom_frontend_node_modules:/app/node_modules
+      - vettro_frontend_node_modules:/app/node_modules
 
 volumes:
-  vetdom_pgdata:
-  vetdom_frontend_node_modules:
+  vettro_pgdata:
+  vettro_frontend_node_modules:

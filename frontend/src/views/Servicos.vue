@@ -124,7 +124,7 @@ onMounted(carregar);
           <tbody>
             <tr v-for="s in servicos" :key="s.id">
               <td>{{ s.nome }}</td>
-              <td style="color: #8b5e9a; font-weight: 700">{{ fmt(s.valor) }}</td>
+              <td style="color: #5c6b3c; font-weight: 700">{{ fmt(s.valor) }}</td>
               <td>
                 <div class="td-actions">
                   <button class="btn btn-edit" @click="editarServico(s)">Editar</button>

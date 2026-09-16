@@ -110,21 +110,21 @@ onMounted(carregar);
         <div>
           <label>Serviços realizados</label>
           <div class="select-list">
-            <div v-if="!servicos.length" style="padding: 12px; color: #a0aec0; font-size: 0.85rem">Nenhum serviço cadastrado.</div>
+            <div v-if="!servicos.length" style="padding: 12px; color: #8c8a78; font-size: 0.85rem">Nenhum serviço cadastrado.</div>
             <div v-for="s in servicos" :key="s.id" class="item">
               <input type="checkbox" :checked="servicosSel.has(s.id)" @change="toggleServico(s.id)" />
               <span class="item-label">{{ s.nome }}</span>
-              <span style="font-weight: 700; color: #2c1a30">{{ fmt(s.valor) }}</span>
+              <span style="font-weight: 700; color: #2b2b22">{{ fmt(s.valor) }}</span>
             </div>
           </div>
         </div>
         <div>
           <label>Insumos utilizados</label>
           <div class="select-list">
-            <div v-if="!insumos.length" style="padding: 12px; color: #a0aec0; font-size: 0.85rem">Nenhum insumo cadastrado.</div>
+            <div v-if="!insumos.length" style="padding: 12px; color: #8c8a78; font-size: 0.85rem">Nenhum insumo cadastrado.</div>
             <div v-for="i in insumos" :key="i.id" class="item">
               <input type="checkbox" :checked="insumosSel[i.id] !== undefined" @change="toggleInsumo(i.id)" />
-              <span class="item-label">{{ i.nome }} <small style="color: #a0aec0">(est: {{ i.qtd }})</small></span>
+              <span class="item-label">{{ i.nome }} <small style="color: #8c8a78">(est: {{ i.qtd }})</small></span>
               <input v-if="insumosSel[i.id] !== undefined" class="qty-input" type="number" min="1" v-model.number="insumosSel[i.id]" />
             </div>
           </div>
@@ -151,26 +151,26 @@ onMounted(carregar);
           <div>
             <h4>
               {{ especieEmoji(a.pac_especie) }} {{ a.pac_nome }}
-              <span style="font-weight: 400; color: #718096">({{ a.pac_especie }})</span>
+              <span style="font-weight: 400; color: #6e6c5c">({{ a.pac_especie }})</span>
               <span v-if="a.plantao" class="badge" style="background: #fef3c7; color: #92400e; font-size: 0.72rem">🌙 Plantão</span>
             </h4>
             <div class="meta">Tutor: {{ a.tutor_nome || "—" }}{{ a.tutor_tel ? " · " + a.tutor_tel : "" }}</div>
             <div class="meta">{{ a.data }}{{ a.hora ? " às " + a.hora : "" }}</div>
           </div>
           <div style="display: flex; gap: 6px; align-items: flex-start">
-            <span style="font-size: 1.05rem; font-weight: 800; color: #2c1a30">{{ fmt(a.total) }}</span>
+            <span style="font-size: 1.05rem; font-weight: 800; color: #2b2b22">{{ fmt(a.total) }}</span>
             <button class="btn btn-danger" @click="excluir(a.id)">Excluir</button>
           </div>
         </div>
         <div v-if="a.servicos.length" class="tags">
-          <strong style="font-size: 0.78rem; color: #4a5568">Serviços:</strong>
+          <strong style="font-size: 0.78rem; color: #3f3f33">Serviços:</strong>
           <span v-for="s in a.servicos" :key="s.id" class="badge b-green">{{ s.nome }} · {{ fmt(s.valor) }}</span>
         </div>
         <div v-if="a.insumos.length" class="tags">
-          <strong style="font-size: 0.78rem; color: #4a5568">Insumos:</strong>
+          <strong style="font-size: 0.78rem; color: #3f3f33">Insumos:</strong>
           <span v-for="i in a.insumos" :key="i.id" class="badge b-blue">{{ i.nome }} ×{{ i.qtd }} · {{ fmt(i.valor * i.qtd) }}</span>
         </div>
-        <div v-if="a.obs" style="font-size: 0.84rem; color: #718096; margin-top: 6px">📝 {{ a.obs }}</div>
+        <div v-if="a.obs" style="font-size: 0.84rem; color: #6e6c5c; margin-top: 6px">📝 {{ a.obs }}</div>
       </div>
     </div>
   </div>

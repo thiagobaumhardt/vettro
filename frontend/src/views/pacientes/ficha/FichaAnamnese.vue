@@ -184,11 +184,11 @@ onMounted(carregar);
     </div>
 
     <div class="aval-section-title" style="margin-top: 20px">🧾 O que foi feito / utilizado</div>
-    <div style="background: #faf0f8; border: 1.5px solid #edd5e5; border-radius: 9px; padding: 12px 16px; margin-bottom: 14px">
-      <div style="font-size: 0.78rem; font-weight: 700; color: #8b5e9a; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px">Tipo de atendimento</div>
+    <div style="background: #efede0; border: 1.5px solid #e1dec9; border-radius: 9px; padding: 12px 16px; margin-bottom: 14px">
+      <div style="font-size: 0.78rem; font-weight: 700; color: #5c6b3c; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px">Tipo de atendimento</div>
       <div class="radio-group">
         <label><input v-model="form.plantao" type="radio" :value="false" /> Normal</label>
-        <label><input v-model="form.plantao" type="radio" :value="true" /> 🌙 Plantão <span style="font-size: 0.82rem; color: #8b5e9a; font-weight: 600">(+50% nos serviços)</span></label>
+        <label><input v-model="form.plantao" type="radio" :value="true" /> 🌙 Plantão <span style="font-size: 0.82rem; color: #5c6b3c; font-weight: 600">(+50% nos serviços)</span></label>
       </div>
     </div>
 
@@ -196,21 +196,21 @@ onMounted(carregar);
       <div>
         <label>Serviços realizados</label>
         <div class="select-list">
-          <div v-if="!servicos.length" style="padding: 12px; color: #a0aec0; font-size: 0.85rem">Nenhum serviço cadastrado.</div>
+          <div v-if="!servicos.length" style="padding: 12px; color: #8c8a78; font-size: 0.85rem">Nenhum serviço cadastrado.</div>
           <div v-for="s in servicos" :key="s.id" class="item">
             <input type="checkbox" :checked="servicosSel.has(s.id)" @change="toggleServico(s.id)" />
             <span class="item-label">{{ s.nome }}</span>
-            <span style="font-weight: 700; color: #2c1a30">{{ fmt(s.valor) }}</span>
+            <span style="font-weight: 700; color: #2b2b22">{{ fmt(s.valor) }}</span>
           </div>
         </div>
       </div>
       <div>
         <label>Insumos utilizados</label>
         <div class="select-list">
-          <div v-if="!insumos.length" style="padding: 12px; color: #a0aec0; font-size: 0.85rem">Nenhum insumo cadastrado.</div>
+          <div v-if="!insumos.length" style="padding: 12px; color: #8c8a78; font-size: 0.85rem">Nenhum insumo cadastrado.</div>
           <div v-for="i in insumos" :key="i.id" class="item">
             <input type="checkbox" :checked="insumosSel[i.id] !== undefined" @change="toggleInsumo(i.id)" />
-            <span class="item-label">{{ i.nome }} <small style="color: #a0aec0">(est: {{ i.qtd }})</small></span>
+            <span class="item-label">{{ i.nome }} <small style="color: #8c8a78">(est: {{ i.qtd }})</small></span>
             <input
               v-if="insumosSel[i.id] !== undefined"
               class="qty-input"
@@ -252,13 +252,13 @@ onMounted(carregar);
           <div v-if="a.medicamentos" class="hist-detail-item full"><label>Medicamentos em uso</label><p>{{ a.medicamentos }}</p></div>
           <div v-if="a.alergias" class="hist-detail-item"><label>Alergias</label><p>{{ a.alergias }}</p></div>
         </div>
-        <div v-if="a.servicos?.length || a.insumos?.length" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e8d0eb">
+        <div v-if="a.servicos?.length || a.insumos?.length" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e1dec9">
           <div v-if="a.servicos?.length" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px">
-            <strong style="font-size: 0.78rem; color: #4a5568; align-self: center">Serviços:</strong>
+            <strong style="font-size: 0.78rem; color: #3f3f33; align-self: center">Serviços:</strong>
             <span v-for="s in a.servicos" :key="s.id" class="badge b-green">{{ s.nome }} · {{ fmt(s.valor) }}</span>
           </div>
           <div v-if="a.insumos?.length" style="display: flex; gap: 6px; flex-wrap: wrap">
-            <strong style="font-size: 0.78rem; color: #4a5568; align-self: center">Insumos:</strong>
+            <strong style="font-size: 0.78rem; color: #3f3f33; align-self: center">Insumos:</strong>
             <span v-for="i in a.insumos" :key="i.id" class="badge b-blue">{{ i.nome }} ×{{ i.qtd }} · {{ fmt(i.valor * i.qtd) }}</span>
           </div>
         </div>

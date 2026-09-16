@@ -2,6 +2,7 @@
 import { onMounted, ref } from "vue";
 
 import { dashboardApi } from "@/api/dashboard";
+import { session } from "@/stores/session";
 import { especieEmoji, fmt } from "@/utils";
 
 const stats = ref(null);
@@ -10,6 +11,14 @@ const ultimas = ref([]);
 const carregando = ref(true);
 
 const TIPO_ICON = { modulo: "📋", "ficha-atend": "🩺", cirurgia: "🔪" };
+
+const primeiroNome = (session.usuario?.nome || "").trim().split(/\s+/)[0] || "";
+const dataHoje = new Intl.DateTimeFormat("pt-BR", {
+  weekday: "long",
+  day: "2-digit",
+  month: "long",
+  year: "numeric",
+}).format(new Date());
 
 onMounted(async () => {
   try {
@@ -28,17 +37,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="home-hero-simple">
-    <div style="font-size: 2.6rem; line-height: 1; flex-shrink: 0">🐾</div>
-    <div>
-      <h1 style="font-size: 2rem; font-weight: 800; color: #2c1a30; margin-bottom: 5px">VetDom</h1>
-      <p style="font-size: 0.96rem; color: #5a3a60; font-weight: 500">
-        Sistema de Atendimento Veterinário a Domicílio
-      </p>
-    </div>
-  </div>
-
   <div class="home-body">
+    <div class="home-hero">
+      <div>
+        <div class="home-hero-kicker">Bem-vindo{{ primeiroNome ? "," : "" }}</div>
+        <h1>{{ primeiroNome || "Vettro" }}!</h1>
+        <p>Que hoje seja mais um dia de cuidado, dedicação e muitas histórias boas com nossos pacientes.</p>
+      </div>
+      <div class="home-hero-date"><span class="ic">📅</span>{{ dataHoje }}</div>
+    </div>
     <div v-if="alerta && (alerta.zerados.length || alerta.baixos.length)" class="stock-alert-box">
       <div class="al-icon">⚠️</div>
       <div class="al-body">
@@ -78,7 +85,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <p style="font-size: 0.78rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px">
+    <p style="font-size: 0.78rem; font-weight: 700; color: #8c8a78; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px">
       Resumo do sistema
     </p>
     <div v-if="stats" class="stats-row">
@@ -114,7 +121,7 @@ onMounted(async () => {
       </router-link>
     </div>
 
-    <p style="font-size: 0.78rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px">
+    <p style="font-size: 0.78rem; font-weight: 700; color: #8c8a78; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px">
       Acesso rápido
     </p>
     <div class="nav-cards">

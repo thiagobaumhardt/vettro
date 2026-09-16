@@ -314,7 +314,7 @@ onMounted(carregar);
 
         <div class="card">
           <div class="section-title">Próximos Agendamentos</div>
-          <div v-if="!proximos.length" style="color: #a0aec0; text-align: center; padding: 20px; font-size: 0.87rem">Nenhum próximo agendamento.</div>
+          <div v-if="!proximos.length" style="color: #8c8a78; text-align: center; padding: 20px; font-size: 0.87rem">Nenhum próximo agendamento.</div>
           <div v-for="a in proximos" :key="a.id" class="ag-card" :class="a.status" style="cursor: pointer" @click="calSelectDay(a.data)">
             <div class="ag-card-header">
               <div class="ag-hora" style="text-align: center; font-size: 0.8rem; min-width: 36px">

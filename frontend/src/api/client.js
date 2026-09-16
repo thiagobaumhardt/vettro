@@ -1,4 +1,4 @@
-const TOKEN_KEY = "vetdom_token";
+const TOKEN_KEY = "vettro_token";
 
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY);

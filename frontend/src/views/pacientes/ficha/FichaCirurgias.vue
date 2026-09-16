@@ -128,14 +128,14 @@ onMounted(carregar);
 
     <div style="margin-top: 16px; display: flex; gap: 20px; flex-wrap: wrap">
       <div>
-        <div style="font-size: 0.78rem; font-weight: 700; color: #8b5e9a; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px">Tipo de atendimento</div>
+        <div style="font-size: 0.78rem; font-weight: 700; color: #5c6b3c; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px">Tipo de atendimento</div>
         <div class="radio-group">
           <label><input v-model="form.plantao" type="radio" :value="false" /> Normal</label>
           <label><input v-model="form.plantao" type="radio" :value="true" /> 🌙 Plantão (+50%)</label>
         </div>
       </div>
-      <label style="display: flex; align-items: center; gap: 6px; font-size: 0.86rem; color: #4a5568">
-        <input v-model="form.outra_cidade" type="checkbox" style="width: 16px; height: 16px; accent-color: #c4a0d4" />
+      <label style="display: flex; align-items: center; gap: 6px; font-size: 0.86rem; color: #3f3f33">
+        <input v-model="form.outra_cidade" type="checkbox" style="width: 16px; height: 16px; accent-color: #6b7345" />
         📍 Deslocamento (outra cidade, +R$ 50)
       </label>
     </div>
@@ -143,23 +143,23 @@ onMounted(carregar);
     <div class="form-grid" style="margin-top: 16px">
       <div>
         <label>Procedimentos cirúrgicos</label>
-        <div style="font-size: 0.76rem; color: #8b5e9a; font-weight: 700; margin-bottom: 6px">{{ faixaLabel }}</div>
+        <div style="font-size: 0.76rem; color: #5c6b3c; font-weight: 700; margin-bottom: 6px">{{ faixaLabel }}</div>
         <div class="select-list">
-          <div v-if="!cirurgiasCat.length" style="padding: 12px; color: #a0aec0; font-size: 0.85rem">Nenhum procedimento cadastrado.</div>
+          <div v-if="!cirurgiasCat.length" style="padding: 12px; color: #8c8a78; font-size: 0.85rem">Nenhum procedimento cadastrado.</div>
           <div v-for="c in cirurgiasCat" :key="c.id" class="item">
             <input type="checkbox" :checked="procSel.has(c.id)" @change="toggleProc(c.id)" />
             <span class="item-label">{{ c.nome }}</span>
-            <span style="font-weight: 800; color: #8b5e9a">{{ fmt(valorPorPeso(c)) }}</span>
+            <span style="font-weight: 800; color: #5c6b3c">{{ fmt(valorPorPeso(c)) }}</span>
           </div>
         </div>
       </div>
       <div>
         <label>Insumos utilizados</label>
         <div class="select-list">
-          <div v-if="!insumos.length" style="padding: 12px; color: #a0aec0; font-size: 0.85rem">Nenhum insumo cadastrado.</div>
+          <div v-if="!insumos.length" style="padding: 12px; color: #8c8a78; font-size: 0.85rem">Nenhum insumo cadastrado.</div>
           <div v-for="i in insumos" :key="i.id" class="item">
             <input type="checkbox" :checked="insumosSel[i.id] !== undefined" @change="toggleInsumo(i.id)" />
-            <span class="item-label">{{ i.nome }} <small style="color: #a0aec0">(est: {{ i.qtd }})</small></span>
+            <span class="item-label">{{ i.nome }} <small style="color: #8c8a78">(est: {{ i.qtd }})</small></span>
             <input v-if="insumosSel[i.id] !== undefined" class="qty-input" type="number" min="1" v-model.number="insumosSel[i.id]" />
           </div>
         </div>
@@ -197,13 +197,13 @@ onMounted(carregar);
           <div v-if="c.desc_cir" class="hist-detail-item full"><label>Descrição</label><p>{{ c.desc_cir }}</p></div>
           <div v-if="c.pos_op" class="hist-detail-item full"><label>Pós-operatório</label><p>{{ c.pos_op }}</p></div>
         </div>
-        <div v-if="c.procedimentos?.length || c.insumos?.length" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e8d0eb">
+        <div v-if="c.procedimentos?.length || c.insumos?.length" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e1dec9">
           <div v-if="c.procedimentos?.length" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px">
-            <strong style="font-size: 0.78rem; color: #4a5568; align-self: center">Procedimentos:</strong>
+            <strong style="font-size: 0.78rem; color: #3f3f33; align-self: center">Procedimentos:</strong>
             <span v-for="p in c.procedimentos" :key="p.id" class="badge b-green">{{ p.nome }} · {{ fmt(p.valor) }}</span>
           </div>
           <div v-if="c.insumos?.length" style="display: flex; gap: 6px; flex-wrap: wrap">
-            <strong style="font-size: 0.78rem; color: #4a5568; align-self: center">Insumos:</strong>
+            <strong style="font-size: 0.78rem; color: #3f3f33; align-self: center">Insumos:</strong>
             <span v-for="i in c.insumos" :key="i.id" class="badge b-blue">{{ i.nome }} ×{{ i.qtd }} · {{ fmt(i.valor * i.qtd) }}</span>
           </div>
         </div>

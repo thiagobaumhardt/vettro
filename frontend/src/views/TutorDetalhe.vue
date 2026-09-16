@@ -29,7 +29,7 @@ onMounted(async () => {
         <div class="info-item"><label>CPF</label><p>{{ tutor.cpf || "—" }}</p></div>
         <div class="info-item"><label>Endereço</label><p>{{ tutor.endereco || "—" }}</p></div>
       </div>
-      <p v-if="tutor.obs" style="margin-top: 14px; font-size: 0.88rem; color: #4a5568">📝 {{ tutor.obs }}</p>
+      <p v-if="tutor.obs" style="margin-top: 14px; font-size: 0.88rem; color: #3f3f33">📝 {{ tutor.obs }}</p>
     </div>
 
     <div class="card">

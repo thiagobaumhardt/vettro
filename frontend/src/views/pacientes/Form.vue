@@ -96,7 +96,7 @@ async function salvar() {
             📷 Escolher foto de perfil
             <input type="file" accept="image/*" @change="previewFoto" />
           </label>
-          <p style="font-size: 0.78rem; color: #a0aec0; margin-top: 4px">Formatos: JPG, PNG · Máx. 3 MB</p>
+          <p style="font-size: 0.78rem; color: #8c8a78; margin-top: 4px">Formatos: JPG, PNG · Máx. 3 MB</p>
         </div>
       </div>
       <div class="form-grid">
@@ -117,7 +117,7 @@ async function salvar() {
         <div><label>Peso (kg)</label><input v-model="form.peso" type="number" step="0.1" min="0" placeholder="Ex: 8.5" /></div>
         <div><label>Idade</label><input v-model="form.idade" placeholder="Ex: 3 anos" /></div>
         <div class="full">
-          <label>Tutor * <span style="font-weight: 400; color: #a0aec0">— cadastre em 👤 Tutores</span></label>
+          <label>Tutor * <span style="font-weight: 400; color: #8c8a78">— cadastre em 👤 Tutores</span></label>
           <select v-model="form.tutor_id">
             <option value="">Selecione o tutor...</option>
             <option v-for="t in tutores" :key="t.id" :value="t.id">{{ t.nome }} — {{ t.tel }}</option>

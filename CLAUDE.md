@@ -1,4 +1,4 @@
-# VetDom — Sistema de Atendimento Veterinário a Domicílio
+# Vettro — Sistema de Atendimento Veterinário a Domicílio
 
 ## Tecnologia
 - **Backend:** FastAPI + SQLAlchemy + Alembic, Python 3.12 (`backend/`)

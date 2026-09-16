@@ -21,8 +21,8 @@ defineProps({ paciente: Object });
       <div class="info-item"><label>Idade</label><p>{{ paciente.idade || "—" }}</p></div>
     </div>
     <div v-if="paciente.obs" style="margin-top: 16px">
-      <label style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #a0aec0">Observações</label>
-      <p style="font-size: 0.9rem; color: #2d3748; margin-top: 4px; white-space: pre-wrap">{{ paciente.obs }}</p>
+      <label style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #8c8a78">Observações</label>
+      <p style="font-size: 0.9rem; color: #2b2b22; margin-top: 4px; white-space: pre-wrap">{{ paciente.obs }}</p>
     </div>
   </div>
 </template>

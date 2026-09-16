@@ -35,7 +35,7 @@ async function entrar() {
   <div class="login-wrap">
     <form class="login-card" @submit.prevent="entrar">
       <div style="font-size: 2.4rem; text-align: center; margin-bottom: 6px">🐾</div>
-      <h1>VetDom</h1>
+      <h1>Vettro</h1>
       <p class="sub">Entre com o e-mail e senha da clínica</p>
       <div v-if="erro" class="login-error">{{ erro }}</div>
       <div style="margin-bottom: 12px">
