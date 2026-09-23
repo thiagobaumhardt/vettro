@@ -6,4 +6,10 @@ export const insumosApi = {
   atualizar: (id, dados) => api.put(`/insumos/${id}`, dados),
   excluir: (id) => api.del(`/insumos/${id}`),
   repor: (id, qtd) => api.patch(`/insumos/${id}/repor`, { qtd }),
+  buscarPorCodigo: (codigo) => api.get(`/insumos/codigo/${encodeURIComponent(codigo)}`),
+  importarXml: (arquivo) => {
+    const fd = new FormData();
+    fd.append("arquivo", arquivo);
+    return api.postForm("/insumos/importar-xml", fd);
+  },
 };

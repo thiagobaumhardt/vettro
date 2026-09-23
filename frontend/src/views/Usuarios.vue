@@ -2,6 +2,7 @@
 import { onMounted, reactive, ref } from "vue";
 
 import { usuariosApi } from "@/api/usuarios";
+import { confirmar } from "@/stores/confirm";
 import { toast } from "@/stores/toast";
 
 const vazio = { id: "", nome: "", email: "", papel: "vet", senha: "", ativo: true };
@@ -42,7 +43,7 @@ function editar(u) {
 }
 
 async function excluir(u) {
-  if (!confirm(`Excluir o acesso de ${u.nome}?`)) return;
+  if (!(await confirmar(`Excluir o acesso de ${u.nome}?`))) return;
   await usuariosApi.excluir(u.id);
   toast("Usuário removido.");
   carregar();

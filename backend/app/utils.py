@@ -13,6 +13,52 @@ def get_or_404(db: Session, model, id: uuid.UUID, name: str = "Registro"):
     return obj
 
 
+def cpf_valido(cpf: str) -> bool:
+    """Valida CPF pelo algoritmo oficial de dígitos verificadores (módulo 11)."""
+    d = "".join(c for c in cpf if c.isdigit())
+    if len(d) != 11 or d == d[0] * 11:
+        return False
+    for i in (9, 10):
+        soma = sum(int(d[num]) * ((i + 1) - num) for num in range(i))
+        dv = (soma * 10 % 11) % 10
+        if dv != int(d[i]):
+            return False
+    return True
+
+
+def validar_tamanho_base64(data_url: str | None, max_bytes: int, campo: str):
+    """Valida o tamanho de um payload base64 (data URL) no servidor — o limite no
+    navegador é só UX, precisa ser reforçado aqui para não ser contornável via API direta."""
+    if not data_url:
+        return
+    payload = data_url.split(",", 1)[-1]
+    tamanho_aprox = len(payload) * 3 // 4
+    if tamanho_aprox > max_bytes:
+        raise HTTPException(status_code=400, detail=f"{campo} excede o tamanho máximo de {max_bytes // (1024 * 1024)} MB.")
+
+
+def registrar_auditoria(
+    db: Session,
+    usuario: "models.Usuario | None",
+    acao: str,
+    entidade: str,
+    entidade_id: uuid.UUID | None = None,
+    detalhe: str | None = None,
+    ip: str | None = None,
+):
+    db.add(
+        models.AuditLog(
+            usuario_id=usuario.id if usuario else None,
+            usuario_nome=usuario.nome if usuario else None,
+            acao=acao,
+            entidade=entidade,
+            entidade_id=entidade_id,
+            detalhe=detalhe,
+            ip=ip,
+        )
+    )
+
+
 def montar_servicos(db: Session, servico_ids: list[uuid.UUID]) -> tuple[list[dict], float]:
     total = 0.0
     itens = []

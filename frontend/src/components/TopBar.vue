@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 
 import { dashboardApi } from "@/api/dashboard";
 import { encerrarSessao, session } from "@/stores/session";
+import { alternarSidebar } from "@/stores/ui";
 
 const router = useRouter();
 const estoqueBaixoQtd = ref(0);
@@ -22,7 +23,7 @@ const iniciais = computed(() => {
 async function carregarAlerta() {
   try {
     const alerta = await dashboardApi.estoqueAlerta();
-    estoqueBaixoQtd.value = alerta.zerados.length + alerta.baixos.length;
+    estoqueBaixoQtd.value = alerta.zerados.length + alerta.baixos.length + alerta.vencidos.length + alerta.vencendo.length;
   } catch {
     /* silencioso — não é crítico para a navegação */
   }
@@ -38,6 +39,8 @@ function sair() {
 
 <template>
   <header class="topbar">
+    <button class="sidebar-toggle-btn" @click="alternarSidebar" title="Abrir/fechar menu">☰</button>
+
     <div class="topbar-search">
       <span class="ic">🔍</span>
       <input type="text" placeholder="Buscar paciente, tutor, atendimento..." />

@@ -5,6 +5,7 @@ import { atendimentosApi } from "@/api/atendimentos";
 import { insumosApi } from "@/api/insumos";
 import { pacientesApi } from "@/api/pacientes";
 import { servicosApi } from "@/api/servicos";
+import { confirmar } from "@/stores/confirm";
 import { toast } from "@/stores/toast";
 import { especieEmoji, fmt, hojeISO } from "@/utils";
 
@@ -76,7 +77,7 @@ async function salvar() {
 }
 
 async function excluir(id) {
-  if (!confirm("Excluir?")) return;
+  if (!(await confirmar("Excluir?"))) return;
   await atendimentosApi.excluir(id);
   toast("Atendimento removido.");
   carregar();

@@ -5,7 +5,9 @@ import { carregarSessao, session } from "@/stores/session";
 const routes = [
   { path: "/login", name: "login", component: () => import("@/views/Login.vue"), meta: { publica: true } },
   { path: "/", name: "inicio", component: () => import("@/views/Inicio.vue") },
-  { path: "/tutores", name: "tutores", component: () => import("@/views/Tutores.vue") },
+  { path: "/tutores", name: "tutores", component: () => import("@/views/tutores/Lista.vue") },
+  { path: "/tutores/novo", name: "tutor-novo", component: () => import("@/views/tutores/Form.vue") },
+  { path: "/tutores/:id/editar", name: "tutor-editar", component: () => import("@/views/tutores/Form.vue"), props: true },
   { path: "/tutores/:id", name: "tutor-detalhe", component: () => import("@/views/TutorDetalhe.vue"), props: true },
   { path: "/pacientes", name: "pacientes", component: () => import("@/views/pacientes/Lista.vue") },
   { path: "/pacientes/novo", name: "paciente-novo", component: () => import("@/views/pacientes/Form.vue") },
@@ -19,6 +21,12 @@ const routes = [
     path: "/usuarios",
     name: "usuarios",
     component: () => import("@/views/Usuarios.vue"),
+    meta: { admin: true },
+  },
+  {
+    path: "/auditoria",
+    name: "auditoria",
+    component: () => import("@/views/Auditoria.vue"),
     meta: { admin: true },
   },
 ];

@@ -11,6 +11,7 @@ from .routers import (
     agendamentos,
     anamnese,
     atendimentos,
+    auditoria,
     auth,
     cirurgias,
     cirurgias_cat,
@@ -39,6 +40,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def _security_headers(request, call_next):
+    resp = await call_next(request)
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    resp.headers["X-Frame-Options"] = "DENY"
+    resp.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    resp.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    resp.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return resp
 
 
 @app.on_event("startup")
@@ -71,6 +83,7 @@ for router in (
     atendimentos.router,
     agendamentos.router,
     dashboard.router,
+    auditoria.router,
 ):
     app.include_router(router)
 

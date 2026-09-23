@@ -2,6 +2,7 @@
 import { onMounted, ref } from "vue";
 
 import { fotosApi } from "@/api/ficha";
+import { confirmar } from "@/stores/confirm";
 import { toast } from "@/stores/toast";
 
 const props = defineProps({ pacienteId: String });
@@ -30,7 +31,7 @@ async function enviar(ev) {
 }
 
 async function excluir(id) {
-  if (!confirm("Remover?")) return;
+  if (!(await confirmar("Remover?"))) return;
   await fotosApi.excluir(id);
   toast("Foto removida.");
   carregar();

@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 
+import ConfirmModal from "@/components/ConfirmModal.vue";
 import NavBar from "@/components/NavBar.vue";
 import TopBar from "@/components/TopBar.vue";
 import Toast from "@/components/Toast.vue";
@@ -25,4 +26,5 @@ const mostrarNav = computed(() => !route.meta.publica && session.autenticado);
   </template>
   <router-view v-else-if="!session.carregando" />
   <Toast />
+  <ConfirmModal />
 </template>

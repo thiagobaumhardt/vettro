@@ -5,6 +5,7 @@ import { useRouter } from "vue-router";
 import { pacientesApi } from "@/api/pacientes";
 import { tutoresApi } from "@/api/tutores";
 import { toast } from "@/stores/toast";
+import { especieEmoji, hojeISO } from "@/utils";
 
 const props = defineProps({ id: String });
 const router = useRouter();
@@ -14,13 +15,116 @@ const form = reactive({
   especie: "",
   raca: "",
   peso: "",
-  idade: "",
+  data_nascimento: "",
   tutor_id: "",
   obs: "",
   foto_perfil: null,
 });
 const tutores = ref([]);
 const editando = computed(() => !!props.id);
+
+const racasCao = [
+  "SRD (Vira-lata)",
+  "Labrador Retriever",
+  "Golden Retriever",
+  "Poodle",
+  "Bulldog Francês",
+  "Bulldog Inglês",
+  "Pastor Alemão",
+  "Rottweiler",
+  "Yorkshire Terrier",
+  "Shih Tzu",
+  "Lhasa Apso",
+  "Pinscher",
+  "Chihuahua",
+  "Beagle",
+  "Dachshund (Salsicha)",
+  "Border Collie",
+  "Cocker Spaniel",
+  "Maltês",
+  "Pug",
+  "Boxer",
+  "Dálmata",
+  "Husky Siberiano",
+  "Akita",
+  "Basset Hound",
+  "Fox Paulistinha",
+  "Spitz Alemão (Lulu da Pomerânia)",
+  "Schnauzer",
+  "Pit Bull",
+  "Doberman",
+  "Weimaraner",
+  "Setter Irlandês",
+  "São Bernardo",
+  "Cane Corso",
+  "Dogue Alemão",
+  "Fila Brasileiro",
+  "Bull Terrier",
+  "American Staffordshire Terrier",
+  "Shar Pei",
+  "Chow Chow",
+  "Buldogue Campeiro",
+  "Whippet",
+  "Pastor Belga (Malinois)",
+  "Rhodesian Ridgeback",
+  "Boiadeiro Bernês",
+  "Australian Shepherd",
+  "Jack Russell Terrier",
+  "West Highland White Terrier",
+  "Bichon Frisé",
+  "Papillon",
+  "Shiba Inu",
+  "Samoieda",
+  "Alaskan Malamute",
+  "Galgo",
+  "Cavalier King Charles Spaniel",
+  "Outra",
+];
+
+const racasGato = [
+  "SRD (Vira-lata)",
+  "Persa",
+  "Siamês",
+  "Maine Coon",
+  "Angorá",
+  "Sphynx",
+  "Ragdoll",
+  "British Shorthair",
+  "Bengal",
+  "Munchkin",
+  "Himalaio",
+  "Exótico de Pelo Curto",
+  "Norueguês da Floresta",
+  "Azul Russo",
+  "Manx",
+  "Abissínio",
+  "Burmês",
+  "Bombaim",
+  "Sagrado da Birmânia",
+  "American Shorthair",
+  "Devon Rex",
+  "Cornish Rex",
+  "Selkirk Rex",
+  "Ocicat",
+  "Savannah",
+  "Scottish Fold",
+  "Van Turco",
+  "Chartreux",
+  "Korat",
+  "Somali",
+  "Egyptian Mau",
+  "Outra",
+];
+
+const racasPorEspecie = computed(() => {
+  if (form.especie === "Cão") return racasCao;
+  if (form.especie === "Gato") return racasGato;
+  return null;
+});
+
+function onEspecieChange() {
+  form.raca = "";
+}
 
 onMounted(async () => {
   tutores.value = await tutoresApi.listar();
@@ -31,7 +135,7 @@ onMounted(async () => {
       especie: p.especie,
       raca: p.raca || "",
       peso: p.peso ?? "",
-      idade: p.idade || "",
+      data_nascimento: p.data_nascimento || "",
       tutor_id: p.tutor_id,
       obs: p.obs || "",
       foto_perfil: p.foto_perfil || null,
@@ -63,7 +167,7 @@ async function salvar() {
     especie: form.especie,
     raca: form.raca || null,
     peso: form.peso === "" ? null : Number(form.peso),
-    idade: form.idade || null,
+    data_nascimento: form.data_nascimento || null,
     tutor_id: form.tutor_id,
     obs: form.obs || null,
     foto_perfil: form.foto_perfil,
@@ -103,19 +207,31 @@ async function salvar() {
         <div><label>Nome do Animal *</label><input v-model="form.nome" placeholder="Ex: Thor" /></div>
         <div>
           <label>Espécie *</label>
-          <select v-model="form.especie">
-            <option value="">Selecione...</option>
-            <option>Cachorro</option>
-            <option>Gato</option>
-            <option>Ave</option>
-            <option>Roedor</option>
-            <option>Réptil</option>
-            <option>Outro</option>
-          </select>
+          <div style="display: flex; align-items: center; gap: 8px">
+            <select v-model="form.especie" @change="onEspecieChange" style="flex: 1">
+              <option value="">Selecione...</option>
+              <option>Cão</option>
+              <option>Gato</option>
+              <option>Outro</option>
+            </select>
+            <span v-if="form.especie" style="font-size: 1.4rem" :title="form.especie">{{ especieEmoji(form.especie) }}</span>
+          </div>
         </div>
-        <div><label>Raça</label><input v-model="form.raca" placeholder="Ex: Golden Retriever" /></div>
+        <div>
+          <label>Raça</label>
+          <select v-if="racasPorEspecie" v-model="form.raca">
+            <option value="">Selecione...</option>
+            <option v-for="r in racasPorEspecie" :key="r" :value="r">{{ r }}</option>
+          </select>
+          <input
+            v-else
+            v-model="form.raca"
+            :disabled="!form.especie"
+            :placeholder="form.especie ? 'Ex: Golden Retriever' : 'Selecione a espécie primeiro'"
+          />
+        </div>
         <div><label>Peso (kg)</label><input v-model="form.peso" type="number" step="0.1" min="0" placeholder="Ex: 8.5" /></div>
-        <div><label>Idade</label><input v-model="form.idade" placeholder="Ex: 3 anos" /></div>
+        <div><label>Data de Nascimento</label><input v-model="form.data_nascimento" type="date" :max="hojeISO()" /></div>
         <div class="full">
           <label>Tutor * <span style="font-weight: 400; color: #8c8a78">— cadastre em 👤 Tutores</span></label>
           <select v-model="form.tutor_id">

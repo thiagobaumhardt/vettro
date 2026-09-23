@@ -25,12 +25,19 @@ def stats(db: Session = Depends(get_db)):
     )
 
 
+VALIDADE_ALERTA_DIAS = 60
+
+
 @router.get("/estoque-alerta", response_model=schemas.EstoqueAlerta)
 def estoque_alerta(db: Session = Depends(get_db)):
+    hoje = dt.date.today()
+    limite = hoje + dt.timedelta(days=VALIDADE_ALERTA_DIAS)
     insumos = db.query(models.Insumo).all()
     zerados = [i for i in insumos if i.qtd <= 0]
     baixos = [i for i in insumos if 0 < i.qtd < 3]
-    return schemas.EstoqueAlerta(zerados=zerados, baixos=baixos)
+    vencidos = [i for i in insumos if i.data_validade and i.data_validade < hoje]
+    vencendo = [i for i in insumos if i.data_validade and hoje <= i.data_validade <= limite]
+    return schemas.EstoqueAlerta(zerados=zerados, baixos=baixos, vencidos=vencidos, vencendo=vencendo)
 
 
 @router.get("/ultimas-24h")

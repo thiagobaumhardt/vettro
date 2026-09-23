@@ -56,6 +56,16 @@ onMounted(async () => {
         </div>
       </div>
     </div>
+    <div v-if="alerta && (alerta.vencidos.length || alerta.vencendo.length)" class="stock-alert-box">
+      <div class="al-icon">📅</div>
+      <div class="al-body">
+        <div class="al-title">Atenção — Validade de insumos</div>
+        <div class="al-items">
+          <span v-for="i in alerta.vencidos" :key="i.id" class="al-item">⛔ {{ i.nome }} — vencido</span>
+          <span v-for="i in alerta.vencendo" :key="i.id" class="al-item">⚠️ {{ i.nome }} — vence em breve</span>
+        </div>
+      </div>
+    </div>
 
     <div class="card" style="margin-bottom: 20px">
       <div class="section-title-row" style="margin-bottom: 12px">

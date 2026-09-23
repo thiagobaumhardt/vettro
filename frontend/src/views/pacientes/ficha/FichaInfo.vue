@@ -1,4 +1,6 @@
 <script setup>
+import { fmtData, idadeTexto } from "@/utils";
+
 defineProps({ paciente: Object });
 </script>
 
@@ -18,7 +20,10 @@ defineProps({ paciente: Object });
       <div class="info-item"><label>Espécie</label><p>{{ paciente.especie }}</p></div>
       <div class="info-item"><label>Raça</label><p>{{ paciente.raca || "—" }}</p></div>
       <div class="info-item"><label>Peso</label><p>{{ paciente.peso ? paciente.peso + " kg" : "—" }}</p></div>
-      <div class="info-item"><label>Idade</label><p>{{ paciente.idade || "—" }}</p></div>
+      <div class="info-item">
+        <label>Data de Nascimento</label>
+        <p>{{ paciente.data_nascimento ? `${fmtData(paciente.data_nascimento)} (${idadeTexto(paciente.data_nascimento)})` : "—" }}</p>
+      </div>
     </div>
     <div v-if="paciente.obs" style="margin-top: 16px">
       <label style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #8c8a78">Observações</label>

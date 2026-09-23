@@ -2,6 +2,7 @@
 import { onMounted, ref } from "vue";
 
 import { pacientesApi } from "@/api/pacientes";
+import { confirmar } from "@/stores/confirm";
 import { toast } from "@/stores/toast";
 import { especieEmoji } from "@/utils";
 
@@ -13,7 +14,7 @@ async function carregar() {
 }
 
 async function excluir(p) {
-  if (!confirm("Excluir este paciente e todos os seus dados?")) return;
+  if (!(await confirmar("Excluir este paciente e todos os seus dados?"))) return;
   try {
     await pacientesApi.excluir(p.id);
     toast("Paciente removido.");

@@ -4,6 +4,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { cobrancasApi } from "@/api/ficha";
 import { insumosApi } from "@/api/insumos";
 import { servicosApi } from "@/api/servicos";
+import { confirmar } from "@/stores/confirm";
 import { toast } from "@/stores/toast";
 import { fmt } from "@/utils";
 
@@ -70,7 +71,7 @@ async function marcarPago(id) {
 }
 
 async function excluir(id) {
-  if (!confirm("Excluir?")) return;
+  if (!(await confirmar("Excluir?"))) return;
   await cobrancasApi.excluir(id);
   toast("Cobrança removida.");
   carregar();

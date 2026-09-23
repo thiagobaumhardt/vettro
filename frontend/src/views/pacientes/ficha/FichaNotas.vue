@@ -2,6 +2,7 @@
 import { onMounted, reactive, ref } from "vue";
 
 import { notasApi } from "@/api/ficha";
+import { confirmar } from "@/stores/confirm";
 import { toast } from "@/stores/toast";
 
 const props = defineProps({ pacienteId: String });
@@ -41,7 +42,7 @@ function editar(n) {
 }
 
 async function excluir(id) {
-  if (!confirm("Excluir esta anotação?")) return;
+  if (!(await confirmar("Excluir esta anotação?"))) return;
   await notasApi.excluir(id);
   toast("Anotação removida.");
   carregar();

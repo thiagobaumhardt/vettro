@@ -2,7 +2,9 @@ import datetime as dt
 import uuid
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
+
+from .utils import cpf_valido
 
 
 class ORMModel(BaseModel):
@@ -15,8 +17,23 @@ class TutorIn(BaseModel):
     tel: str
     email: Optional[str] = None
     cpf: Optional[str] = None
+    cep: Optional[str] = None
     endereco: Optional[str] = None
+    numero: Optional[str] = None
+    complemento: Optional[str] = None
+    bairro: Optional[str] = None
+    cidade: Optional[str] = None
+    uf: Optional[str] = None
+    como_conheceu: Optional[str] = None
     obs: Optional[str] = None
+    consentimento_dados: bool = False
+
+    @field_validator("cpf")
+    @classmethod
+    def _valida_cpf(cls, v):
+        if v and not cpf_valido(v):
+            raise ValueError("CPF inválido.")
+        return v
 
 
 class TutorOut(ORMModel):
@@ -25,8 +42,17 @@ class TutorOut(ORMModel):
     tel: str
     email: Optional[str] = None
     cpf: Optional[str] = None
+    cep: Optional[str] = None
     endereco: Optional[str] = None
+    numero: Optional[str] = None
+    complemento: Optional[str] = None
+    bairro: Optional[str] = None
+    cidade: Optional[str] = None
+    uf: Optional[str] = None
+    como_conheceu: Optional[str] = None
     obs: Optional[str] = None
+    consentimento_dados: bool = False
+    consentimento_em: Optional[dt.datetime] = None
     criado_em: dt.datetime
 
 
@@ -42,7 +68,7 @@ class PacienteIn(BaseModel):
     especie: str
     raca: Optional[str] = None
     peso: Optional[float] = None
-    idade: Optional[str] = None
+    data_nascimento: Optional[dt.date] = None
     tutor_id: uuid.UUID
     obs: Optional[str] = None
     foto_perfil: Optional[str] = None
@@ -54,7 +80,7 @@ class PacienteOut(ORMModel):
     especie: str
     raca: Optional[str] = None
     peso: Optional[float] = None
-    idade: Optional[str] = None
+    data_nascimento: Optional[dt.date] = None
     tutor_id: uuid.UUID
     obs: Optional[str] = None
     foto_perfil: Optional[str] = None
@@ -100,6 +126,10 @@ class InsumoIn(BaseModel):
     categoria: Optional[str] = None
     valor: float
     qtd: int = 0
+    codigo_barras: Optional[str] = None
+    unidades_por_pacote: int = 1
+    data_validade: Optional[dt.date] = None
+    lote: Optional[str] = None
     obs: Optional[str] = None
 
 
@@ -109,6 +139,10 @@ class InsumoOut(ORMModel):
     categoria: Optional[str] = None
     valor: float
     qtd: int
+    codigo_barras: Optional[str] = None
+    unidades_por_pacote: int
+    data_validade: Optional[dt.date] = None
+    lote: Optional[str] = None
     obs: Optional[str] = None
 
 
@@ -335,11 +369,24 @@ class AgendamentoReagendarIn(BaseModel):
 
 
 # ── Usuário / Auth ──
+def _valida_forca_senha(v: str) -> str:
+    if len(v) < 8:
+        raise ValueError("A senha deve ter no mínimo 8 caracteres.")
+    if v.isdigit() or v.isalpha():
+        raise ValueError("A senha deve combinar letras e números.")
+    return v
+
+
 class UsuarioIn(BaseModel):
     nome: str
     email: str
     senha: str
     papel: str = "vet"  # 'admin' | 'vet'
+
+    @field_validator("senha")
+    @classmethod
+    def _senha_forte(cls, v):
+        return _valida_forca_senha(v)
 
 
 class UsuarioUpdateIn(BaseModel):
@@ -347,6 +394,11 @@ class UsuarioUpdateIn(BaseModel):
     papel: Optional[str] = None
     ativo: Optional[bool] = None
     senha: Optional[str] = None
+
+    @field_validator("senha")
+    @classmethod
+    def _senha_forte(cls, v):
+        return _valida_forca_senha(v) if v else v
 
 
 class UsuarioOut(ORMModel):
@@ -377,3 +429,24 @@ class DashboardStats(BaseModel):
 class EstoqueAlerta(BaseModel):
     zerados: list[InsumoOut]
     baixos: list[InsumoOut]
+    vencidos: list[InsumoOut] = []
+    vencendo: list[InsumoOut] = []
+
+
+# ── Importação de XML de NF-e (pedido de compra) ──
+class ImportarXmlResultado(BaseModel):
+    criados: list[InsumoOut] = []
+    atualizados: list[InsumoOut] = []
+    ignorados: list[str] = []
+
+
+# ── Auditoria (LGPD — rastreabilidade) ──
+class AuditLogOut(ORMModel):
+    id: uuid.UUID
+    usuario_nome: Optional[str] = None
+    acao: str
+    entidade: str
+    entidade_id: Optional[uuid.UUID] = None
+    detalhe: Optional[str] = None
+    ip: Optional[str] = None
+    criado_em: dt.datetime

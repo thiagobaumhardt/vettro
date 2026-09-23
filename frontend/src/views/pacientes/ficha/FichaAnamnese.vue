@@ -4,6 +4,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { anamneseApi } from "@/api/ficha";
 import { insumosApi } from "@/api/insumos";
 import { servicosApi } from "@/api/servicos";
+import { confirmar } from "@/stores/confirm";
 import { toast } from "@/stores/toast";
 import { fmt } from "@/utils";
 
@@ -94,7 +95,7 @@ async function salvar() {
 }
 
 async function excluir(id) {
-  if (!confirm("Excluir este registro de atendimento?")) return;
+  if (!(await confirmar("Excluir este registro de atendimento?"))) return;
   await anamneseApi.excluir(id);
   toast("Registro removido.");
   carregar();

@@ -4,6 +4,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { agendamentosApi } from "@/api/agendamentos";
 import { pacientesApi } from "@/api/pacientes";
 import { servicosApi } from "@/api/servicos";
+import { confirmar } from "@/stores/confirm";
 import { toast } from "@/stores/toast";
 import { hojeISO, STATUS_LABEL } from "@/utils";
 
@@ -165,7 +166,7 @@ function editar(a) {
 }
 
 async function excluir(id) {
-  if (!confirm("Excluir este agendamento?")) return;
+  if (!(await confirmar("Excluir este agendamento?"))) return;
   await agendamentosApi.excluir(id);
   toast("Agendamento removido.");
   carregar();
@@ -177,7 +178,7 @@ async function marcarRealizado(id) {
   carregar();
 }
 async function marcarCancelado(id) {
-  if (!confirm("Marcar como cancelado?")) return;
+  if (!(await confirmar("Marcar como cancelado?"))) return;
   await agendamentosApi.alterarStatus(id, "cancelado");
   toast("Atendimento cancelado.");
   carregar();

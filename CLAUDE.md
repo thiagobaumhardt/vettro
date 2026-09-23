@@ -51,6 +51,20 @@ usa `${PORT:-8000}`).
   módulos clínicos, mas **sem acesso ao módulo de Cobranças/faturamento**.
 - Login em `/login`; token JWT válido por `JWT_EXPIRA_HORAS` (padrão 8h).
 
+## Segurança e LGPD
+- **Rate limiting no login**: bloqueia por 15 min após 5 tentativas erradas (IP + e-mail).
+- **Headers de segurança** (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`,
+  `Permissions-Policy`, `Strict-Transport-Security`) em todas as respostas da API.
+- **Validação de CPF** (dígito verificador) e **política de senha** (mín. 8 caracteres, letras
+  e números) para usuários.
+- **Limite de tamanho de upload reforçado no servidor** (não só no navegador): fotos 3–4MB,
+  exames PDF 5MB.
+- **Trilha de auditoria** (`audit_log` / módulo 🛡️ Auditoria, admin only): login, criação,
+  edição e exclusão de tutores/pacientes, com usuário, IP e timestamp.
+- **Consentimento LGPD** por tutor (`consentimento_dados` + timestamp) e **exportação de dados**
+  do titular (botão "Exportar dados (LGPD)" na ficha do tutor, admin only) — direito de
+  acesso/portabilidade.
+
 ## Módulos do sistema
 
 ### 1. Tutores
@@ -58,7 +72,8 @@ usa `${PORT:-8000}`).
 - Cada tutor lista os animais vinculados
 
 ### 2. Pacientes
-- Cadastro: nome do animal, espécie, raça, peso, idade, tutor vinculado, foto de perfil, observações
+- Cadastro: nome do animal, espécie (Cão/Gato/Outro), raça (lista por espécie), peso, data de
+  nascimento, tutor vinculado, foto de perfil, observações
 - Ficha do paciente com sub-abas:
   - **Ficha** — dados básicos e banner do tutor
   - **Anamnese** — registro de atendimento com avaliação física completa (FC, FR, PA, temperatura,

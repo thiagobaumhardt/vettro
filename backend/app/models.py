@@ -31,8 +31,17 @@ class Tutor(Base):
     tel: Mapped[str] = mapped_column(String(40), nullable=False)
     email: Mapped[str | None] = mapped_column(String(200))
     cpf: Mapped[str | None] = mapped_column(String(20))
-    endereco: Mapped[str | None] = mapped_column(Text)
+    cep: Mapped[str | None] = mapped_column(String(9))
+    endereco: Mapped[str | None] = mapped_column(String(200))
+    numero: Mapped[str | None] = mapped_column(String(20))
+    complemento: Mapped[str | None] = mapped_column(String(100))
+    bairro: Mapped[str | None] = mapped_column(String(100))
+    cidade: Mapped[str | None] = mapped_column(String(100))
+    uf: Mapped[str | None] = mapped_column(String(2))
+    como_conheceu: Mapped[str | None] = mapped_column(String(30))
     obs: Mapped[str | None] = mapped_column(Text)
+    consentimento_dados: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    consentimento_em: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
     criado_em: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     pacientes: Mapped[list["Paciente"]] = relationship(back_populates="tutor")
@@ -46,7 +55,7 @@ class Paciente(Base):
     especie: Mapped[str] = mapped_column(String(50), nullable=False)
     raca: Mapped[str | None] = mapped_column(String(120))
     peso: Mapped[float | None] = mapped_column(Numeric(6, 2))
-    idade: Mapped[str | None] = mapped_column(String(60))
+    data_nascimento: Mapped[dt.date | None] = mapped_column(Date)
     obs: Mapped[str | None] = mapped_column(Text)
     foto_perfil: Mapped[str | None] = mapped_column(Text)
     criado_em: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -92,6 +101,10 @@ class Insumo(Base):
     categoria: Mapped[str | None] = mapped_column(String(80))
     valor: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     qtd: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    codigo_barras: Mapped[str | None] = mapped_column(String(64), unique=True)
+    unidades_por_pacote: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    data_validade: Mapped[dt.date | None] = mapped_column(Date)
+    lote: Mapped[str | None] = mapped_column(String(60))
     obs: Mapped[str | None] = mapped_column(Text)
 
 
@@ -261,4 +274,20 @@ class Agendamento(Base):
     servicos_livre: Mapped[str | None] = mapped_column(String(300))
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="agendado")
     obs: Mapped[str | None] = mapped_column(Text)
+    criado_em: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AuditLog(Base):
+    """Trilha de auditoria (rastreabilidade exigida pelo princípio de responsabilização da LGPD)."""
+
+    __tablename__ = "audit_log"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    usuario_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("usuarios.id", ondelete="SET NULL"))
+    usuario_nome: Mapped[str | None] = mapped_column(String(200))
+    acao: Mapped[str] = mapped_column(String(30), nullable=False)  # login_ok | login_falha | criar | atualizar | excluir | exportar
+    entidade: Mapped[str] = mapped_column(String(30), nullable=False)  # tutor | paciente | usuario | auth
+    entidade_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    detalhe: Mapped[str | None] = mapped_column(String(300))
+    ip: Mapped[str | None] = mapped_column(String(45))
     criado_em: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

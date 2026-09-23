@@ -38,7 +38,11 @@ async function request(path, { method = "GET", body, isForm = false } = {}) {
     let detail = `Erro ${res.status}`;
     try {
       const data = await res.json();
-      detail = data.detail || detail;
+      if (Array.isArray(data.detail)) {
+        detail = data.detail.map((d) => d.msg || JSON.stringify(d)).join(" ");
+      } else if (data.detail) {
+        detail = data.detail;
+      }
     } catch {
       /* corpo não é JSON */
     }

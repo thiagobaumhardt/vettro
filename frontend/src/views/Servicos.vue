@@ -2,6 +2,7 @@
 import { onMounted, reactive, ref } from "vue";
 
 import { cirurgiasCatApi, servicosApi } from "@/api/servicos";
+import { confirmar } from "@/stores/confirm";
 import { toast } from "@/stores/toast";
 import { fmt } from "@/utils";
 
@@ -42,7 +43,7 @@ function editarServico(s) {
 }
 
 async function excluirServico(s) {
-  if (!confirm("Excluir?")) return;
+  if (!(await confirmar("Excluir?"))) return;
   await servicosApi.excluir(s.id);
   toast("Serviço removido.");
   carregar();
@@ -91,7 +92,7 @@ function editarCat(c) {
 }
 
 async function excluirCat(c) {
-  if (!confirm("Excluir?")) return;
+  if (!(await confirmar("Excluir?"))) return;
   await cirurgiasCatApi.excluir(c.id);
   toast("Procedimento removido.");
   carregar();
