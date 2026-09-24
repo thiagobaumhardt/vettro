@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{% if tutor %}Editar{% else %}Novo{% endif %} Tutor — Vettro{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>{% if tutor %}Editar Tutor{% else %}Novo Tutor{% endif %}</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-grid">
+      <div><label for="id_nome">Nome</label>{{ form.nome }}</div>
+      <div><label for="id_tel">Telefone</label>{{ form.tel }}</div>
+      <div><label for="id_email">E-mail</label>{{ form.email }}</div>
+      <div>
+        <label for="id_cpf">CPF</label>{{ form.cpf }}
+        {% if form.cpf.errors %}<p style="color:var(--danger-hover); font-size:.82rem;">{{ form.cpf.errors|join:", " }}</p>{% endif %}
+      </div>
+      <div>
+        <label for="id_cep">CEP</label>
+        {{ form.cep }}
+        <span hx-get="{% url 'tutores:cep_lookup' %}" hx-trigger="blur from:#id_cep" hx-include="#id_cep"
+              hx-target="this" hx-swap="none"></span>
+      </div>
+      <div></div>
+      <div class="full"><label for="id_endereco">Endereço</label><span id="campo-endereco">{{ form.endereco }}</span></div>
+      <div><label for="id_numero">Número</label>{{ form.numero }}</div>
+      <div><label for="id_complemento">Complemento</label>{{ form.complemento }}</div>
+      <div><label for="id_bairro">Bairro</label><span id="campo-bairro">{{ form.bairro }}</span></div>
+      <div><label for="id_cidade">Cidade</label><span id="campo-cidade">{{ form.cidade }}</span></div>
+      <div><label for="id_uf">UF</label><span id="campo-uf">{{ form.uf }}</span></div>
+      <div><label for="id_como_conheceu">Como conheceu</label>{{ form.como_conheceu }}</div>
+      <div class="full"><label for="id_obs">Observações</label>{{ form.obs }}</div>
+      <div class="full" style="background:#FFFBEA; border:1px solid #fcd34d; border-radius:8px; padding:12px;">
+        <label style="display:flex; align-items:center; gap:8px; margin:0;">
+          {{ form.consentimento_dados }}
+          Tutor consente com o uso dos dados conforme a LGPD
+        </label>
+      </div>
+    </div>
+    <div style="margin-top:18px; display:flex; gap:10px;">
+      <button type="submit" class="btn-primary btn">Salvar</button>
+      <a href="{% url 'tutores:lista' %}" class="btn-secondary btn">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base_public.html" %}
+{% block title %}Escolher clínica — Vettro{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <div class="login-card" style="max-width:420px;">
+    <h1>Escolher clínica</h1>
+    <p class="subtitle">Sua conta acessa mais de uma clínica — escolha qual quer abrir.</p>
+    <form method="post" class="clinica-lista">
+      {% csrf_token %}
+      {% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}">{% endif %}
+      {% for vinculo in vinculos %}
+        <button type="submit" name="clinica_id" value="{{ vinculo.clinica_id }}" class="clinica-opcao">
+          <strong>{{ vinculo.clinica.nome }}</strong><br>
+          <span class="badge {% if vinculo.papel == 'admin' %}badge-admin{% else %}badge-vet{% endif %}">
+            {% if vinculo.papel == "admin" %}Admin{% else %}Veterinária{% endif %}
+          </span>
+        </button>
+      {% endfor %}
+    </form>
+    <p style="text-align:center; margin-top:16px;"><a href="{% url 'contas:logout' %}">Sair</a></p>
+  </div>
+</div>
+{% endblock %}

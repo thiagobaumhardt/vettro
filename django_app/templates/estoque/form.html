@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{% if insumo %}Editar{% else %}Novo{% endif %} Insumo — Vettro{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>{% if insumo %}Editar Insumo{% else %}Novo Insumo{% endif %}</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-grid">
+      <div><label>Nome</label>{{ form.nome }}</div>
+      <div><label>Categoria</label>{{ form.categoria }}</div>
+      <div><label>Valor unitário</label>{{ form.valor }}</div>
+      <div>
+        <label>Código de barras</label>{{ form.codigo_barras }}
+        {% if form.codigo_barras.errors %}<p style="color:var(--danger-hover); font-size:.82rem;">{{ form.codigo_barras.errors|join:", " }}</p>{% endif %}
+      </div>
+      <div><label>Unidades por pacote/caixa</label>{{ form.unidades_por_pacote }}
+        <p style="font-size:.8rem; color:var(--muted); margin:4px 0 0;">Se o código de barras é da caixa com várias unidades, o sistema soma a quantidade certa ao repor.</p>
+      </div>
+      <div><label>Validade</label>{{ form.data_validade }}</div>
+      <div><label>Lote</label>{{ form.lote }}</div>
+      <div><label>Tipo fiscal</label>{{ form.tipo_fiscal }}</div>
+      <div><label>NCM</label>{{ form.ncm }}</div>
+      <div><label>CFOP</label>{{ form.cfop }}</div>
+      <div><label>CST/CSOSN</label>{{ form.cst_csosn }}</div>
+      <div class="full"><label>Observações</label>{{ form.obs }}</div>
+    </div>
+    {% if not insumo %}
+      <p style="font-size:.85rem; color:var(--muted); margin-top:10px;">
+        O estoque inicial começa em 0 — registre a primeira entrada em "📥 Entrada sem nota" ou "📄 Importar XML de NF-e" depois de salvar.
+      </p>
+    {% endif %}
+    <div style="margin-top:18px; display:flex; gap:10px;">
+      <button type="submit" class="btn-primary btn">Salvar</button>
+      <a href="{% url 'estoque:lista' %}" class="btn-secondary btn">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

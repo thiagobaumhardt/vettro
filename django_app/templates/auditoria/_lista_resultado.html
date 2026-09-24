@@ -1,0 +1,27 @@
+{% if logs %}
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Quando</th><th>Usuário</th><th>Ação</th><th>Entidade</th><th>Detalhe</th><th>IP</th></tr></thead>
+    <tbody>
+      {% for log in logs %}
+      <tr>
+        <td>{{ log.criado_em|date:"d/m/Y H:i" }}</td>
+        <td>{{ log.usuario_nome|default:"—" }}</td>
+        <td>
+          {% if log.acao == "login_falha" %}
+          <span class="badge" style="background:#feebc8; color:#7b341e;">{{ log.get_acao_display }}</span>
+          {% else %}
+          <span class="badge badge-vet">{{ log.get_acao_display }}</span>
+          {% endif %}
+        </td>
+        <td>{{ log.get_entidade_display }}</td>
+        <td>{{ log.detalhe|default:"—" }}</td>
+        <td>{{ log.ip|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty"><span class="icon">🛡️</span>Nenhum evento registrado.</div>
+{% endif %}

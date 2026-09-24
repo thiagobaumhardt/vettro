@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Entrada de estoque — Vettro{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>📥 Entrada de estoque sem nota fiscal</h2>
+  <p style="color:var(--muted);">Registra uma movimentação SD1 (entrada) sem vincular a uma NF-e — use pra compras informais ou ajuste de saldo inicial.</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-grid">
+      <div class="full"><label>Insumo</label>{{ form.insumo }}</div>
+      <div><label>Quantidade</label>{{ form.quantidade }}</div>
+      <div><label>Valor unitário (opcional)</label>{{ form.valor_unitario }}</div>
+      <div><label>Lote (opcional)</label>{{ form.lote }}</div>
+      <div><label>Validade (opcional)</label>{{ form.data_validade }}</div>
+      <div class="full"><label>Observação</label>{{ form.observacao }}</div>
+    </div>
+    <div style="margin-top:18px; display:flex; gap:10px;">
+      <button type="submit" class="btn-primary btn">Registrar entrada</button>
+      <a href="{% url 'estoque:lista' %}" class="btn-secondary btn">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

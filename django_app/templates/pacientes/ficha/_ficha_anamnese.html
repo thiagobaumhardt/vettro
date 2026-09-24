@@ -1,0 +1,127 @@
+{% if erro %}<div class="login-error" style="margin-bottom:14px;">{{ erro }}</div>{% endif %}
+
+<div class="card" style="box-shadow:none; border:1px solid var(--border); margin-bottom:18px;"
+     x-data="totalBoxAnamnese({{ servicos_json|default:'[]' }}, {{ insumos_json|default:'[]' }})">
+  <div class="section-title">Novo Registro de Atendimento</div>
+  <form hx-post="{% url 'pacientes:anamnese_criar' paciente.pk %}" hx-target="#ficha-conteudo" hx-swap="innerHTML">
+    <div class="form-grid">
+      <div class="full"><label>Queixa principal</label>{{ form.queixa }}</div>
+      <div class="full"><label>Histórico clínico anterior</label>{{ form.historico }}</div>
+      <div><label>Medicamentos em uso</label>{{ form.medicamentos }}</div>
+      <div><label>Alergias conhecidas</label>{{ form.alergias }}</div>
+      <div><label>Vacinação</label>{{ form.vacina }}</div>
+      <div><label>Vermifugação</label>{{ form.verme }}</div>
+      <div><label>Acesso à rua</label>{{ form.rua }}</div>
+      <div><label>Convive com outros animais</label>{{ form.convive }}</div>
+      <div><label>Alimentação</label>{{ form.alimentacao }}</div>
+      <div class="full"><label>Observações adicionais</label>{{ form.obs_add }}</div>
+    </div>
+
+    <div class="section-title" style="margin-top:18px;">Avaliação Física</div>
+    <div class="form-grid">
+      <div><label>FC (bpm)</label>{{ form.av_fc }}</div>
+      <div><label>FR (mpm)</label>{{ form.av_fr }}</div>
+      <div><label>PA (mmHg)</label>{{ form.av_pa }}</div>
+      <div><label>T°C</label>{{ form.av_temp }}</div>
+      <div><label>Hidratação</label>{{ form.av_hidratacao }}</div>
+      <div><label>Mucosas</label>{{ form.av_mucosas }}</div>
+      <div><label>Linfonodos submandibulares</label>{{ form.av_linf_sub }}</div>
+      <div><label>Linfonodos subescapulares</label>{{ form.av_linf_sube }}</div>
+      <div><label>Linfonodos inguinais</label>{{ form.av_linf_ing }}</div>
+      <div><label>Linfonodos poplíteos</label>{{ form.av_linf_pop }}</div>
+      <div class="full"><label>Demais informações</label>{{ form.av_demais }}</div>
+    </div>
+
+    <div class="section-title" style="margin-top:18px;">O que foi feito/utilizado</div>
+    <label style="display:flex; align-items:center; gap:8px;">
+      <input type="checkbox" name="plantao" x-model="plantao"> 🌙 Plantão (acréscimo de 50% sobre os serviços)
+    </label>
+
+    <div class="form-grid" style="margin-top:10px;">
+      <div>
+        <label>Serviços realizados</label>
+        <div class="select-list" style="border:1.5px solid var(--border-2); border-radius:7px; max-height:220px; overflow-y:auto; padding:8px;">
+          {% for s in servicos %}
+          <label style="display:flex; justify-content:space-between; padding:4px 0;">
+            <span><input type="checkbox" name="servico_ids" value="{{ s.id }}" x-model="servicosSel"> {{ s.nome }}</span>
+            <span>R$ {{ s.valor }}</span>
+          </label>
+          {% empty %}<p class="empty" style="padding:0;">Nenhum serviço cadastrado.</p>{% endfor %}
+        </div>
+      </div>
+      <div>
+        <label>Insumos utilizados</label>
+        <div class="select-list" style="border:1.5px solid var(--border-2); border-radius:7px; max-height:220px; overflow-y:auto; padding:8px;">
+          {% for i in insumos %}
+          <div style="padding:4px 0;">
+            <label style="display:flex; justify-content:space-between;">
+              <span><input type="checkbox" name="insumo_ids" value="{{ i.id }}" x-model="insumosSel"> {{ i.nome }}</span>
+              <span>R$ {{ i.valor }} · {{ i.qtd }} un.</span>
+            </label>
+            <template x-if="insumosSel.includes('{{ i.id }}')">
+              <input type="number" name="qtd_{{ i.id }}" min="1" value="1" style="width:80px; margin-top:4px;" x-on:input="qtyTick++">
+            </template>
+          </div>
+          {% empty %}<p class="empty" style="padding:0;">Nenhum insumo cadastrado.</p>{% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="total-box" style="border:1.5px solid var(--primary); border-radius:8px; padding:12px 16px; margin-top:14px; display:flex; justify-content:space-between; align-items:center;">
+      <span>Total estimado</span>
+      <strong x-text="'R$ ' + total().toFixed(2)"></strong>
+    </div>
+
+    <div style="margin-top:14px; display:flex; gap:10px;">
+      <button type="submit" class="btn-primary btn">Salvar</button>
+    </div>
+  </form>
+</div>
+
+<div class="section-title">Histórico de Atendimentos</div>
+{% for a in historico %}
+<details class="card" style="box-shadow:none; border:1px solid var(--border); margin-bottom:8px;">
+  <summary style="cursor:pointer; display:flex; justify-content:space-between;">
+    <span>{{ a.data|date:"d/m/Y" }} {{ a.hora|time:"H:i" }} {% if a.plantao %}<span class="badge" style="background:#fef3c7;">🌙 Plantão</span>{% endif %}</span>
+    <strong>R$ {{ a.total }}</strong>
+  </summary>
+  <div class="form-grid" style="margin-top:10px;">
+    <div><label>Queixa</label>{{ a.queixa|default:"—" }}</div>
+    <div><label>Histórico</label>{{ a.historico|default:"—" }}</div>
+    <div><label>Medicamentos</label>{{ a.medicamentos|default:"—" }}</div>
+    <div><label>Alergias</label>{{ a.alergias|default:"—" }}</div>
+  </div>
+  <div style="margin-top:8px;">
+    {% for item in a.servicos %}<span class="badge" style="background:#EDEBDE;">{{ item.nome }} · R$ {{ item.valor }}</span>{% endfor %}
+    {% for item in a.insumos %}<span class="badge" style="background:#EDEBDE;">{{ item.nome }} ×{{ item.qtd }}</span>{% endfor %}
+  </div>
+  <form method="post" action="{% url 'pacientes:anamnese_excluir' paciente.pk a.pk %}" style="margin-top:8px;"
+        hx-post="{% url 'pacientes:anamnese_excluir' paciente.pk a.pk %}" hx-target="#ficha-conteudo">
+    {% csrf_token %}
+    <button type="submit" class="btn-danger btn" data-confirm="Excluir este registro de anamnese?">Excluir</button>
+  </form>
+</details>
+{% empty %}
+<div class="empty"><span class="icon">🩺</span>Nenhum atendimento registrado ainda.</div>
+{% endfor %}
+
+<script>
+  function totalBoxAnamnese(servicosPrecos, insumosPrecos) {
+    return {
+      plantao: false, servicosSel: [], insumosSel: [], qtyTick: 0,
+      precosServicos: Object.fromEntries(servicosPrecos.map(s => [s.id, parseFloat(s.valor)])),
+      precosInsumos: Object.fromEntries(insumosPrecos.map(i => [i.id, parseFloat(i.valor)])),
+      total() {
+        void this.qtyTick;
+        const totalServicos = this.servicosSel.reduce((soma, id) => soma + (this.precosServicos[id] || 0), 0);
+        const totalInsumos = this.insumosSel.reduce((soma, id) => {
+          const input = document.querySelector(`input[name="qtd_${id}"]`);
+          const qtd = input ? parseInt(input.value || "1") : 1;
+          return soma + (this.precosInsumos[id] || 0) * qtd;
+        }, 0);
+        const acrescimo = this.plantao ? totalServicos * 0.5 : 0;
+        return totalServicos + totalInsumos + acrescimo;
+      },
+    };
+  }
+</script>

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Agenda — Vettro{% endblock %}
+{% block content %}
+<div class="agenda-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:18px;" x-data="agendaForm({{ pacientes_json|default:'[]' }})">
+  <div>
+    <div id="agenda-calendario">
+      {% include "agenda/_calendario_conteudo.html" %}
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h2>Novo Agendamento</h2>
+      <form method="post" action="{% url 'agenda:novo' %}">
+        {% csrf_token %}
+        <div class="form-grid">
+          <div class="full">
+            <label>Paciente cadastrado (opcional)</label>
+            <select name="paciente" x-model="pacienteId" @change="preencherAutomatico()">
+              <option value="">— Avulso —</option>
+              {% for p in form.paciente.field.queryset %}<option value="{{ p.pk }}">{{ p.nome }}</option>{% endfor %}
+            </select>
+          </div>
+          <div><label>Nome do paciente (se avulso)</label><input type="text" name="pac_nome" x-model="pacNome"></div>
+          <div><label>Nome do tutor</label><input type="text" name="tutor_nome" x-model="tutorNome"></div>
+          <div><label>Telefone do tutor</label><input type="text" name="tutor_tel" x-model="tutorTel"></div>
+          <div>
+            <label>Consultório (opcional)</label>
+            <select name="consultorio">
+              <option value="">—</option>
+              {% for c in consultorios %}<option value="{{ c.id }}">{{ c.nome }}</option>{% endfor %}
+            </select>
+          </div>
+          <div><label>Data</label>{{ form.data }}</div>
+          <div><label>Hora</label>{{ form.hora }}</div>
+          <div class="full"><label>Queixa</label>{{ form.queixa }}</div>
+          <div class="full">
+            <label>Serviços</label>
+            <div class="select-list" style="border:1.5px solid var(--border-2); border-radius:7px; max-height:150px; overflow-y:auto; padding:8px;">
+              {% for s in servicos %}
+              <label style="display:block; padding:2px 0;"><input type="checkbox" name="servico_ids" value="{{ s.id }}"> {{ s.nome }}</label>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="full"><label>Outros serviços (texto livre)</label>{{ form.servicos_livre }}</div>
+          <div><label>Status</label>{{ form.status }}</div>
+          <div class="full"><label>Observações</label>{{ form.obs }}</div>
+        </div>
+        <div style="margin-top:14px;"><button type="submit" class="btn-primary btn">Salvar</button></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Próximos Agendamentos</div>
+      {% for a in proximos %}
+      <a href="{% url 'agenda:calendario' %}?ano={{ a.data.year }}&mes={{ a.data.month }}&dia={{ a.data.isoformat }}"
+         style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); text-decoration:none; color:inherit;">
+        <span>{{ a.data|date:"d/m" }} {{ a.hora|time:"H:i"|default:"" }} · {{ a.pac_nome }}</span>
+        <span class="badge">{{ a.get_status_display }}</span>
+      </a>
+      {% empty %}<div class="empty">Nenhum agendamento futuro.</div>{% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+  function agendaForm(pacientes) {
+    return {
+      pacienteId: "", pacNome: "", tutorNome: "", tutorTel: "",
+      mapa: Object.fromEntries(pacientes.map(p => [p.id, p])),
+      preencherAutomatico() {
+        const p = this.mapa[this.pacienteId];
+        if (p) { this.pacNome = p.nome; this.tutorNome = p.tutor_nome; this.tutorTel = p.tutor_tel; }
+      },
+    };
+  }
+</script>
+{% endblock %}

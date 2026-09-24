@@ -1,0 +1,35 @@
+{% if insumos %}
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Nome</th><th>Categoria</th><th>Valor</th><th>Estoque</th><th>Ações</th></tr></thead>
+    <tbody>
+      {% for i in insumos %}
+      <tr>
+        <td>
+          {{ i.nome }}
+          {% if i.unidades_por_pacote > 1 %}<br><small style="color:var(--muted);">{{ i.unidades_por_pacote }} un./pacote</small>{% endif %}
+          {% if i.lote %}<br><small style="color:var(--muted);">Lote {{ i.lote }}</small>{% endif %}
+        </td>
+        <td>{{ i.categoria|default:"—" }}</td>
+        <td>R$ {{ i.valor }}</td>
+        <td>
+          {% if i.status_estoque == "zerado" %}<span class="badge" style="background:#fed7d7; color:#9b2c2c;">Sem estoque</span>
+          {% elif i.status_estoque == "baixo" %}<span class="badge" style="background:#feebc8; color:#7b341e;">⚠️ {{ i.qtd }} un.</span>
+          {% else %}{{ i.qtd }} un.{% endif %}
+        </td>
+        <td>
+          <a href="{% url 'estoque:entrada_manual' %}?insumo={{ i.pk }}" class="btn-secondary btn">➕ Repor</a>
+          <a href="{% url 'estoque:editar' i.pk %}" class="btn-secondary btn">Editar</a>
+          <form method="post" action="{% url 'estoque:excluir' i.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn-danger btn" data-confirm="Excluir o insumo {{ i.nome }}?">Excluir</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty"><span class="icon">📦</span>Nenhum insumo cadastrado.</div>
+{% endif %}

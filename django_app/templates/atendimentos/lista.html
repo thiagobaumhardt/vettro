@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Atendimentos — Vettro{% endblock %}
+{% block content %}
+{% load static %}
+
+<div class="card" x-data="totalBoxAtendimento({{ servicos_json|default:'[]' }}, {{ insumos_json|default:'[]' }})">
+  <h2>🩺 Registrar Atendimento</h2>
+  <form method="post" action="{% url 'atendimentos:criar' %}">
+    {% csrf_token %}
+    <div class="form-grid">
+      <div class="full"><label>Paciente</label>{{ form.paciente }}</div>
+      <div><label>Data</label>{{ form.data }}</div>
+      <div><label>Hora</label>{{ form.hora }}</div>
+      <div class="full">
+        <label style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" name="plantao" x-model="plantao"> 🌙 Plantão (+50% sobre serviços)
+        </label>
+      </div>
+    </div>
+
+    <div class="form-grid" style="margin-top:10px;">
+      <div>
+        <label>Serviços</label>
+        <div class="select-list" style="border:1.5px solid var(--border-2); border-radius:7px; max-height:220px; overflow-y:auto; padding:8px;">
+          {% for s in servicos %}
+          <label style="display:flex; justify-content:space-between; padding:4px 0;">
+            <span><input type="checkbox" name="servico_ids" value="{{ s.id }}" x-model="servicosSel"> {{ s.nome }}</span>
+            <span>R$ {{ s.valor }}</span>
+          </label>
+          {% empty %}<p class="empty" style="padding:0;">Nenhum serviço cadastrado.</p>{% endfor %}
+        </div>
+      </div>
+      <div>
+        <label>Insumos</label>
+        <div class="select-list" style="border:1.5px solid var(--border-2); border-radius:7px; max-height:220px; overflow-y:auto; padding:8px;">
+          {% for i in insumos %}
+          <div style="padding:4px 0;">
+            <label style="display:flex; justify-content:space-between;">
+              <span><input type="checkbox" name="insumo_ids" value="{{ i.id }}" x-model="insumosSel"> {{ i.nome }}</span>
+              <span>R$ {{ i.valor }} · {{ i.qtd }} un.</span>
+            </label>
+            <template x-if="insumosSel.includes('{{ i.id }}')">
+              <input type="number" name="qtd_{{ i.id }}" min="1" value="1" style="width:80px; margin-top:4px;" x-on:input="qtyTick++">
+            </template>
+          </div>
+          {% empty %}<p class="empty" style="padding:0;">Nenhum insumo cadastrado.</p>{% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="full" style="margin-top:10px;"><label>Observações</label>{{ form.obs }}</div>
+
+    <div class="total-box" style="border:1.5px solid var(--primary); border-radius:8px; padding:12px 16px; margin-top:14px; display:flex; justify-content:space-between; align-items:center;">
+      <span>Total estimado</span>
+      <strong x-text="'R$ ' + total().toFixed(2)"></strong>
+    </div>
+
+    <div style="margin-top:14px;"><button type="submit" class="btn-primary btn">Registrar Atendimento</button></div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="section-title">Atendimentos Registrados</div>
+  {% for a in atendimentos %}
+  <div class="card" style="box-shadow:none; border:1px solid var(--border); border-left:3px solid var(--primary); margin-bottom:10px;">
+    <div style="display:flex; justify-content:space-between;">
+      <span>{% if a.pac_especie == "Cão" %}🐶{% elif a.pac_especie == "Gato" %}🐱{% else %}🐾{% endif %} <strong>{{ a.pac_nome }}</strong>
+        {% if a.plantao %}<span class="badge" style="background:#fef3c7;">🌙 Plantão</span>{% endif %}</span>
+      <strong>R$ {{ a.total }}</strong>
+    </div>
+    <p style="color:var(--muted); margin:4px 0;">{{ a.tutor_nome }} {% if a.tutor_tel %}· {{ a.tutor_tel }}{% endif %} · {{ a.data|date:"d/m/Y" }} {{ a.hora|time:"H:i" }}</p>
+    {% for item in a.servicos %}<span class="badge" style="background:#EDEBDE;">{{ item.nome }} · R$ {{ item.valor }}</span>{% endfor %}
+    {% for item in a.insumos %}<span class="badge" style="background:#EDEBDE;">{{ item.nome }} ×{{ item.qtd }}</span>{% endfor %}
+    {% if a.obs %}<p style="margin-top:6px;">{{ a.obs }}</p>{% endif %}
+    <form method="post" action="{% url 'atendimentos:excluir' a.pk %}" style="margin-top:8px;">
+      {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir este atendimento?">Excluir</button>
+    </form>
+  </div>
+  {% empty %}
+  <div class="empty"><span class="icon">🩺</span>Nenhum atendimento registrado.</div>
+  {% endfor %}
+</div>
+
+<script>
+  function totalBoxAtendimento(servicosPrecos, insumosPrecos) {
+    return {
+      plantao: false, servicosSel: [], insumosSel: [], qtyTick: 0,
+      precosServicos: Object.fromEntries(servicosPrecos.map(s => [s.id, parseFloat(s.valor)])),
+      precosInsumos: Object.fromEntries(insumosPrecos.map(i => [i.id, parseFloat(i.valor)])),
+      total() {
+        void this.qtyTick;
+        const totalServicos = this.servicosSel.reduce((soma, id) => soma + (this.precosServicos[id] || 0), 0);
+        const totalInsumos = this.insumosSel.reduce((soma, id) => {
+          const input = document.querySelector(`input[name="qtd_${id}"]`);
+          const qtd = input ? parseInt(input.value || "1") : 1;
+          return soma + (this.precosInsumos[id] || 0) * qtd;
+        }, 0);
+        const acrescimo = this.plantao ? totalServicos * 0.5 : 0;
+        return totalServicos + totalInsumos + acrescimo;
+      },
+    };
+  }
+</script>
+{% endblock %}

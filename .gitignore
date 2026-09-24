@@ -1,16 +1,17 @@
-# Node / frontend
-frontend/node_modules/
-frontend/dist/
-
-# Python / backend
-backend/__pycache__/
-backend/**/__pycache__/
-backend/.venv/
 *.pyc
+
+# Django (django_app/, único sistema vivo — ver CLAUDE.md) — migrations SÃO versionadas de propósito
+django_app/.venv/
+django_app/__pycache__/
+django_app/**/__pycache__/
+django_app/staticfiles/
+django_app/media/
+django_app/static/dist/*.css.map
+django_app/node_modules/
 
 # Env
 .env
-backend/.env
+django_app/.env
 
 # Editor / OS
 .DS_Store

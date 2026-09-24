@@ -1,0 +1,5 @@
+Olá, {{ usuario.nome }}!
+
+Você agora também tem acesso à clínica {{ clinica_nome }} no Vettro, com a mesma conta que já usa.
+
+Na próxima vez que entrar, escolha essa clínica na tela de seleção.

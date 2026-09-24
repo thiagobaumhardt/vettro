@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ tutor.nome }} — Vettro{% endblock %}
+{% block content %}
+<a href="{% url 'tutores:lista' %}" class="btn-secondary btn" style="margin-bottom:12px; display:inline-block;">← Voltar</a>
+
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+    <h2 style="margin:0;">{{ tutor.nome }}</h2>
+    {% if papel_ativo == "admin" %}
+      <a href="{% url 'tutores:exportar' tutor.pk %}" class="btn-secondary btn">⬇ Exportar dados (LGPD)</a>
+    {% endif %}
+  </div>
+  <div class="form-grid" style="margin-top:14px;">
+    <div><label>Telefone</label>{{ tutor.tel }}</div>
+    <div><label>E-mail</label>{{ tutor.email|default:"—" }}</div>
+    <div><label>CPF</label>{{ tutor.cpf|default:"—" }}</div>
+    <div><label>Como conheceu</label>{{ tutor.get_como_conheceu_display|default:"—" }}</div>
+    <div class="full"><label>Endereço</label>{{ tutor.endereco_completo|default:"—" }}</div>
+    <div>
+      <label>Consentimento LGPD</label>
+      {% if tutor.consentimento_dados %}✅ Consentido em {{ tutor.consentimento_em|date:"d/m/Y H:i" }}{% else %}❌ Não consentido{% endif %}
+    </div>
+  </div>
+  {% if tutor.obs %}<p style="margin-top:14px;">{{ tutor.obs|linebreaksbr }}</p>{% endif %}
+</div>
+
+<div class="card">
+  <div class="section-title">Animais deste tutor</div>
+  {% if pacientes %}
+    {% for p in pacientes %}
+      <a href="{% url 'pacientes:ficha' p.pk %}" style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); text-decoration:none; color:inherit;">
+        <span>{{ p.nome }} — {{ p.especie }}{% if p.raca %} · {{ p.raca }}{% endif %}</span>
+        <span>→</span>
+      </a>
+    {% endfor %}
+  {% else %}
+    <div class="empty"><span class="icon">🐾</span>Nenhum animal cadastrado ainda.</div>
+  {% endif %}
+</div>
+{% endblock %}

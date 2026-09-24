@@ -1,0 +1,11 @@
+{% extends "base_public.html" %}
+{% block title %}Link inválido — Vettro{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <div class="login-card">
+    <h1>⚠️</h1>
+    <p class="subtitle">Esse link de convite é inválido ou já expirou. Peça pra clínica te convidar novamente.</p>
+    <a href="{% url 'contas:login' %}" class="btn-secondary btn" style="width:100%; justify-content:center;">Ir para o login</a>
+  </div>
+</div>
+{% endblock %}

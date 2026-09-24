@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Consultórios — Vettro{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="section-title">Novo Consultório</div>
+  <form method="post" action="{% url 'agenda:consultorio_novo' %}">
+    {% csrf_token %}
+    <div class="form-grid">
+      <div>
+        <label>Nome</label>{{ consultorio_form.nome }}
+        <p style="font-size:.8rem; color:var(--muted); margin:4px 0 0;">{{ consultorio_form.nome.help_text }}</p>
+      </div>
+      <div><label>Endereço (opcional)</label>{{ consultorio_form.endereco }}</div>
+      <div><label style="display:flex; align-items:center; gap:8px;">{{ consultorio_form.ativo }} Ativo</label></div>
+    </div>
+    <div style="margin-top:12px;"><button type="submit" class="btn-primary btn">Salvar</button></div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="section-title">Consultórios cadastrados</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Nome</th><th>Endereço</th><th>Status</th><th>Ações</th></tr></thead>
+      <tbody>
+        {% for c in consultorios %}
+        <tr>
+          <td>{{ c.nome }}</td><td>{{ c.endereco|default:"—" }}</td>
+          <td>{% if c.ativo %}<span class="badge badge-vet">Ativo</span>{% else %}<span class="badge" style="background:#fed7d7;color:#9b2c2c;">Inativo</span>{% endif %}</td>
+          <td>
+            <form method="post" action="{% url 'agenda:consultorio_excluir' c.pk %}" style="display:inline;">
+              {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir o consultório {{ c.nome }}?">Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="4" class="empty">Nenhum consultório cadastrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">🔒 Fechar agenda de um consultório</div>
+  <p style="color:var(--muted);">Bloqueia novos agendamentos num consultório, por dia inteiro ou só um turno — ação restrita ao admin da clínica.</p>
+  <form method="post" action="{% url 'agenda:bloqueio_novo' %}">
+    {% csrf_token %}
+    <div class="form-grid">
+      <div><label>Consultório</label>{{ bloqueio_form.consultorio }}</div>
+      <div><label>Turno</label>{{ bloqueio_form.turno }}</div>
+      <div><label>De</label>{{ bloqueio_form.data_inicio }}</div>
+      <div><label>Até</label>{{ bloqueio_form.data_fim }}</div>
+      <div class="full"><label>Motivo</label>{{ bloqueio_form.motivo }}</div>
+    </div>
+    <div style="margin-top:12px;"><button type="submit" class="btn-danger btn">Fechar agenda</button></div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="section-title">Fechamentos ativos/futuros</div>
+  {% for b in bloqueios %}
+  <div class="card" style="box-shadow:none; border:1px solid var(--border); border-left:3px solid #fc8181; margin-bottom:8px;">
+    <div style="display:flex; justify-content:space-between;">
+      <strong>🏥 {{ b.consultorio.nome }} · {{ b.get_turno_display }}</strong>
+      <span>{{ b.data_inicio|date:"d/m/Y" }} – {{ b.data_fim|date:"d/m/Y" }}</span>
+    </div>
+    <p style="margin:4px 0;">{{ b.motivo }} <small style="color:var(--muted);">(por {{ b.criado_por_nome }})</small></p>
+    <form method="post" action="{% url 'agenda:bloqueio_excluir' b.pk %}">
+      {% csrf_token %}<button type="submit" class="btn-secondary btn" data-confirm="Reabrir a agenda desse período?">Reabrir</button>
+    </form>
+  </div>
+  {% empty %}
+  <div class="empty"><span class="icon">🔓</span>Nenhum fechamento ativo.</div>
+  {% endfor %}
+</div>
+{% endblock %}

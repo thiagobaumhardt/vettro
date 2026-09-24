@@ -1,0 +1,25 @@
+{% if pacientes %}
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Animal</th><th>Espécie / Raça</th><th>Tutor</th><th>Ações</th></tr></thead>
+    <tbody>
+      {% for p in pacientes %}
+      <tr>
+        <td><a href="{% url 'pacientes:ficha' p.pk %}">{{ p.especie_emoji }} {{ p.nome }}</a></td>
+        <td>{{ p.get_especie_display }}{% if p.raca %} · {{ p.raca }}{% endif %}</td>
+        <td>{% if p.tutor %}{{ p.tutor.nome }}{% else %}—{% endif %}</td>
+        <td>
+          <a href="{% url 'pacientes:editar' p.pk %}" class="btn-secondary btn">Editar</a>
+          <form method="post" action="{% url 'pacientes:excluir' p.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn-danger btn" data-confirm="Excluir o paciente {{ p.nome }}?">Excluir</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty"><span class="icon">🐾</span>Nenhum paciente encontrado.</div>
+{% endif %}

@@ -1,0 +1,18 @@
+{% if paciente.tutor %}
+<div style="background:#F8F7F0; border:1px solid var(--border); border-radius:8px; padding:12px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+  <span>👤 <strong>{{ paciente.tutor.nome }}</strong> · {{ paciente.tutor.tel }}</span>
+  <a href="{% url 'tutores:detalhe' paciente.tutor.pk %}" class="btn-secondary btn">Ver tutor</a>
+</div>
+{% endif %}
+
+<div class="form-grid">
+  <div><label>Nome</label>{{ paciente.nome }}</div>
+  <div><label>Espécie</label>{{ paciente.get_especie_display }}</div>
+  <div><label>Raça</label>{{ paciente.raca|default:"—" }}</div>
+  <div><label>Peso</label>{% if paciente.peso %}{{ paciente.peso }} kg{% else %}—{% endif %}</div>
+  <div><label>Data de nascimento</label>{{ paciente.data_nascimento|date:"d/m/Y"|default:"—" }}</div>
+  <div><label>Idade</label>{{ paciente.idade_texto }}</div>
+</div>
+{% if paciente.obs %}
+  <div style="margin-top:16px;"><label>Observações</label><p>{{ paciente.obs|linebreaksbr }}</p></div>
+{% endif %}

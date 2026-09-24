@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Estoque — Vettro{% endblock %}
+{% block content %}
+
+{% if alertas.zerados or alertas.baixos %}
+<div class="card" style="background:#FFFBEA; border:1px dashed #fcd34d;">
+  <div class="section-title">⚠️ Estoque baixo</div>
+  {% for i in alertas.zerados %}<span class="badge" style="background:#fed7d7; color:#9b2c2c;">{{ i.nome }} (zerado)</span>{% endfor %}
+  {% for i in alertas.baixos %}<span class="badge" style="background:#feebc8; color:#7b341e;">{{ i.nome }} ({{ i.qtd }})</span>{% endfor %}
+</div>
+{% endif %}
+{% if alertas.vencidos or alertas.vencendo %}
+<div class="card" style="background:#FFFBEA; border:1px dashed #fcd34d;">
+  <div class="section-title">📅 Validade de insumos</div>
+  {% for i in alertas.vencidos %}<span class="badge" style="background:#fed7d7; color:#9b2c2c;">{{ i.nome }} vencido</span>{% endfor %}
+  {% for i in alertas.vencendo %}<span class="badge" style="background:#feebc8; color:#7b341e;">{{ i.nome }} vence {{ i.data_validade|date:"d/m" }}</span>{% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+    <h2 style="margin:0;">📦 Estoque</h2>
+    <div style="display:flex; gap:10px;">
+      <a href="{% url 'estoque:novo' %}" class="btn-primary btn">+ Novo Insumo</a>
+      <a href="{% url 'estoque:entrada_manual' %}" class="btn-secondary btn">📥 Entrada sem nota</a>
+      <form method="post" action="{% url 'estoque:importar_xml' %}" enctype="multipart/form-data" style="display:inline;">
+        {% csrf_token %}
+        <label class="btn-secondary btn" style="cursor:pointer;">
+          📄 Importar XML de NF-e
+          <input type="file" name="arquivo" accept=".xml" style="display:none;" onchange="this.form.submit()">
+        </label>
+      </form>
+    </div>
+  </div>
+
+  <input type="search" name="q" placeholder="Buscar por nome ou categoria..." value="{{ termo }}"
+         hx-get="{% url 'estoque:lista' %}" hx-trigger="input changed delay:300ms, search"
+         hx-target="#estoque-resultado" hx-select="#estoque-resultado" hx-swap="outerHTML"
+         style="margin-bottom:16px;">
+
+  <div id="estoque-resultado">
+    {% include "estoque/_lista_resultado.html" %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% if tutores %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>Como conheceu</th><th>Ações</th></tr>
+    </thead>
+    <tbody>
+      {% for tutor in tutores %}
+      <tr>
+        <td><a href="{% url 'tutores:detalhe' tutor.pk %}">{{ tutor.nome }}</a></td>
+        <td>{{ tutor.tel }}</td>
+        <td>{{ tutor.email|default:"—" }}</td>
+        <td>{{ tutor.get_como_conheceu_display|default:"—" }}</td>
+        <td>
+          <a href="{% url 'tutores:editar' tutor.pk %}" class="btn-secondary btn">Editar</a>
+          <form method="post" action="{% url 'tutores:excluir' tutor.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn-danger btn" data-confirm="Excluir o tutor {{ tutor.nome }}?">Excluir</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty"><span class="icon">👤</span>Nenhum tutor encontrado.</div>
+{% endif %}

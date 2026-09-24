@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Tutores — Vettro{% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <h2 style="margin:0;">👤 Tutores Cadastrados</h2>
+    <a href="{% url 'tutores:novo' %}" class="btn-primary btn">+ Novo Tutor</a>
+  </div>
+  <input type="search" name="q" placeholder="Buscar por nome ou telefone..." value="{{ termo }}"
+         hx-get="{% url 'tutores:lista' %}" hx-trigger="input changed delay:300ms, search"
+         hx-target="#tutores-resultado" hx-select="#tutores-resultado" hx-swap="outerHTML"
+         style="margin-bottom:16px;">
+  <div id="tutores-resultado">
+    {% include "tutores/_lista_resultado.html" %}
+  </div>
+</div>
+{% endblock %}

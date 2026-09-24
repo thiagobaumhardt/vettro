@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Serviços — Vettro{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="section-title">{% if editando_servico %}Editar Serviço{% else %}Novo Serviço{% endif %}</div>
+  <form method="post" action="{% if editando_servico %}{% url 'financeiro:servico_editar' editando_servico.pk %}{% else %}{% url 'financeiro:servico_novo' %}{% endif %}">
+    {% csrf_token %}
+    <div class="form-grid">
+      <div><label>Nome</label>{{ servico_form.nome }}</div>
+      <div><label>Valor</label>{{ servico_form.valor }}</div>
+      <div><label>Código de serviço municipal (NFS-e, opcional)</label>{{ servico_form.codigo_servico_municipal }}</div>
+      <div class="full"><label>Descrição</label>{{ servico_form.descricao }}</div>
+    </div>
+    <div style="margin-top:12px; display:flex; gap:10px;">
+      <button type="submit" class="btn-primary btn">Salvar</button>
+      {% if editando_servico %}<a href="{% url 'financeiro:catalogo' %}" class="btn-secondary btn">Cancelar</a>{% endif %}
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="section-title">Serviços cadastrados</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Nome</th><th>Valor</th><th>Ações</th></tr></thead>
+      <tbody>
+        {% for s in servicos %}
+        <tr>
+          <td>{{ s.nome }}</td><td>R$ {{ s.valor }}</td>
+          <td>
+            <a href="{% url 'financeiro:servico_editar' s.pk %}" class="btn-secondary btn">Editar</a>
+            <form method="post" action="{% url 'financeiro:servico_excluir' s.pk %}" style="display:inline;">
+              {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir o serviço {{ s.nome }}?">Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="3" class="empty">Nenhum serviço cadastrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">{% if editando_categoria %}Editar Procedimento Cirúrgico{% else %}Novo Procedimento Cirúrgico{% endif %}</div>
+  <form method="post" action="{% if editando_categoria %}{% url 'financeiro:categoria_editar' editando_categoria.pk %}{% else %}{% url 'financeiro:categoria_novo' %}{% endif %}">
+    {% csrf_token %}
+    {% if categoria_form.non_field_errors %}<p style="color:var(--danger-hover);">{{ categoria_form.non_field_errors|join:", " }}</p>{% endif %}
+    <div class="form-grid">
+      <div class="full"><label>Nome</label>{{ categoria_form.nome }}</div>
+      <div><label>Até 10kg (P)</label>{{ categoria_form.valor_p }}</div>
+      <div><label>10–25kg (M)</label>{{ categoria_form.valor_m }}</div>
+      <div><label>Acima de 25kg (G)</label>{{ categoria_form.valor_g }}</div>
+      <div class="full"><label>Descrição</label>{{ categoria_form.descricao }}</div>
+    </div>
+    <div style="margin-top:12px; display:flex; gap:10px;">
+      <button type="submit" class="btn-primary btn">Salvar</button>
+      {% if editando_categoria %}<a href="{% url 'financeiro:catalogo' %}" class="btn-secondary btn">Cancelar</a>{% endif %}
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="section-title">Procedimentos Cirúrgicos cadastrados</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Nome</th><th>P (&lt;10kg)</th><th>M (10–25kg)</th><th>G (&gt;25kg)</th><th>Ações</th></tr></thead>
+      <tbody>
+        {% for c in categorias %}
+        <tr>
+          <td>{{ c.nome }}</td>
+          <td>{{ c.valor_p|default:"—" }}</td><td>{{ c.valor_m|default:"—" }}</td><td>{{ c.valor_g|default:"—" }}</td>
+          <td>
+            <a href="{% url 'financeiro:categoria_editar' c.pk %}" class="btn-secondary btn">Editar</a>
+            <form method="post" action="{% url 'financeiro:categoria_excluir' c.pk %}" style="display:inline;">
+              {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir {{ c.nome }}?">Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="5" class="empty">Nenhum procedimento cadastrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

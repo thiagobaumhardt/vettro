@@ -1,0 +1,44 @@
+{# Modal de confirmação global — qualquer elemento com data-confirm="mensagem"
+   dispara este modal antes de deixar o hx-delete/hx-post real acontecer,
+   substituindo o ConfirmModal.vue promise-based (ver §7 do plano). #}
+<div x-data="confirmModal()" x-on:click.capture="interceptar($event)">
+  <div class="modal-backdrop" x-show="aberto" x-cloak @click.self="cancelar()">
+    <div class="modal-card">
+      <p x-text="mensagem"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary btn" @click="cancelar()">Cancelar</button>
+        <button type="button" class="btn-danger btn" @click="confirmar()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  function confirmModal() {
+    return {
+      aberto: false,
+      mensagem: "",
+      alvo: null,
+      interceptar(evento) {
+        const elemento = evento.target.closest("[data-confirm]");
+        if (!elemento || elemento.dataset.confirmado) return;
+        evento.preventDefault();
+        evento.stopPropagation();
+        this.alvo = elemento;
+        this.mensagem = elemento.dataset.confirm;
+        this.aberto = true;
+      },
+      confirmar() {
+        this.aberto = false;
+        if (this.alvo) {
+          this.alvo.dataset.confirmado = "1";
+          this.alvo.click();
+          delete this.alvo.dataset.confirmado;
+        }
+      },
+      cancelar() {
+        this.aberto = false;
+        this.alvo = null;
+      },
+    };
+  }
+</script>

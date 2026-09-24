@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Auditoria — Vettro{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>🛡️ Auditoria</h2>
+  <p style="color:var(--muted);">Trilha de responsabilização (LGPD) — login, criação, edição e exclusão de tutores/pacientes/insumos, com usuário, IP e horário.</p>
+  <select name="entidade" hx-get="{% url 'auditoria:lista' %}" hx-trigger="change" hx-target="#auditoria-resultado" hx-select="#auditoria-resultado" hx-swap="outerHTML" style="margin-bottom:16px;">
+    <option value="">Todas as entidades</option>
+    {% for valor, label in entidades %}<option value="{{ valor }}" {% if entidade == valor %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <div id="auditoria-resultado">
+    {% include "auditoria/_lista_resultado.html" %}
+  </div>
+</div>
+{% endblock %}

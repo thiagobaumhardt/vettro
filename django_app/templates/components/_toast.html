@@ -1,0 +1,7 @@
+{# Toast global — views que mutam dados podem devolver um OOB swap desta
+   div (id="toast-region") pra disparar uma mensagem, ver §7 do plano. #}
+<div id="toast-region"
+     x-data="{ show:false, msg:'', ok:true }"
+     x-init="window.addEventListener('toast', e => { msg = e.detail.msg; ok = e.detail.ok ?? true; show = true; setTimeout(() => show = false, 2800) })">
+  <div id="toast" :class="ok ? 'ok' : 'erro'" x-show="show" x-transition style="display:none;" x-text="msg"></div>
+</div>

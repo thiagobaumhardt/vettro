@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}{{ paciente.nome }} — Vettro{% endblock %}
+{% block content %}
+<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+  <div style="display:flex; align-items:center; gap:14px;">
+    <div class="avatar-circle" style="width:56px; height:56px; border-radius:50%; background:var(--border); display:flex; align-items:center; justify-content:center; font-size:1.5rem; overflow:hidden;">
+      {% if paciente.foto_perfil %}<img src="{{ paciente.foto_perfil.url }}" style="width:100%; height:100%; object-fit:cover;">{% else %}{{ paciente.especie_emoji }}{% endif %}
+    </div>
+    <div>
+      <h2 style="margin:0;">{{ paciente.nome }}</h2>
+      <p style="margin:0; color:var(--muted);">{{ paciente.get_especie_display }}{% if paciente.raca %} · {{ paciente.raca }}{% endif %}</p>
+    </div>
+  </div>
+  <div style="display:flex; gap:10px;">
+    <a href="{% url 'pacientes:lista' %}" class="btn-secondary btn">← Voltar</a>
+    <a href="{% url 'pacientes:editar' paciente.pk %}" class="btn-secondary btn">Editar Ficha</a>
+  </div>
+</div>
+
+<div class="card" style="padding:0; overflow-x:auto;">
+  <div style="display:flex; border-bottom:1px solid var(--border);">
+    <a href="{% url 'pacientes:ficha' paciente.pk %}?aba=ficha"
+       hx-get="{% url 'pacientes:ficha_aba' paciente.pk 'ficha' %}" hx-target="#ficha-conteudo" hx-push-url="{% url 'pacientes:ficha' paciente.pk %}?aba=ficha"
+       class="btn" style="border-radius:0; {% if aba_ativa == 'ficha' %}background:var(--primary); color:#fff;{% endif %}">📋 Ficha</a>
+    {% if "pacientes_clinico" in secoes_permitidas %}
+    <a href="{% url 'pacientes:ficha' paciente.pk %}?aba=anamnese"
+       hx-get="{% url 'pacientes:ficha_aba' paciente.pk 'anamnese' %}" hx-target="#ficha-conteudo" hx-push-url="{% url 'pacientes:ficha' paciente.pk %}?aba=anamnese"
+       class="btn" style="border-radius:0; {% if aba_ativa == 'anamnese' %}background:var(--primary); color:#fff;{% endif %}">🩺 Anamnese</a>
+    <a href="{% url 'pacientes:ficha' paciente.pk %}?aba=cirurgias"
+       hx-get="{% url 'pacientes:ficha_aba' paciente.pk 'cirurgias' %}" hx-target="#ficha-conteudo" hx-push-url="{% url 'pacientes:ficha' paciente.pk %}?aba=cirurgias"
+       class="btn" style="border-radius:0; {% if aba_ativa == 'cirurgias' %}background:var(--primary); color:#fff;{% endif %}">🔪 Cirurgias</a>
+    <a href="{% url 'pacientes:ficha' paciente.pk %}?aba=exames"
+       hx-get="{% url 'pacientes:ficha_aba' paciente.pk 'exames' %}" hx-target="#ficha-conteudo" hx-push-url="{% url 'pacientes:ficha' paciente.pk %}?aba=exames"
+       class="btn" style="border-radius:0; {% if aba_ativa == 'exames' %}background:var(--primary); color:#fff;{% endif %}">📄 Exames</a>
+    <a href="{% url 'pacientes:ficha' paciente.pk %}?aba=fotos"
+       hx-get="{% url 'pacientes:ficha_aba' paciente.pk 'fotos' %}" hx-target="#ficha-conteudo" hx-push-url="{% url 'pacientes:ficha' paciente.pk %}?aba=fotos"
+       class="btn" style="border-radius:0; {% if aba_ativa == 'fotos' %}background:var(--primary); color:#fff;{% endif %}">🖼️ Fotos</a>
+    {% endif %}
+    <a href="{% url 'pacientes:ficha' paciente.pk %}?aba=notas"
+       hx-get="{% url 'pacientes:ficha_aba' paciente.pk 'notas' %}" hx-target="#ficha-conteudo" hx-push-url="{% url 'pacientes:ficha' paciente.pk %}?aba=notas"
+       class="btn" style="border-radius:0; {% if aba_ativa == 'notas' %}background:var(--primary); color:#fff;{% endif %}">📝 Anotações</a>
+    {% if papel_ativo == "admin" %}
+    <a href="{% url 'pacientes:ficha' paciente.pk %}?aba=cobranca"
+       hx-get="{% url 'pacientes:ficha_aba' paciente.pk 'cobranca' %}" hx-target="#ficha-conteudo" hx-push-url="{% url 'pacientes:ficha' paciente.pk %}?aba=cobranca"
+       class="btn" style="border-radius:0; {% if aba_ativa == 'cobranca' %}background:var(--primary); color:#fff;{% endif %}">💰 Cobrança</a>
+    {% endif %}
+  </div>
+  <div id="ficha-conteudo" style="padding:22px;">
+    {% if aba_ativa == "ficha" %}
+      {% include "pacientes/ficha/_ficha_info.html" %}
+    {% elif aba_ativa == "notas" %}
+      {% include "pacientes/ficha/_ficha_notas.html" %}
+    {% elif aba_ativa == "anamnese" %}
+      {% include "pacientes/ficha/_ficha_anamnese.html" %}
+    {% elif aba_ativa == "cirurgias" %}
+      {% include "pacientes/ficha/_ficha_cirurgias.html" %}
+    {% elif aba_ativa == "exames" %}
+      {% include "pacientes/ficha/_ficha_exames.html" %}
+    {% elif aba_ativa == "fotos" %}
+      {% include "pacientes/ficha/_ficha_fotos.html" %}
+    {% elif aba_ativa == "cobranca" %}
+      {% include "pacientes/ficha/_ficha_cobranca.html" %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

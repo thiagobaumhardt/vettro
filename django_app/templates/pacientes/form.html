@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}{% if paciente %}Editar{% else %}Novo{% endif %} Paciente — Vettro{% endblock %}
+{% block content %}
+<div class="card" x-data="pacienteForm({{ racas_json|safe }}, '{{ form.raca.value|default:'' }}', '{{ form.especie.value|default:'' }}')">
+  <h2>{% if paciente %}Editar Paciente{% else %}Novo Paciente{% endif %}</h2>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div style="display:flex; align-items:center; gap:16px; margin-bottom:18px;">
+      <div class="avatar-circle" style="width:64px; height:64px; border-radius:50%; background:var(--border); display:flex; align-items:center; justify-content:center; font-size:1.6rem; overflow:hidden;">
+        {% if paciente.foto_perfil %}<img src="{{ paciente.foto_perfil.url }}" style="width:100%; height:100%; object-fit:cover;">{% else %}🐾{% endif %}
+      </div>
+      <label class="btn-secondary btn" style="cursor:pointer;">📷 Escolher foto de perfil{{ form.foto_perfil }}</label>
+    </div>
+
+    <div class="form-grid">
+      <div><label for="id_nome">Nome</label>{{ form.nome }}</div>
+      <div>
+        <label for="id_especie">Espécie</label>
+        <select name="especie" id="id_especie" x-model="especie" @change="raca = ''">
+          <option value="">—</option>
+          <option value="cao" {% if form.especie.value == "cao" %}selected{% endif %}>🐶 Cão</option>
+          <option value="gato" {% if form.especie.value == "gato" %}selected{% endif %}>🐱 Gato</option>
+          <option value="outro" {% if form.especie.value == "outro" %}selected{% endif %}>🐾 Outro</option>
+        </select>
+      </div>
+      <div>
+        <label for="id_raca">Raça</label>
+        <template x-if="especie === 'cao' || especie === 'gato'">
+          <select name="raca" id="id_raca" x-model="raca">
+            <option value="">—</option>
+            <template x-for="r in racasPorEspecie[especie] || []" :key="r">
+              <option :value="r" x-text="r" :selected="r === raca"></option>
+            </template>
+          </select>
+        </template>
+        <template x-if="especie !== 'cao' && especie !== 'gato'">
+          <input type="text" name="raca" x-model="raca" placeholder="Raça (opcional)">
+        </template>
+      </div>
+      <div><label for="id_peso">Peso (kg)</label>{{ form.peso }}</div>
+      <div><label for="id_data_nascimento">Data de nascimento</label>{{ form.data_nascimento }}</div>
+      <div>
+        <label for="id_tutor">Tutor</label>
+        {{ form.tutor }}
+        <p style="font-size:.8rem; color:var(--muted); margin:4px 0 0;">
+          Não achou? <a href="{% url 'tutores:novo' %}">Cadastre um tutor novo</a>.
+        </p>
+      </div>
+      <div class="full"><label for="id_obs">Observações</label>{{ form.obs }}</div>
+    </div>
+
+    <div style="margin-top:18px; display:flex; gap:10px;">
+      <button type="submit" class="btn-primary btn">Salvar</button>
+      <a href="{% url 'pacientes:lista' %}" class="btn-secondary btn">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+<script>
+  function pacienteForm(racas, racaInicial, especieInicial) {
+    return {
+      racasPorEspecie: racas,
+      raca: racaInicial,
+      especie: especieInicial,
+    };
+  }
+</script>
+{% endblock %}

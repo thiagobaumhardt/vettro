@@ -1,0 +1,8 @@
+Olá, {{ usuario.nome }}!
+
+Você foi cadastrado(a) na clínica {{ clinica_nome }} no Vettro.
+
+Para acessar, defina sua senha neste link (válido por tempo limitado, uso único):
+{{ link }}
+
+Se você não esperava este e-mail, pode ignorá-lo.

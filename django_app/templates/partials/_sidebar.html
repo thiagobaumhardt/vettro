@@ -1,0 +1,31 @@
+<aside class="sidebar" :class="{ aberta: sidebarAberta }">
+  <div class="brand">🐾 Vettro</div>
+  <nav>
+    <a href="{% url 'dashboard:inicio' %}" class="{% if request.resolver_match.url_name == 'inicio' %}active{% endif %}">🏠 Início</a>
+    {% if "pacientes" in secoes_permitidas %}
+    <a href="{% url 'pacientes:lista' %}" class="{% if request.resolver_match.app_name == 'pacientes' %}active{% endif %}">🐾 Pacientes</a>
+    {% endif %}
+    {% if "tutores" in secoes_permitidas %}
+    <a href="{% url 'tutores:lista' %}" class="{% if request.resolver_match.app_name == 'tutores' %}active{% endif %}">👤 Tutores</a>
+    {% endif %}
+    {% if "agenda" in secoes_permitidas %}
+    <a href="{% url 'agenda:calendario' %}" class="{% if request.resolver_match.app_name == 'agenda' and request.resolver_match.url_name == 'calendario' %}active{% endif %}">📅 Agenda</a>
+    {% endif %}
+    {% if papel_ativo == "admin" %}
+    <a href="{% url 'agenda:consultorios' %}" class="{% if request.resolver_match.url_name == 'consultorios' %}active{% endif %}">🏥 Consultórios</a>
+    {% endif %}
+    {% if "atendimentos" in secoes_permitidas %}
+    <a href="{% url 'atendimentos:lista' %}" class="{% if request.resolver_match.app_name == 'atendimentos' %}active{% endif %}">🩺 Atendimentos</a>
+    {% endif %}
+    {% if "financeiro" in secoes_permitidas %}
+    <a href="{% url 'financeiro:catalogo' %}" class="{% if request.resolver_match.app_name == 'financeiro' %}active{% endif %}">💵 Serviços</a>
+    {% endif %}
+    {% if "estoque" in secoes_permitidas %}
+    <a href="{% url 'estoque:lista' %}" class="{% if request.resolver_match.app_name == 'estoque' %}active{% endif %}">📦 Estoque</a>
+    {% endif %}
+    {% if papel_ativo == "admin" %}
+    <a href="{% url 'usuarios_clinica:lista' %}" class="{% if request.resolver_match.app_name == 'usuarios_clinica' %}active{% endif %}">🔑 Usuários</a>
+    <a href="{% url 'auditoria:lista' %}" class="{% if request.resolver_match.app_name == 'auditoria' %}active{% endif %}">🛡️ Auditoria</a>
+    {% endif %}
+  </nav>
+</aside>

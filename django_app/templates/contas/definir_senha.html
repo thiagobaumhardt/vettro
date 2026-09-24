@@ -1,0 +1,20 @@
+{% extends "base_public.html" %}
+{% block title %}Definir senha — Vettro{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <div class="login-card">
+    <h1>🐾 Vettro</h1>
+    <p class="subtitle">Defina sua senha para acessar</p>
+    {% if form.errors %}<div class="login-error">{{ form.errors|join:" " }}</div>{% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <label for="id_new_password1">Nova senha</label>
+      {{ form.new_password1 }}
+      <p style="font-size:.78rem; color:var(--muted); margin:4px 0 12px;">Mínimo 8 caracteres, com letras e números.</p>
+      <label for="id_new_password2">Confirme a senha</label>
+      {{ form.new_password2 }}
+      <button type="submit" class="btn-primary btn" style="width:100%; justify-content:center; margin-top:16px;">Definir senha e continuar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

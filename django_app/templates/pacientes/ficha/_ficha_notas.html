@@ -1,0 +1,37 @@
+<div class="card" style="box-shadow:none; border:1px solid var(--border); margin-bottom:18px;">
+  <div class="section-title">{% if editando_id %}Editar Anotação{% else %}Nova Anotação{% endif %}</div>
+  <form hx-post="{% if editando_id %}{% url 'pacientes:nota_editar' paciente.pk editando_id %}{% else %}{% url 'pacientes:nota_criar' paciente.pk %}{% endif %}"
+        hx-target="#ficha-conteudo" hx-swap="innerHTML">
+    <div class="form-grid">
+      <div class="full"><label>Título (opcional)</label>{{ form.titulo }}</div>
+      <div class="full"><label>Conteúdo</label>{{ form.conteudo }}</div>
+    </div>
+    <div style="margin-top:12px; display:flex; gap:10px;">
+      <button type="submit" class="btn-primary btn">Salvar</button>
+      {% if editando_id %}
+        <button type="button" class="btn-secondary btn"
+                hx-get="{% url 'pacientes:ficha_aba' paciente.pk 'notas' %}" hx-target="#ficha-conteudo">Cancelar</button>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<div class="section-title">Histórico</div>
+{% if notas %}
+  {% for nota in notas %}
+  <div class="card" style="box-shadow:none; border:1px solid var(--border); border-left:3px solid var(--primary); margin-bottom:10px;">
+    <div style="display:flex; justify-content:space-between;">
+      <strong>{{ nota.titulo|default:"Sem título" }}</strong>
+      <span style="color:var(--muted); font-size:.82rem;">{{ nota.criado_em|date:"d/m/Y H:i" }}</span>
+    </div>
+    <p style="white-space:pre-wrap; margin:8px 0;">{{ nota.conteudo }}</p>
+    <div style="display:flex; gap:10px;">
+      <button class="btn-secondary btn" hx-get="{% url 'pacientes:nota_editar' paciente.pk nota.pk %}" hx-target="#ficha-conteudo">Editar</button>
+      <button class="btn-danger btn" data-confirm="Excluir esta anotação?"
+              hx-post="{% url 'pacientes:nota_excluir' paciente.pk nota.pk %}" hx-target="#ficha-conteudo">Excluir</button>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty"><span class="icon">📝</span>Nenhuma anotação ainda.</div>
+{% endif %}

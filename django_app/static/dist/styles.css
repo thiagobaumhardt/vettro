@@ -1,0 +1,228 @@
+/*
+  Fallback hand-escrito enquanto o build real do Tailwind não roda neste
+  ambiente (sem Node/npm disponível). Reencoda o design system da marca
+  real Lume (ver identidade visual — Apresentação Lume, Studio Ananda Souza,
+  2026), aplicado em cima da mesma estrutura de classes já usada em todos os
+  templates (.card, .btn-*, .badge etc.) — nenhum template precisou mudar.
+
+  IMPORTANTE — duas ressalvas sobre fidelidade à marca:
+  1) Cores: o material da Lume não trouxe códigos hex oficiais pra paleta
+     própria (só nomes: verde-escuro, verde-oliva, verde-claro, marfim,
+     amarelo, terroso). Os valores abaixo são uma estimativa visual feita a
+     partir da apresentação — não são os hex exatos de um guia de marca. Se
+     vocês tiverem os valores exatos (Figma/Canva/PDF com swatches), me
+     passem que eu ajusto com precisão.
+  2) Tipografia: a marca usa Roca Two (títulos) + Livvic (textos). Roca Two
+     é uma fonte PAGA (fundição TipoType) — sem confirmação de licença de
+     uso web, uso aqui a Fraunces (Google Fonts, gratuita, eixo "soft"
+     arredondado) como substituta temporária de visual próximo. Livvic é a
+     fonte real da marca e já está aplicada de verdade.
+*/
+
+:root {
+  /* Paleta nomeada da Lume (estimativa visual, ver ressalva acima) */
+  --verde-escuro: #4B5530;      /* Confiança */
+  --verde-escuro-2: #333B22;    /* extremo mais escuro, usado em gradientes */
+  --verde-oliva: #7C8752;       /* Vitalidade — cor principal da marca */
+  --verde-oliva-hover: #626D3F;
+  --verde-claro: #D9DEBB;       /* Tranquilidade */
+  --marfim: #F3F0D8;            /* Clareza — fundo base */
+  --amarelo: #E5AE3E;           /* Luz — acento pontual */
+  --terroso: #BC7440;           /* Proximidade — acento/CTA */
+  --terroso-hover: #A25F31;
+
+  /* Aliases usados nos templates (mantidos pra não precisar tocar em cada
+     arquivo — só os valores mudaram pra bater com a Lume de verdade) */
+  --bg: var(--marfim);
+  --text: #2B2B20;
+  --primary: var(--verde-oliva);
+  --primary-hover: var(--verde-oliva-hover);
+  --sidebar-from: var(--verde-escuro);
+  --sidebar-to: var(--verde-escuro-2);
+  --sidebar-active: #5C6640;
+  --card-bg: rgba(255, 255, 255, .96);
+  --border: #E3DFC4;
+  --border-2: #CAC6A0;
+  --muted: #8B8768;
+  --muted-2: #6B6850;
+  --btn-secondary-bg: #EDE9CD;
+  --btn-secondary-hover: #E2DCB8;
+  --danger: #fc8181;
+  --danger-hover: #e53e3e;
+  --accent: var(--terroso);
+  --accent-hover: var(--terroso-hover);
+
+  --font-heading: 'Fraunces', 'Georgia', serif;
+  --font-body: 'Livvic', 'Segoe UI', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+}
+
+a { color: inherit; }
+
+h1, h2, .brand, .login-card h1 { font-family: var(--font-heading); font-weight: 600; }
+
+.app-shell { display: flex; min-height: 100vh; }
+.app-content { flex: 1; padding: 24px; max-width: 1200px; }
+
+/* --- Sidebar --- */
+.sidebar {
+  width: 232px;
+  background: linear-gradient(180deg, var(--sidebar-from), var(--sidebar-to));
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 0;
+}
+.sidebar .brand { padding: 0 18px 18px; font-weight: 600; font-size: 1.3rem; }
+.sidebar nav { display: flex; flex-direction: column; gap: 2px; }
+.sidebar a {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 18px; text-decoration: none; color: var(--verde-claro);
+  font-size: .92rem;
+}
+.sidebar a.active, .sidebar a:hover { background: var(--sidebar-active); color: #fff; }
+
+/* --- Topbar --- */
+.topbar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 24px; border-bottom: 1px solid var(--border);
+  background: var(--card-bg);
+}
+.topbar .spacer { flex: 1; }
+.topbar .user-menu { display: flex; align-items: center; gap: 10px; font-size: .88rem; }
+.hamburger { display: none; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text); }
+
+/* --- Cards / forms --- */
+.card {
+  background: var(--card-bg);
+  border-radius: 10px;
+  padding: 22px;
+  box-shadow: 0 4px 20px rgba(60, 64, 40, .18);
+  margin-bottom: 18px;
+}
+.section-title {
+  font-size: .78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--muted-2);
+  border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 14px;
+}
+h2 { color: var(--verde-escuro); }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-grid .full { grid-column: 1 / -1; }
+
+label { display: block; font-size: .85rem; margin-bottom: 4px; color: var(--muted-2); }
+input, select, textarea {
+  width: 100%; padding: 9px 12px; border-radius: 7px;
+  border: 1.5px solid var(--border-2); font-size: .95rem; font-family: inherit;
+}
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+/* --- Buttons --- */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 20px; border-radius: 7px; border: none;
+  font-size: .9rem; cursor: pointer; text-decoration: none;
+  transition: background .15s;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-secondary { background: var(--btn-secondary-bg); color: var(--text); }
+.btn-secondary:hover { background: var(--btn-secondary-hover); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: var(--danger-hover); }
+/* Acento terroso — usado em chamadas/CTA pontuais, igual "AGENDE A CONSULTA" no material da marca */
+.btn-accent { background: var(--accent); color: #fff; border-radius: 20px; }
+.btn-accent:hover { background: var(--accent-hover); }
+
+/* --- Badges --- */
+.badge {
+  display: inline-block; padding: 2px 10px; border-radius: 20px;
+  font-size: .75rem; font-weight: 600;
+}
+.badge-admin { background: #dbeafe; color: #1e40af; }
+.badge-vet { background: var(--verde-claro); color: var(--verde-escuro); }
+
+/* --- Empty state --- */
+.empty { text-align: center; color: var(--muted); padding: 40px 0; }
+.empty .icon { font-size: 2.2rem; display: block; margin-bottom: 8px; }
+
+/* --- Login --- */
+.login-wrap {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--sidebar-from), var(--sidebar-to));
+}
+.login-card {
+  background: var(--card-bg); border-radius: 12px; padding: 36px 32px;
+  width: 100%; max-width: 360px; box-shadow: 0 10px 40px rgba(0,0,0,.3);
+}
+.login-card h1 { text-align: center; margin: 0 0 4px; font-size: 2rem; color: var(--verde-escuro); }
+.login-card .subtitle { text-align: center; color: var(--muted); margin-bottom: 20px; font-size: .88rem; }
+.login-error {
+  background: #fff5f5; border: 1px solid var(--danger); color: #9b2c2c;
+  border-radius: 7px; padding: 10px 12px; font-size: .85rem; margin-bottom: 14px;
+}
+
+/* --- Clinic picker --- */
+.clinica-lista { display: flex; flex-direction: column; gap: 10px; }
+.clinica-opcao {
+  display: block; width: 100%; text-align: left; padding: 14px 16px;
+  border: 1.5px solid var(--border-2); border-radius: 8px; background: #fff;
+  cursor: pointer; font-size: .95rem;
+}
+.clinica-opcao:hover { border-color: var(--primary); background: #F8F7EA; }
+
+/* --- Toast / Confirm --- */
+#toast-region {
+  position: fixed; bottom: 20px; right: 20px; z-index: 100;
+}
+#toast {
+  padding: 12px 18px; border-radius: 8px; color: #fff; font-size: .9rem;
+  box-shadow: 0 6px 20px rgba(0,0,0,.2);
+}
+#toast.ok { background: var(--primary); }
+#toast.erro { background: var(--danger-hover); }
+
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center; z-index: 200;
+}
+.modal-card {
+  background: #fff; border-radius: 10px; padding: 24px; max-width: 380px; width: 90%;
+}
+.modal-card .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+
+/* --- Responsivo / mobile (Fase 5) --- */
+@media (max-width: 640px) {
+  .form-grid { grid-template-columns: 1fr; }
+
+  .hamburger { display: inline-flex; }
+
+  .sidebar {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 50;
+    transform: translateX(-100%); transition: transform .2s ease;
+  }
+  .sidebar.aberta { transform: translateX(0); }
+
+  .sidebar-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 40;
+  }
+  .sidebar-backdrop.aberta { display: block; }
+
+  .app-content { padding: 14px; }
+  .topbar { padding: 10px 14px; }
+  .card { padding: 16px; }
+
+  .table-wrap { overflow-x: auto; }
+
+  .agenda-grid { grid-template-columns: 1fr !important; }
+}
+
+.table-wrap { overflow-x: auto; }

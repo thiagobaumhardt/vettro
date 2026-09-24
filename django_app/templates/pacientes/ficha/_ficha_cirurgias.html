@@ -1,0 +1,114 @@
+{% if erro %}<div class="login-error" style="margin-bottom:14px;">{{ erro }}</div>{% endif %}
+
+<div class="card" style="box-shadow:none; border:1px solid var(--border); margin-bottom:18px;"
+     x-data="totalBoxCirurgia({{ categorias_json|default:'[]' }}, {{ insumos_json|default:'[]' }})">
+  <div class="section-title">Novo Registro de Cirurgia</div>
+  {% if faixa_peso_label %}<p style="color:var(--muted);">{{ faixa_peso_label }}</p>
+  {% else %}<p style="color:var(--danger-hover);">Paciente sem peso cadastrado — o preço vai usar o valor de fallback do procedimento.</p>{% endif %}
+
+  <form hx-post="{% url 'pacientes:cirurgia_criar' paciente.pk %}" hx-target="#ficha-conteudo" hx-swap="innerHTML">
+    <div class="form-grid">
+      <div class="full"><label>Procedimento</label>{{ form.proc }}</div>
+      <div><label>Clínica/local</label>{{ form.clinica }}</div>
+      <div><label>Anestesista</label>{{ form.anestesista }}</div>
+      <div class="full"><label>Descrição da cirurgia</label>{{ form.desc_cir }}</div>
+      <div class="full"><label>Pós-operatório</label>{{ form.pos_op }}</div>
+    </div>
+
+    <div style="margin-top:10px; display:flex; gap:18px;">
+      <label style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" name="plantao" x-model="plantao"> 🌙 Plantão (+50% sobre procedimentos)
+      </label>
+      <label style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" name="outra_cidade" x-model="outraCidade"> 📍 Deslocamento outra cidade (+R$50)
+      </label>
+    </div>
+
+    <div class="form-grid" style="margin-top:10px;">
+      <div>
+        <label>Procedimentos (preço já pela faixa de peso do paciente)</label>
+        <div class="select-list" style="border:1.5px solid var(--border-2); border-radius:7px; max-height:220px; overflow-y:auto; padding:8px;">
+          {% for c in categorias %}
+          <label style="display:flex; justify-content:space-between; padding:4px 0;">
+            <span><input type="checkbox" name="categoria_ids" value="{{ c.id }}" x-model="categoriasSel"> {{ c.nome }}</span>
+          </label>
+          {% empty %}<p class="empty" style="padding:0;">Nenhum procedimento cadastrado.</p>{% endfor %}
+        </div>
+      </div>
+      <div>
+        <label>Insumos utilizados</label>
+        <div class="select-list" style="border:1.5px solid var(--border-2); border-radius:7px; max-height:220px; overflow-y:auto; padding:8px;">
+          {% for i in insumos %}
+          <div style="padding:4px 0;">
+            <label style="display:flex; justify-content:space-between;">
+              <span><input type="checkbox" name="insumo_ids" value="{{ i.id }}" x-model="insumosSel"> {{ i.nome }}</span>
+              <span>R$ {{ i.valor }} · {{ i.qtd }} un.</span>
+            </label>
+            <template x-if="insumosSel.includes('{{ i.id }}')">
+              <input type="number" name="qtd_{{ i.id }}" min="1" value="1" style="width:80px; margin-top:4px;" x-on:input="qtyTick++">
+            </template>
+          </div>
+          {% empty %}<p class="empty" style="padding:0;">Nenhum insumo cadastrado.</p>{% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="total-box" style="border:1.5px solid var(--primary); border-radius:8px; padding:12px 16px; margin-top:14px; display:flex; justify-content:space-between; align-items:center;">
+      <span>Total estimado</span>
+      <strong x-text="'R$ ' + total().toFixed(2)"></strong>
+    </div>
+
+    <div style="margin-top:14px;"><button type="submit" class="btn-primary btn">Salvar</button></div>
+  </form>
+</div>
+
+<div class="section-title">Histórico de Cirurgias</div>
+{% for c in historico %}
+<details class="card" style="box-shadow:none; border:1px solid var(--border); margin-bottom:8px;">
+  <summary style="cursor:pointer; display:flex; justify-content:space-between;">
+    <span>{{ c.data|date:"d/m/Y" }} · {{ c.proc }}
+      {% if c.plantao %}<span class="badge" style="background:#fef3c7;">🌙</span>{% endif %}
+      {% if c.outra_cidade %}<span class="badge" style="background:#dbeafe;">📍</span>{% endif %}
+    </span>
+    <strong>R$ {{ c.total }}</strong>
+  </summary>
+  <div class="form-grid" style="margin-top:10px;">
+    <div><label>Clínica</label>{{ c.clinica|default:"—" }}</div>
+    <div><label>Anestesista</label>{{ c.anestesista|default:"—" }}</div>
+    <div class="full"><label>Descrição</label>{{ c.desc_cir|default:"—" }}</div>
+    <div class="full"><label>Pós-operatório</label>{{ c.pos_op|default:"—" }}</div>
+  </div>
+  <div style="margin-top:8px;">
+    {% for item in c.procedimentos %}<span class="badge" style="background:#EDEBDE;">{{ item.nome }} · R$ {{ item.valor }}</span>{% endfor %}
+    {% for item in c.insumos %}<span class="badge" style="background:#EDEBDE;">{{ item.nome }} ×{{ item.qtd }}</span>{% endfor %}
+  </div>
+  <form method="post" hx-post="{% url 'pacientes:cirurgia_excluir' paciente.pk c.pk %}" hx-target="#ficha-conteudo" style="margin-top:8px;">
+    {% csrf_token %}
+    <button type="submit" class="btn-danger btn" data-confirm="Excluir este registro de cirurgia?">Excluir</button>
+  </form>
+</details>
+{% empty %}
+<div class="empty"><span class="icon">🔪</span>Nenhuma cirurgia registrada ainda.</div>
+{% endfor %}
+
+<script>
+  function totalBoxCirurgia(categoriasPrecos, insumosPrecos) {
+    return {
+      plantao: false, outraCidade: false, categoriasSel: [], insumosSel: [], qtyTick: 0,
+      precosCategorias: Object.fromEntries(categoriasPrecos.map(c => [c.id, parseFloat(c.valor)])),
+      precosInsumos: Object.fromEntries(insumosPrecos.map(i => [i.id, parseFloat(i.valor)])),
+      total() {
+        void this.qtyTick;
+        const totalProc = this.categoriasSel.reduce((soma, id) => soma + (this.precosCategorias[id] || 0), 0);
+        const totalInsumos = this.insumosSel.reduce((soma, id) => {
+          const input = document.querySelector(`input[name="qtd_${id}"]`);
+          const qtd = input ? parseInt(input.value || "1") : 1;
+          return soma + (this.precosInsumos[id] || 0) * qtd;
+        }, 0);
+        const acrescimoPlantao = this.plantao ? totalProc * 0.5 : 0;
+        const acrescimoDeslocamento = this.outraCidade ? 50 : 0;
+        return totalProc + totalInsumos + acrescimoPlantao + acrescimoDeslocamento;
+      },
+    };
+  }
+</script>

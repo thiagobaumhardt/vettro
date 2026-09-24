@@ -1,0 +1,12 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+  <h1>Provisionar nova clínica</h1>
+  <p>Cria o schema da clínica, roda as migrations de tenant e cadastra o primeiro admin dela.</p>
+  <form method="post">
+    {% csrf_token %}
+    <table>
+      {{ form.as_table }}
+    </table>
+    <input type="submit" value="Provisionar" class="default">
+  </form>
+{% endblock %}

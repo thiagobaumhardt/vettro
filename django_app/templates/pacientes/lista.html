@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Pacientes — Vettro{% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <h2 style="margin:0;">🐾 Pacientes</h2>
+    <a href="{% url 'pacientes:novo' %}" class="btn-primary btn">+ Novo Paciente</a>
+  </div>
+  <input type="search" name="q" placeholder="Buscar por animal ou tutor..." value="{{ termo }}"
+         hx-get="{% url 'pacientes:lista' %}" hx-trigger="input changed delay:300ms, search"
+         hx-target="#pacientes-resultado" hx-select="#pacientes-resultado" hx-swap="outerHTML"
+         style="margin-bottom:16px;">
+  <div id="pacientes-resultado">
+    {% include "pacientes/_lista_resultado.html" %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,5 @@
+{% extends "admin/change_list.html" %}
+{% block object-tools-items %}
+  <li><a href="{% url 'admin:plataforma_clinica_provisionar' %}" class="addlink">Provisionar nova clínica</a></li>
+  {{ block.super }}
+{% endblock %}

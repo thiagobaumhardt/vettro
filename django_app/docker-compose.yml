@@ -1,0 +1,23 @@
+# Postgres de desenvolvimento SÓ do novo backend Django — porta 5433 pra não
+# colidir com o Postgres do sistema FastAPI atual (docker-compose.yml da raiz,
+# porta 5432), já que os dois convivem durante a migração por fases.
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vettro
+      POSTGRES_PASSWORD: vettro
+      POSTGRES_DB: vettro_django
+    ports:
+      - "5433:5432"
+    volumes:
+      - vettro_django_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vettro"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  vettro_django_pgdata:

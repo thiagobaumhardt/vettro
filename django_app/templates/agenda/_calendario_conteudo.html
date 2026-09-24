@@ -1,0 +1,79 @@
+<div class="card">
+  <div style="margin-bottom:10px;">
+    <label style="font-size:.8rem;">Consultório</label>
+    <select hx-get="{% url 'agenda:calendario' %}" hx-target="#agenda-calendario" hx-select="#agenda-calendario" hx-swap="outerHTML"
+            hx-include="this" name="consultorio" hx-vals='{"ano": "{{ ano }}", "mes": "{{ mes }}", "dia": "{{ dia_selecionado|date:"Y-m-d" }}"}'>
+      <option value="">Todos os consultórios</option>
+      {% for c in consultorios %}<option value="{{ c.id }}" {% if consultorio_id == c.id|stringformat:"s" %}selected{% endif %}>{{ c.nome }}</option>{% endfor %}
+    </select>
+  </div>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+    <button class="btn-secondary btn"
+            hx-get="{% url 'agenda:calendario' %}?ano={% if mes == 1 %}{{ ano|add:"-1" }}{% else %}{{ ano }}{% endif %}&mes={% if mes == 1 %}12{% else %}{{ mes|add:"-1" }}{% endif %}&consultorio={{ consultorio_id }}"
+            hx-target="#agenda-calendario" hx-select="#agenda-calendario" hx-swap="outerHTML">←</button>
+    <strong>{{ mes_nome }} {{ ano }}</strong>
+    <button class="btn-secondary btn"
+            hx-get="{% url 'agenda:calendario' %}?ano={% if mes == 12 %}{{ ano|add:"1" }}{% else %}{{ ano }}{% endif %}&mes={% if mes == 12 %}1{% else %}{{ mes|add:"1" }}{% endif %}&consultorio={{ consultorio_id }}"
+            hx-target="#agenda-calendario" hx-select="#agenda-calendario" hx-swap="outerHTML">→</button>
+  </div>
+  <table style="width:100%; text-align:center; border-collapse:collapse;">
+    <thead><tr>{% for d in "DSTQQSS" %}<th style="padding:4px; font-size:.78rem; color:var(--muted);">{{ d }}</th>{% endfor %}</tr></thead>
+    <tbody>
+      {% for semana in semanas %}
+      <tr>
+        {% for dia in semana %}
+        <td style="padding:2px;">
+          {% if dia != 0 %}
+            {% with data_iso=ano|stringformat:"04d"|add:"-"|add:mes|stringformat:"02d"|add:"-"|add:dia|stringformat:"02d" %}
+            <a href="{% url 'agenda:calendario' %}?ano={{ ano }}&mes={{ mes }}&dia={{ data_iso }}&consultorio={{ consultorio_id }}"
+               hx-get="{% url 'agenda:calendario' %}?ano={{ ano }}&mes={{ mes }}&dia={{ data_iso }}&consultorio={{ consultorio_id }}"
+               hx-target="#agenda-calendario" hx-select="#agenda-calendario" hx-swap="outerHTML"
+               style="display:block; padding:6px; border-radius:6px; text-decoration:none; color:inherit; position:relative;
+                      {% if dia == dia_selecionado.day and mes == dia_selecionado.month and ano == dia_selecionado.year %}background:var(--primary); color:#fff;
+                      {% elif dia == hoje.day and mes == hoje.month and ano == hoje.year %}background:#fce4ec;{% endif %}">
+              {{ dia }}
+              {% with data_atual=data_iso %}
+              {% for db in dias_bloqueados %}{% if db|date:"Y-m-d" == data_atual %}🔒{% endif %}{% endfor %}
+              {% for de in dias_com_evento %}{% if de|date:"Y-m-d" == data_atual %}<span style="display:inline-block; width:5px; height:5px; border-radius:50%; background:currentColor; margin-left:2px;"></span>{% endif %}{% endfor %}
+              {% endwith %}
+            </a>
+            {% endwith %}
+          {% endif %}
+        </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <div class="section-title">Agendamentos de {{ dia_selecionado|date:"d/m/Y" }}</div>
+  {% if dia_selecionado in dias_bloqueados %}
+  <div class="login-error">🔒 A agenda deste consultório está fechada nesse dia.</div>
+  {% endif %}
+  {% for a in do_dia %}
+  <div class="card" style="box-shadow:none; border:1px solid var(--border);
+      border-left:3px solid {% if a.status == 'cancelado' %}#fc8181{% elif a.status == 'realizado' %}#68a678{% else %}var(--primary){% endif %}; margin-bottom:10px;">
+    <div style="display:flex; justify-content:space-between;">
+      <strong>{{ a.hora|time:"H:i"|default:"—" }} · {{ a.pac_nome }}</strong>
+      <span class="badge">{{ a.get_status_display }}</span>
+    </div>
+    <p style="color:var(--muted); margin:4px 0;">
+      {{ a.tutor_nome }} {% if a.tutor_tel %}· {{ a.tutor_tel }}{% endif %}
+      {% if a.consultorio %}· 🏥 {{ a.consultorio.nome }}{% endif %}
+    </p>
+    {% if a.queixa %}<p>{{ a.queixa }}</p>{% endif %}
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
+      {% if a.status != "realizado" and a.status != "cancelado" %}
+      <form method="post" action="{% url 'agenda:status' a.pk %}"><input type="hidden" name="status" value="realizado">{% csrf_token %}<button class="btn-secondary btn">✔ Realizado</button></form>
+      <form method="post" action="{% url 'agenda:status' a.pk %}"><input type="hidden" name="status" value="cancelado">{% csrf_token %}<button class="btn-danger btn" data-confirm="Cancelar este agendamento?">✕ Cancelar</button></form>
+      {% endif %}
+      <form method="post" action="{% url 'agenda:excluir' a.pk %}"><button class="btn-danger btn" data-confirm="Excluir este agendamento?">🗑 Excluir</button>{% csrf_token %}</form>
+    </div>
+  </div>
+  {% empty %}
+  <div class="empty"><span class="icon">📅</span>Nenhum agendamento neste dia.</div>
+  {% endfor %}
+</div>

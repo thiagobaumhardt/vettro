@@ -1,0 +1,28 @@
+<div x-data="{ lightbox: null }">
+  <form hx-post="{% url 'pacientes:foto_upload' paciente.pk %}" hx-target="#ficha-conteudo" hx-encoding="multipart/form-data" style="margin-bottom:16px;">
+    {% csrf_token %}
+    <label class="btn-secondary btn upload-label" style="cursor:pointer; border:1.5px dashed var(--border-2);">
+      📷 Anexar foto(s) (até 4MB cada)
+      <input type="file" name="arquivos" accept="image/*" multiple style="display:none;" onchange="this.form.requestSubmit()">
+    </label>
+  </form>
+
+  {% if fotos %}
+  <div class="foto-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px;">
+    {% for f in fotos %}
+    <div style="position:relative; aspect-ratio:1; border-radius:8px; overflow:hidden;">
+      <img src="{{ f.imagem.url }}" style="width:100%; height:100%; object-fit:cover; cursor:pointer;" @click="lightbox = '{{ f.imagem.url }}'">
+      <button class="btn-danger btn" data-confirm="Excluir esta foto?"
+              hx-post="{% url 'pacientes:foto_excluir' paciente.pk f.pk %}" hx-target="#ficha-conteudo"
+              style="position:absolute; top:4px; right:4px; border-radius:50%; width:26px; height:26px; padding:0; line-height:1;">✕</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty"><span class="icon">🖼️</span>Nenhuma foto ainda.</div>
+  {% endif %}
+
+  <div class="modal-backdrop" x-show="lightbox" x-cloak @click="lightbox = null" style="z-index:300;">
+    <img :src="lightbox" style="max-width:90vw; max-height:90vh; border-radius:8px;">
+  </div>
+</div>

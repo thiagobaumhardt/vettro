@@ -1,0 +1,7 @@
+Django==5.1.4
+django-tenants==3.7.0
+psycopg[binary]==3.2.3
+whitenoise==6.8.2
+python-dotenv==1.0.1
+requests==2.32.3
+Pillow==11.0.0
