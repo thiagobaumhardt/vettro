@@ -31,11 +31,22 @@ class Consultorio(models.Model):
 
 
 class BloqueioAgenda(models.Model):
-    """"Fechar a agenda" de um consultório num período, dia inteiro ou só um
-    turno — só o admin da clínica pode criar (@admin_required nas views, ver
+    """"Fechar a agenda" num período, dia inteiro ou só um turno — só o admin
+    da clínica pode criar (@admin_required nas views, ver
     apps/agenda/views.py). Nenhum agendamento pode ser criado/reagendado pra
     dentro da janela bloqueada naquele consultório+turno (validação em
-    AgendamentoForm.clean)."""
+    AgendamentoForm.clean).
+
+    `consultorio=None` é um bloqueio **geral** (fecha a agenda inteira, todos
+    os consultórios de uma vez) — equivalente ao "bloqueio geral" do
+    SimplesVet, que afeta todas as filas de atendimento. Sem isso, fechar a
+    clínica inteira exigia criar um bloqueio manual em cada consultório.
+
+    `recorrente=True` repete o bloqueio toda semana no mesmo `dia_semana`
+    (0=segunda...6=domingo, igual `date.weekday()`), a partir de
+    `data_inicio`, indefinidamente se `data_fim` ficar em branco —
+    equivalente ao bloqueio recorrente do SimplesVet (ex: folga fixa toda
+    quarta, sem precisar recriar toda semana)."""
 
     TURNO_DIA_INTEIRO = "dia_inteiro"
     TURNO_MANHA = "manha"
@@ -55,11 +66,28 @@ class BloqueioAgenda(models.Model):
         TURNO_NOITE: (time(18, 0), time(23, 59, 59)),
     }
 
+    DIA_SEMANA_CHOICES = [
+        (0, "Segunda"), (1, "Terça"), (2, "Quarta"), (3, "Quinta"),
+        (4, "Sexta"), (5, "Sábado"), (6, "Domingo"),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    consultorio = models.ForeignKey(Consultorio, on_delete=models.CASCADE, related_name="bloqueios")
+    consultorio = models.ForeignKey(
+        Consultorio, on_delete=models.CASCADE, related_name="bloqueios",
+        null=True, blank=True,
+        help_text="Em branco = bloqueio geral (fecha a agenda inteira, todos os consultórios).",
+    )
     data_inicio = models.DateField()
-    data_fim = models.DateField()
+    data_fim = models.DateField(
+        null=True, blank=True,
+        help_text="Em branco só é permitido em bloqueio recorrente (sem data de término).",
+    )
     turno = models.CharField(max_length=15, choices=TURNO_CHOICES, default=TURNO_DIA_INTEIRO)
+    recorrente = models.BooleanField("Repetir toda semana", default=False)
+    dia_semana = models.IntegerField(
+        "Dia da semana", choices=DIA_SEMANA_CHOICES, null=True, blank=True,
+        help_text="Obrigatório se o bloqueio for recorrente.",
+    )
     motivo = models.CharField(max_length=200)
     criado_por_nome = models.CharField(max_length=150, blank=True)
     criado_em = models.DateTimeField(auto_now_add=True)
@@ -68,13 +96,24 @@ class BloqueioAgenda(models.Model):
         ordering = ["-data_inicio"]
 
     def __str__(self):
-        return f"{self.consultorio.nome} fechado {self.data_inicio}–{self.data_fim} ({self.get_turno_display()})"
+        alvo = self.consultorio.nome if self.consultorio_id else "Todos os consultórios"
+        if self.recorrente:
+            return f"{alvo} fechado toda(o) {self.get_dia_semana_display()} ({self.get_turno_display()})"
+        return f"{alvo} fechado {self.data_inicio}–{self.data_fim} ({self.get_turno_display()})"
 
     def cobre(self, data, hora=None) -> bool:
         """Se `hora` não for informada (agendamento sem horário definido),
         qualquer bloqueio na data já conta como conflito."""
-        if not (self.data_inicio <= data <= self.data_fim):
+        if self.recorrente:
+            if data < self.data_inicio:
+                return False
+            if self.data_fim and data > self.data_fim:
+                return False
+            if data.weekday() != self.dia_semana:
+                return False
+        elif not (self.data_inicio <= data <= self.data_fim):
             return False
+
         if self.turno == self.TURNO_DIA_INTEIRO or hora is None:
             return True
         inicio, fim = self.FAIXAS_HORARIO[self.turno]

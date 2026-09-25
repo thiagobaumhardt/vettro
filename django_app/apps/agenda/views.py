@@ -3,6 +3,7 @@ import json
 from datetime import date, timedelta
 
 from django.contrib import messages
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from apps.core.decorators import admin_required, requer_secao
@@ -33,17 +34,26 @@ def _contexto_calendario(ano: int, mes: int, dia_selecionado: date, consultorio_
 
     dias_com_evento = {d.isoformat() for d in agendamentos_mes.values_list("data", flat=True)}
 
+    # Bloqueio geral (consultorio=None) sempre entra, mesmo sem filtrar por
+    # consultório na tela — representa a clínica inteira fechada. Recorrência
+    # e data_fim em aberto não dão pra resolver com um range simples de SQL,
+    # então percorre dia a dia do mês checando BloqueioAgenda.cobre().
     dias_bloqueados = set()
+    primeiro_dia = date(ano, mes, 1)
+    ultimo_dia = date(ano, mes, calendar.monthrange(ano, mes)[1])
+    filtro_alvo = Q(consultorio__isnull=True)
     if consultorio_id:
-        for bloqueio in BloqueioAgenda.objects.filter(
-            consultorio_id=consultorio_id, data_fim__gte=date(ano, mes, 1),
-            data_inicio__lte=date(ano, mes, calendar.monthrange(ano, mes)[1]),
-        ):
-            d = max(bloqueio.data_inicio, date(ano, mes, 1))
-            fim = min(bloqueio.data_fim, date(ano, mes, calendar.monthrange(ano, mes)[1]))
-            while d <= fim:
-                dias_bloqueados.add(d.isoformat())
-                d += timedelta(days=1)
+        filtro_alvo |= Q(consultorio_id=consultorio_id)
+    candidatos = list(
+        BloqueioAgenda.objects.filter(filtro_alvo, data_inicio__lte=ultimo_dia).filter(
+            Q(data_fim__gte=primeiro_dia) | Q(data_fim__isnull=True)
+        )
+    )
+    d = primeiro_dia
+    while d <= ultimo_dia:
+        if any(b.cobre(d) for b in candidatos):
+            dias_bloqueados.add(d.isoformat())
+        d += timedelta(days=1)
 
     hoje = date.today()
     return {
@@ -153,7 +163,9 @@ def consultorios_lista(request):
         "consultorios": Consultorio.objects.all(),
         "consultorio_form": ConsultorioForm(),
         "bloqueio_form": BloqueioForm(),
-        "bloqueios": BloqueioAgenda.objects.filter(data_fim__gte=date.today()).select_related("consultorio"),
+        "bloqueios": BloqueioAgenda.objects.filter(
+            Q(data_fim__gte=date.today()) | Q(data_fim__isnull=True)
+        ).select_related("consultorio"),
     })
 
 
@@ -188,11 +200,19 @@ def bloqueio_criar(request):
             bloqueio = form.save(commit=False)
             bloqueio.criado_por_nome = request.user.nome
             bloqueio.save()
-            messages.success(
-                request,
-                f"Agenda de {bloqueio.consultorio.nome} fechada de "
-                f"{bloqueio.data_inicio:%d/%m/%Y} a {bloqueio.data_fim:%d/%m/%Y}.",
-            )
+            alvo = bloqueio.consultorio.nome if bloqueio.consultorio_id else "Todos os consultórios"
+            if bloqueio.recorrente:
+                fim_txt = f" até {bloqueio.data_fim:%d/%m/%Y}" if bloqueio.data_fim else " (sem data de término)"
+                messages.success(
+                    request,
+                    f"Agenda de {alvo} fechada toda(o) {bloqueio.get_dia_semana_display()} "
+                    f"a partir de {bloqueio.data_inicio:%d/%m/%Y}{fim_txt}.",
+                )
+            else:
+                messages.success(
+                    request,
+                    f"Agenda de {alvo} fechada de {bloqueio.data_inicio:%d/%m/%Y} a {bloqueio.data_fim:%d/%m/%Y}.",
+                )
         else:
             messages.error(request, "Verifique os campos do bloqueio.")
     return redirect("agenda:consultorios")

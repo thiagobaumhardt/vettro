@@ -16,8 +16,28 @@ PERMISSOES_POR_PAPEL = {
 }
 
 
-def secoes_permitidas(papel: str) -> set:
-    return PERMISSOES_POR_PAPEL.get(papel, set())
+def secoes_permitidas(request) -> set:
+    """Interseção de duas camadas independentes (pedido explícito do
+    usuário): o que o PAPEL da pessoa permite (PERMISSOES_POR_PAPEL) E o que
+    a CLÍNICA tem habilitado como módulo (Clinica.modulos_habilitados,
+    decidido no provisionamento/editável no admin — vale pra todo mundo da
+    clínica, inclusive admin). "pacientes_clinico" é sub-permissão de
+    "pacientes", não um módulo próprio — só sobrevive ao filtro se
+    "pacientes" também estiver habilitado pra clínica."""
+    papel = request.session.get("papel") if hasattr(request, "session") else None
+    papel_secoes = PERMISSOES_POR_PAPEL.get(papel, set())
+
+    modulos_clinica = request.session.get("modulos_habilitados") if hasattr(request, "session") else None
+    if modulos_clinica is None:
+        # Sessão sem essa chave (ex: sessão antiga de antes desta feature) —
+        # não bloqueia nada por omissão, comportamento antigo preservado.
+        return papel_secoes
+
+    modulos_clinica = set(modulos_clinica)
+    permitido = {s for s in papel_secoes if s in modulos_clinica}
+    if "pacientes_clinico" in papel_secoes and "pacientes" in modulos_clinica:
+        permitido.add("pacientes_clinico")
+    return permitido
 
 
 def admin_required(view_func):
@@ -36,16 +56,15 @@ def admin_required(view_func):
 
 
 def requer_secao(secao: str):
-    """Restringe uma view a perfis cujo PERMISSOES_POR_PAPEL inclui `secao`
-    — ex: motorista só tem "agenda", então qualquer view de Pacientes/
-    Tutores/Financeiro/Estoque decorada com outra seção nega acesso a ele."""
+    """Restringe uma view a quem tem `secao` liberada — pelo papel E pela
+    clínica ter esse módulo habilitado (ver secoes_permitidas)."""
 
     def decorador(view_func):
         @wraps(view_func)
         @login_required
         def _wrapped(request, *args, **kwargs):
-            if secao not in secoes_permitidas(request.session.get("papel")):
-                raise PermissionDenied("Seu perfil não tem acesso a esta área.")
+            if secao not in secoes_permitidas(request):
+                raise PermissionDenied("Esta área não está disponível — verifique seu perfil ou se o módulo está habilitado pra sua clínica.")
             return view_func(request, *args, **kwargs)
 
         return _wrapped

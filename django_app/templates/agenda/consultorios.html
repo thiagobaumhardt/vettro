@@ -42,15 +42,17 @@
 </div>
 
 <div class="card">
-  <div class="section-title">🔒 Fechar agenda de um consultório</div>
-  <p style="color:var(--muted);">Bloqueia novos agendamentos num consultório, por dia inteiro ou só um turno — ação restrita ao admin da clínica.</p>
+  <div class="section-title">🔒 Fechar agenda</div>
+  <p style="color:var(--muted);">Bloqueia novos agendamentos — de um consultório específico ou de todos de uma vez (bloqueio geral), por dia inteiro ou só um turno, uma vez só ou repetindo toda semana — ação restrita ao admin da clínica.</p>
   <form method="post" action="{% url 'agenda:bloqueio_novo' %}">
     {% csrf_token %}
     <div class="form-grid">
       <div><label>Consultório</label>{{ bloqueio_form.consultorio }}</div>
       <div><label>Turno</label>{{ bloqueio_form.turno }}</div>
-      <div><label>De</label>{{ bloqueio_form.data_inicio }}</div>
-      <div><label>Até</label>{{ bloqueio_form.data_fim }}</div>
+      <div><label>{% if bloqueio_form.recorrente.value %}A partir de{% else %}De{% endif %}</label>{{ bloqueio_form.data_inicio }}</div>
+      <div><label>Até <small style="color:var(--muted);">(opcional se recorrente)</small></label>{{ bloqueio_form.data_fim }}</div>
+      <div><label style="display:flex; align-items:center; gap:8px;">{{ bloqueio_form.recorrente }} Repetir toda semana</label></div>
+      <div><label>Dia da semana <small style="color:var(--muted);">(se recorrente)</small></label>{{ bloqueio_form.dia_semana }}</div>
       <div class="full"><label>Motivo</label>{{ bloqueio_form.motivo }}</div>
     </div>
     <div style="margin-top:12px;"><button type="submit" class="btn-danger btn">Fechar agenda</button></div>
@@ -62,8 +64,12 @@
   {% for b in bloqueios %}
   <div class="card" style="box-shadow:none; border:1px solid var(--border); border-left:3px solid #fc8181; margin-bottom:8px;">
     <div style="display:flex; justify-content:space-between;">
-      <strong>🏥 {{ b.consultorio.nome }} · {{ b.get_turno_display }}</strong>
-      <span>{{ b.data_inicio|date:"d/m/Y" }} – {{ b.data_fim|date:"d/m/Y" }}</span>
+      <strong>🏥 {% if b.consultorio %}{{ b.consultorio.nome }}{% else %}Todos os consultórios{% endif %} · {{ b.get_turno_display }}</strong>
+      {% if b.recorrente %}
+        <span>Toda(o) {{ b.get_dia_semana_display }} · a partir de {{ b.data_inicio|date:"d/m/Y" }}{% if b.data_fim %} até {{ b.data_fim|date:"d/m/Y" }}{% endif %}</span>
+      {% else %}
+        <span>{{ b.data_inicio|date:"d/m/Y" }} – {{ b.data_fim|date:"d/m/Y" }}</span>
+      {% endif %}
     </div>
     <p style="margin:4px 0;">{{ b.motivo }} <small style="color:var(--muted);">(por {{ b.criado_por_nome }})</small></p>
     <form method="post" action="{% url 'agenda:bloqueio_excluir' b.pk %}">

@@ -16,6 +16,22 @@ class Clinica(TenantMixin):
     ativa = models.BooleanField(default=True)
     criado_em = models.DateTimeField(auto_now_add=True)
 
+    # Módulos habilitados pra essa clínica (pedido explícito do usuário) —
+    # decidido no provisionamento (admin de plataforma), editável depois no
+    # admin. Controla se o módulo existe pra essa clínica, independente do
+    # papel do usuário — é uma camada ACIMA de PERMISSOES_POR_PAPEL (ver
+    # apps.core.decorators.secoes_permitidas, que faz a interseção das
+    # duas). Nomes batem 1:1 com as seções de PERMISSOES_POR_PAPEL.
+    modulo_tutores = models.BooleanField("Tutores", default=True)
+    modulo_pacientes = models.BooleanField("Pacientes", default=True)
+    modulo_financeiro = models.BooleanField("Serviços/Financeiro", default=True)
+    modulo_estoque = models.BooleanField("Estoque", default=True)
+    modulo_atendimentos = models.BooleanField("Atendimentos", default=True)
+    modulo_agenda = models.BooleanField("Agenda", default=True)
+    # Desligado por padrão — exige configuração externa (conta Meta Business,
+    # template aprovado) que a clínica pode não ter ainda (§8 do plano).
+    modulo_whatsapp_lembrete = models.BooleanField("Lembrete de WhatsApp (Agenda)", default=False)
+
     # Criação/migração de schema é feita explicitamente pelo fluxo de
     # provisionamento (apps.plataforma.services.provisionar_clinica), não
     # como side-effect automático de save().
@@ -24,6 +40,19 @@ class Clinica(TenantMixin):
 
     def __str__(self):
         return self.nome
+
+    def modulos_habilitados(self) -> set:
+        """Nomes de seção (iguais aos de PERMISSOES_POR_PAPEL) habilitados
+        pra essa clínica."""
+        mapa = {
+            "tutores": self.modulo_tutores,
+            "pacientes": self.modulo_pacientes,
+            "financeiro": self.modulo_financeiro,
+            "estoque": self.modulo_estoque,
+            "atendimentos": self.modulo_atendimentos,
+            "agenda": self.modulo_agenda,
+        }
+        return {secao for secao, ativo in mapa.items() if ativo}
 
 
 class Dominio(DomainMixin):

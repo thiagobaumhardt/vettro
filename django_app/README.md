@@ -21,6 +21,16 @@ estava em produção nela). Ver o plano completo em
   **+ Consultórios/locais cadastráveis livremente**, fechamento de agenda por dia ou turno
   (admin only, testado: vet não-admin recebe 403), e **lembrete de WhatsApp 24h antes**
   (`enviar_lembretes_whatsapp`, backend substituível — provedor ainda não escolhido).
+  **+ Bloqueio geral e recorrente** (paridade com o SimplesVet, que faz distinção entre
+  bloqueio geral × individual e pontual × recorrente): `BloqueioAgenda.consultorio` agora aceita
+  `None` = fecha a agenda inteira (todos os consultórios de uma vez, não só um por um); e
+  `recorrente=True` + `dia_semana` repete o bloqueio toda semana, com `data_fim` opcional
+  (recorrência sem data de término). Testado ponta a ponta (clínica de teste provisionada e
+  removida): bloqueio geral barra agendamento em qualquer consultório; bloqueio recorrente
+  sem data-fim barra o mesmo dia da semana indefinidamente, só no turno certo, só no
+  consultório certo, sem vazar pros outros; calendário mostra 🔒 corretamente em todas as
+  ocorrências do mês (geral aparece mesmo sem filtrar consultório; recorrente só some ao
+  filtrar o consultório certo, mesmo comportamento de antes).
 - ✅ Fase 4 (Cobranças, Auditoria, Usuários por clínica) — aba Cobrança (admin-only) com
   criação manual + Cobrança automática de Anamnese/Cirurgia + marcar como pago; Auditoria
   (login, criar/atualizar/excluir/exportar de Tutor/Paciente, import de NF-e) — `LoginAudit`
@@ -42,7 +52,52 @@ estava em produção nela). Ver o plano completo em
   ressalva em `static/dist/styles.css`), tipografia Livvic (textos, fonte real da marca) +
   Fraunces (títulos, substituta gratuita temporária da Roca Two, que é paga/sem licença web
   confirmada), toggle de sidebar mobile (hambúrguer + off-canvas) finalmente ligado.
-- ⏳ Fases 5-6: Configurações fiscais da clínica, Pagamentos (TEF+Focus NFe), deploy KingHost
+- 📱 **Backend real de WhatsApp implementado** (`WhatsAppMetaCloudBackend`, Meta Cloud API
+  oficial) — decisão tomada depois de pesquisa mostrando que Z-API/Evolution API conectam via
+  QR Code (mesmo risco de banimento do WhatsApp Web não-oficial, mesmo sendo pagas). Mensagem
+  vira variável de um template aprovado (obrigatório pra mensagem de negócio-pro-cliente fora
+  da janela de 24h). Testado com HTTP mockado: payload correto, tratamento de erro/config
+  ausente, fluxo ponta a ponta do comando `enviar_lembretes_whatsapp`. Falta só a conta Meta
+  Business + template aprovado de cada clínica pra ativar de verdade (`WHATSAPP_BACKEND` +
+  `WHATSAPP_META_*` nas envs).
+- 🧩 **Módulos habilitáveis por clínica** (pedido explícito do usuário) — o admin de
+  plataforma decide, no provisionamento (editável depois no admin da Clinica), quais módulos
+  cada clínica tem: Tutores/Pacientes/Financeiro/Estoque/Atendimentos/Agenda vêm marcados por
+  padrão, Lembrete de WhatsApp vem desmarcado (exige config externa). Um módulo desabilitado
+  some da sidebar e retorna 403 em qualquer view daquela seção — **pra todo mundo da clínica,
+  inclusive o admin dela** (é uma camada acima do papel individual, não substitui ela — ver
+  `Clinica.modulos_habilitados()` × `apps.core.decorators.secoes_permitidas`). Testado ponta a
+  ponta: módulo desabilitado bloqueia view (403), some do menu, e o comando de lembrete pula
+  clínica sem o módulo de WhatsApp habilitado.
+- 🧱 **Esqueleto de `apps.pagamentos`** (§8 do plano) — `TransacaoTEF` (adquirente/terminal
+  livres, pensando desde já em clínica com mais de uma maquininha simultânea — SiTef exige
+  código de terminal distinto por conexão simultânea do mesmo par loja/terminal) e
+  `NotaFiscalEmitida` (placeholder, sem chamada real à Focus NFe ainda). Interface `TEFBackendBase`
+  + `TEFConsoleBackend` (sandbox, sempre aprova) — mesmo princípio do backend substituível do
+  WhatsApp, backend real (SiTef/PayGo) plugável depois via `TEF_BACKEND` sem mudar `services.py`.
+  **Importante**: `iniciar_pagamento_tef` só marca a Cobrança como paga — NÃO debita estoque,
+  porque o débito (SD2) já acontece na criação da Anamnese/Cirurgia que gera a Cobrança (ver
+  `apps.pacientes.services`), então debitar de novo aqui duplicaria a saída. Testado ponta a
+  ponta (clínica de teste provisionada e removida na mesma verificação): Cobrança pendente →
+  `iniciar_pagamento_tef` → transação aprovada pelo sandbox → Cobrança vira "pago". Ainda **sem
+  UI** (nenhum botão chama isso ainda) e sem emissão fiscal real — aguardando decisão SiTef vs
+  PayGo e conta Focus NFe homologada.
+- 🔒 **Reforço de LGPD** (pedido explícito do usuário, revisão de conformidade) — dois gaps reais
+  corrigidos: (1) **direito à eliminação incompleto** — excluir um Tutor deixava
+  `tutor_nome`/`tutor_tel` intactos nos snapshots desnormalizados de Cobrança/Agendamento/
+  Atendimento; `apps.tutores.services.escrubar_snapshots_tutor` agora limpa esses snapshots
+  (substitui por "Tutor excluído (LGPD)"/vazio) antes da exclusão, preservando o registro em si
+  (retenção fiscal/histórico clínico, LGPD Art. 16) — só o dado pessoal do snapshot some.
+  (2) **Consentimento LGPD granular** — `Tutor.consentimento_whatsapp` (+ timestamp próprio)
+  separado do `consentimento_dados` geral, porque cadastro/atendimento tem base legal própria
+  (execução de contrato) mas lembrete via WhatsApp (Meta, fora do Brasil) é tratamento opcional
+  que pede opt-in específico e revogável; `enviar_lembretes_whatsapp` agora exige esse
+  consentimento além do módulo da clínica — agendamento avulso ou sem tutor consentido nunca
+  recebe lembrete (padrão seguro: sem registro de consentimento, não envia). Testado ponta a
+  ponta (clínica de teste): sem consentimento não envia, com consentimento envia; exclusão
+  escruba os 3 modelos corretamente preservando paciente/histórico; formulário cria e revoga o
+  consentimento de WhatsApp independente do geral (verificado via `Client` HTTP real).
+- ⏳ Fases 5-6: Configurações fiscais da clínica, emissão fiscal real (Focus NFe), deploy KingHost
   (**bloqueado**: preciso confirmar se o plano da KingHost suporta Python 3.10+ — Django 5.1
   exige isso, e a doc pública encontrada só cobria até Python 3.7).
 
@@ -89,9 +144,11 @@ Ver `config/settings/base.py` (`SHARED_APPS`/`TENANT_APPS`) e §2-§3 do plano. 
 - `apps/tutores`, `apps/pacientes`, `apps/financeiro`, `apps/estoque`, `apps/atendimentos`,
   `apps/agenda`, `apps/auditoria`, `apps/usuarios_clinica` — módulos clínicos/operacionais,
   todos no schema de cada clínica (TENANT_APPS).
+- `apps/pagamentos` — esqueleto (models `TransacaoTEF`/`NotaFiscalEmitida` + interface TEF
+  plugável, sem UI/backend real ainda — ver Status acima).
 
-`apps/pagamentos` e `apps/configuracoes` (Fases 5-6, ainda não implementados) ficam pra depois
-por dependerem de decisões externas (provedor de TEF/Focus NFe, dados fiscais reais).
+`apps/configuracoes` (Fase 6, ainda não implementado) fica pra depois — dados fiscais reais da
+clínica (CNPJ, inscrições, certificado digital) precisam ser levantados com o contador antes.
 
 ## Tailwind
 

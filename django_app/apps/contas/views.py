@@ -30,6 +30,7 @@ def _limpar_clinica_ativa(request):
     request.session.pop("clinica_id", None)
     request.session.pop("clinica_nome", None)
     request.session.pop("papel", None)
+    request.session.pop("modulos_habilitados", None)
 
 
 def _ativar_clinica(request, vinculo: UsuarioClinica):
@@ -41,6 +42,10 @@ def _ativar_clinica(request, vinculo: UsuarioClinica):
     request.session["clinica_id"] = str(vinculo.clinica_id)
     request.session["clinica_nome"] = vinculo.clinica.nome
     request.session["papel"] = vinculo.papel
+    # Módulos habilitados pra essa clínica (pedido explícito do usuário) —
+    # cacheado na sessão pra não bater no schema public a cada request; ver
+    # apps.core.decorators.secoes_permitidas, que cruza isso com o papel.
+    request.session["modulos_habilitados"] = list(vinculo.clinica.modulos_habilitados())
 
     from apps.auditoria.services import registrar as registrar_auditoria
 

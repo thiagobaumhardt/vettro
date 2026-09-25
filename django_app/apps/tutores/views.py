@@ -32,6 +32,7 @@ def form_view(request, pk=None):
     tutor = get_object_or_404(Tutor, pk=pk) if pk else None
 
     consentimento_anterior = tutor.consentimento_dados if tutor else False
+    consentimento_whatsapp_anterior = tutor.consentimento_whatsapp if tutor else False
 
     if request.method == "POST":
         form = TutorForm(request.POST, instance=tutor)
@@ -39,6 +40,9 @@ def form_view(request, pk=None):
             era_novo = tutor is None
             novo = form.save(commit=False)
             services.salvar_consentimento(novo, consentimento_anterior, form.cleaned_data["consentimento_dados"])
+            services.salvar_consentimento_whatsapp(
+                novo, consentimento_whatsapp_anterior, form.cleaned_data["consentimento_whatsapp"]
+            )
             novo.save()
             registrar_auditoria(
                 usuario=request.user, acao="criar" if era_novo else "atualizar",
@@ -64,6 +68,7 @@ def excluir(request, pk):
     tutor = get_object_or_404(Tutor, pk=pk)
     if request.method == "POST":
         nome, tutor_id = tutor.nome, tutor.id
+        services.escrubar_snapshots_tutor(tutor)
         tutor.delete()
         registrar_auditoria(
             usuario=request.user, acao="excluir", entidade="tutor",

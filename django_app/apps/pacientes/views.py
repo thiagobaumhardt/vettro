@@ -85,7 +85,7 @@ def ficha(request, pk):
     if (
         aba not in ABAS_DISPONIVEIS
         or (aba in ABAS_ADMIN_ONLY and papel != "admin")
-        or (aba in ABAS_CLINICAS and "pacientes_clinico" not in secoes_permitidas(papel))
+        or (aba in ABAS_CLINICAS and "pacientes_clinico" not in secoes_permitidas(request))
     ):
         aba = "ficha"
 
@@ -119,7 +119,7 @@ def ficha_aba(request, pk, aba):
         raise Http404
     if aba in ABAS_ADMIN_ONLY and papel != "admin":
         raise PermissionDenied("Aba restrita a administradores da clínica.")
-    if aba in ABAS_CLINICAS and "pacientes_clinico" not in secoes_permitidas(papel):
+    if aba in ABAS_CLINICAS and "pacientes_clinico" not in secoes_permitidas(request):
         raise PermissionDenied("Seu perfil não tem acesso a dados clínicos.")
 
     if aba == "ficha":

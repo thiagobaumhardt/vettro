@@ -34,6 +34,13 @@ class Tutor(models.Model):
 
     consentimento_dados = models.BooleanField("Consentimento LGPD", default=False)
     consentimento_em = models.DateTimeField(null=True, blank=True)
+    # Separado do consentimento geral de propósito: cadastro/atendimento em
+    # si tem base legal própria (execução de contrato, LGPD Art. 7º V), não
+    # depende de consentimento — mas enviar lembrete via WhatsApp (Meta Cloud
+    # API, servidor fora do Brasil) é tratamento adicional, opcional, que
+    # pede opt-in específico e fácil de revogar, independente do resto.
+    consentimento_whatsapp = models.BooleanField("Consentimento p/ lembrete de WhatsApp", default=False)
+    consentimento_whatsapp_em = models.DateTimeField(null=True, blank=True)
 
     criado_em = models.DateTimeField(auto_now_add=True)
 

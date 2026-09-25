@@ -20,6 +20,10 @@
       <label>Consentimento LGPD</label>
       {% if tutor.consentimento_dados %}✅ Consentido em {{ tutor.consentimento_em|date:"d/m/Y H:i" }}{% else %}❌ Não consentido{% endif %}
     </div>
+    <div>
+      <label>Consentimento p/ lembrete de WhatsApp</label>
+      {% if tutor.consentimento_whatsapp %}✅ Consentido em {{ tutor.consentimento_whatsapp_em|date:"d/m/Y H:i" }}{% else %}❌ Não consentido{% endif %}
+    </div>
   </div>
   {% if tutor.obs %}<p style="margin-top:14px;">{{ tutor.obs|linebreaksbr }}</p>{% endif %}
 </div>

@@ -28,6 +28,7 @@ TENANT_APPS = [
     "apps.tutores",
     "apps.estoque",
     "apps.financeiro",
+    "apps.pagamentos",
     "apps.pacientes",
     "apps.atendimentos",
     "apps.agenda",
@@ -146,10 +147,19 @@ VALIDADE_ALERTA_DIAS = 60
 LOGIN_MAX_TENTATIVAS = 5
 LOGIN_JANELA_SEGUNDOS = 15 * 60
 
-# Provedor de WhatsApp ainda não escolhido pelo usuário (Z-API / Meta Cloud
-# API / Twilio, ver §8 do plano) — backend "console" só loga, não envia de
-# verdade. Trocar aqui pro backend real assim que decidido, nada mais muda.
+# WhatsApp — Meta Cloud API oficial (decidido: alternativas tipo Z-API/
+# Evolution API conectam via QR Code e correm risco real de banimento em
+# 2026, mesmo pagas — só a API oficial é livre desse risco). Backend
+# "console" continua sendo o padrão até as credenciais reais serem
+# configuradas (nenhuma delas tem valor default de propósito — sem elas o
+# WhatsAppMetaCloudBackend loga erro e não envia, não quebra o resto do
+# fluxo). Pra ativar de verdade: WHATSAPP_BACKEND=
+# apps.agenda.notificacoes.WhatsAppMetaCloudBackend + as 3-4 vars abaixo.
 WHATSAPP_BACKEND = os.environ.get("WHATSAPP_BACKEND", "apps.agenda.notificacoes.WhatsAppConsoleBackend")
+WHATSAPP_META_TOKEN = os.environ.get("WHATSAPP_META_TOKEN", "")
+WHATSAPP_META_PHONE_NUMBER_ID = os.environ.get("WHATSAPP_META_PHONE_NUMBER_ID", "")
+WHATSAPP_META_TEMPLATE_NAME = os.environ.get("WHATSAPP_META_TEMPLATE_NAME", "")
+WHATSAPP_META_TEMPLATE_LANG = os.environ.get("WHATSAPP_META_TEMPLATE_LANG", "pt_BR")
 
 # E-mail — usado pro convite de "definir senha" ao adicionar alguém em
 # 🔑 Usuários (§5 do plano). Backend "console" (dev): imprime o e-mail no
@@ -165,3 +175,10 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Vettro <nao-responda@vettro.com.br>")
 SITE_URL = os.environ.get("SITE_URL", "http://localhost:8000")
+
+# TEF (maquininha) — casa TEF agnóstica de adquirente ainda não contratada
+# (SiTef vs PayGo em aberto, §8 do plano). "Console" é sandbox: sempre
+# aprova, não fala com maquininha nenhuma — permite testar o fluxo
+# Cobrança→TEF→paga sem depender do contrato. Trocar via TEF_BACKEND quando
+# o provedor for definido e homologado.
+TEF_BACKEND = os.environ.get("TEF_BACKEND", "apps.pagamentos.tef.TEFConsoleBackend")
