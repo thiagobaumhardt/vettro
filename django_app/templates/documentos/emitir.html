@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ modelo.nome }} — {{ paciente.nome }} — Vettro{% endblock %}
+{% block content %}
+<form method="post" class="card">
+  {% csrf_token %}
+  <input type="hidden" name="paciente" value="{{ paciente.pk }}">
+  <input type="hidden" name="modelo" value="{{ modelo.pk }}">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+    <h2 style="margin:0;">{{ modelo.nome }} — {{ paciente.nome }}</h2>
+    <a href="{% url 'documentos:lista' %}" class="btn-secondary btn">← Documentos</a>
+  </div>
+  <p style="color:var(--muted); margin-top:0;">Confira e ajuste o texto antes de emitir. Complete as lacunas <code>{{ lacuna }}</code> se necessário — elas também podem ser preenchidas à mão no papel.</p>
+  <label>Título</label>
+  <input type="text" name="titulo" value="{{ titulo }}" maxlength="120" required>
+  <label style="margin-top:12px;">Texto</label>
+  <textarea name="texto" rows="22" required>{{ texto }}</textarea>
+  <div style="margin-top:14px;"><button type="submit" class="btn-primary btn">Emitir e imprimir</button></div>
+</form>
+{% endblock %}

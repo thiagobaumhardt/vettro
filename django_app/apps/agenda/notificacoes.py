@@ -37,6 +37,8 @@ def _normalizar_telefone(telefone: str) -> str | None:
     digitos = re.sub(r"\D", "", telefone or "")
     if not digitos:
         return None
+    if (telefone or "").strip().startswith("+"):
+        return digitos  # já veio com DDI ("+55 (51) 9 ...", "+1 202 ...")
     if digitos.startswith("55") and len(digitos) in (12, 13):
         return digitos
     if len(digitos) in (10, 11):  # DDD + número, sem o DDI
@@ -122,6 +124,24 @@ class WhatsAppMetaCloudBackend(WhatsAppBackendBase):
 def get_backend() -> WhatsAppBackendBase:
     caminho = getattr(settings, "WHATSAPP_BACKEND", "apps.agenda.notificacoes.WhatsAppConsoleBackend")
     return import_string(caminho)()
+
+
+def montar_mensagem_proxima_dose(atendimento, clinica_nome: str) -> str:
+    nome_tutor = (atendimento.paciente.tutor.nome.split(" ")[0] if atendimento.paciente and atendimento.paciente.tutor else "") or "tutor(a)"
+    return (
+        f"Olá, {nome_tutor}! Aqui é da {clinica_nome}. Passando pra lembrar que a próxima dose da vacina "
+        f"{atendimento.vacina_nome} de {atendimento.pac_nome} está marcada para {atendimento.data_proxima_dose:%d/%m/%Y}. "
+        f"Responda esta mensagem para agendar."
+    )
+
+
+def montar_mensagem_retorno(atendimento, clinica_nome: str) -> str:
+    nome_tutor = (atendimento.paciente.tutor.nome.split(" ")[0] if atendimento.paciente and atendimento.paciente.tutor else "") or "tutor(a)"
+    return (
+        f"Olá, {nome_tutor}! Aqui é da {clinica_nome}. Passando pra lembrar que o retorno de "
+        f"{atendimento.pac_nome} está previsto para {atendimento.data_retorno:%d/%m/%Y}. "
+        f"Responda esta mensagem para agendar."
+    )
 
 
 def montar_mensagem_lembrete(agendamento) -> str:

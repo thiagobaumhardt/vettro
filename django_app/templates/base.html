@@ -1,4 +1,4 @@
-{% load static %}
+{% load static estaticos %}
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -7,12 +7,14 @@
   <title>{% block title %}Vettro{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Livvic:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'dist/styles.css' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400..700,100&family=Livvic:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static_v 'dist/styles.css' %}">
   <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+  <script src="{% static_v 'js/insumos_busca.js' %}" defer></script>
+  <script src="{% static_v 'js/mascaras.js' %}" defer></script>
   <script src="{% static 'vendor/alpine.min.js' %}" defer></script>
 </head>
-<body>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   <div class="app-shell" x-data="{ sidebarAberta: false }">
     <div class="sidebar-backdrop" :class="{ aberta: sidebarAberta }" @click="sidebarAberta = false"></div>
     {% include "partials/_sidebar.html" %}

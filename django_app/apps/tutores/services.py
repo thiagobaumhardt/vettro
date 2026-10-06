@@ -47,13 +47,24 @@ def escrubar_snapshots_tutor(tutor: Tutor) -> None:
     from apps.agenda.models import Agendamento
     from apps.atendimentos.models import Atendimento
     from apps.financeiro.models import Cobranca
+    from apps.lembretes.models import EnvioLembrete
     from apps.pacientes.models import Paciente
+
+    from apps.orcamentos.models import Orcamento
+
+    EnvioLembrete.objects.filter(tutor=tutor).update(tutor_nome=PLACEHOLDER_TUTOR_EXCLUIDO, telefone="")
+    Orcamento.objects.filter(tutor=tutor).update(tutor_nome=PLACEHOLDER_TUTOR_EXCLUIDO, tutor_tel="")
 
     paciente_ids = list(Paciente.objects.filter(tutor=tutor).values_list("id", flat=True))
     if not paciente_ids:
         return
 
     Cobranca.objects.filter(paciente_id__in=paciente_ids).update(tutor_nome=PLACEHOLDER_TUTOR_EXCLUIDO)
+    from apps.receitas.models import Receita
+
+    Receita.objects.filter(paciente_id__in=paciente_ids).update(
+        tutor_nome=PLACEHOLDER_TUTOR_EXCLUIDO, tutor_endereco="", tutor_cidade_uf="", tutor_cpf="", tutor_rg="",
+    )
     for modelo in (Agendamento, Atendimento):
         modelo.objects.filter(paciente_id__in=paciente_ids).update(
             tutor_nome=PLACEHOLDER_TUTOR_EXCLUIDO, tutor_tel="",
@@ -73,8 +84,10 @@ def dados_exportacao_lgpd(tutor: Tutor) -> dict:
             "id": str(tutor.id),
             "nome": tutor.nome,
             "tel": tutor.tel,
+            "tel2": tutor.tel2,
             "email": tutor.email,
             "cpf": tutor.cpf,
+            "rg": tutor.rg,
             "endereco": tutor.endereco_completo,
             "como_conheceu": tutor.como_conheceu,
             "obs": tutor.obs,

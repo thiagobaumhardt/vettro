@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Vendas — Vettro{% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; flex-wrap:wrap;">
+    <h2 style="margin:0;">Vendas</h2>
+    <a href="{% url 'vendas:nova' %}" class="btn-primary btn">+ Nova venda</a>
+  </div>
+  <p style="margin:0 0 14px;">
+    <strong>Hoje:</strong> {{ hoje.qtd }} venda{{ hoje.qtd|pluralize }} · R$ {{ hoje.total|default:0|floatformat:2 }}
+  </p>
+
+  <form method="get" class="form-grid" style="grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); margin-bottom:14px;">
+    <div style="grid-column:span 2;"><label>Buscar</label><input type="search" name="q" value="{{ filtros.q }}" placeholder="Nº ou cliente..."></div>
+    <div><label>De</label><input type="date" name="de" value="{{ filtros.de }}"></div>
+    <div><label>Até</label><input type="date" name="ate" value="{{ filtros.ate }}"></div>
+    <div style="display:flex; align-items:flex-end; gap:8px;">
+      <button type="submit" class="btn-secondary btn">Filtrar</button>
+      <a href="{% url 'vendas:lista' %}" class="btn-secondary btn">Limpar</a>
+    </div>
+  </form>
+  <p style="color:var(--muted); margin:0 0 8px;">
+    No filtro: {{ resumo.qtd }} venda{{ resumo.qtd|pluralize }} · total R$ {{ resumo.total|default:0|floatformat:2 }} · descontos R$ {{ resumo.descontos|default:0|floatformat:2 }} (canceladas não entram)
+  </p>
+
+  {% if pagina.object_list %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Produtos</th><th style="text-align:right;">Total</th><th>Pagamento</th><th>Vendido por</th><th></th></tr></thead>
+      <tbody>
+        {% for v in pagina.object_list %}
+        <tr {% if v.cancelada_em %}style="opacity:.55;"{% endif %}>
+          <td><a href="{% url 'vendas:detalhe' v.pk %}"><strong>#{{ v.numero }}</strong></a></td>
+          <td style="white-space:nowrap;">{{ v.criado_em|date:"d/m/Y H:i" }}</td>
+          <td>{{ v.cliente_nome|default:"—" }}</td>
+          <td>{% for i in v.itens %}<span class="badge" style="background:var(--c-neutro);">{{ i.nome }} ×{{ i.qtd|floatformat:"-3" }}{% if i.unidade and i.unidade != "un." %} {{ i.unidade }}{% endif %}</span>{% endfor %}</td>
+          <td style="text-align:right; white-space:nowrap;">
+            {% if v.desconto_valor %}<s style="color:var(--muted);">R$ {{ v.subtotal }}</s><br>{% endif %}<strong>R$ {{ v.total }}</strong>
+            {% if v.desconto_valor %}<br><small style="color:var(--muted);" title="{{ v.desconto_motivo }}">−R$ {{ v.desconto_valor }}{% if v.desconto_tipo == "percentual" %} ({{ v.desconto_informado|floatformat:"-2" }}%){% endif %}: {{ v.desconto_motivo|truncatechars:30 }}</small>{% endif %}
+          </td>
+          <td>{{ v.get_forma_pagamento_display }}</td>
+          <td>{{ v.usuario_nome|default:"—" }}</td>
+          <td style="white-space:nowrap;">
+            <a href="{% url 'vendas:comprovante' v.pk %}" target="_blank" class="btn-secondary btn" title="Comprovante em PDF">PDF</a>
+            {% if v.cancelada_em %}<span class="badge" style="background:var(--c-alerta);">Cancelada {{ v.cancelada_em|date:"d/m" }}</span>
+            {% elif papel_ativo == "admin" %}
+            <form method="post" action="{% url 'vendas:cancelar' v.pk %}">
+              {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Cancelar a venda #{{ v.numero }}? Os produtos voltam ao estoque.">Cancelar</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if pagina.has_other_pages %}
+  <div style="display:flex; justify-content:center; gap:10px; margin-top:14px;">
+    {% if pagina.has_previous %}<a class="btn-secondary btn" href="?q={{ filtros.q|urlencode }}&de={{ filtros.de }}&ate={{ filtros.ate }}&pagina={{ pagina.previous_page_number }}">← Anterior</a>{% endif %}
+    <span style="color:var(--muted);">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+    {% if pagina.has_next %}<a class="btn-secondary btn" href="?q={{ filtros.q|urlencode }}&de={{ filtros.de }}&ate={{ filtros.ate }}&pagina={{ pagina.next_page_number }}">Próxima →</a>{% endif %}
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="empty">Nenhuma venda encontrada.</div>
+  {% endif %}
+</div>
+{% endblock %}

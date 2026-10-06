@@ -8,52 +8,30 @@
 
   <form hx-post="{% url 'pacientes:cirurgia_criar' paciente.pk %}" hx-target="#ficha-conteudo" hx-swap="innerHTML">
     <div class="form-grid">
-      <div class="full"><label>Procedimento</label>{{ form.proc }}</div>
-      <div><label>Clínica/local</label>{{ form.clinica }}</div>
+      <div class="full">
+        <label>Tipo de cirurgia</label>
+        <select x-model="tipoCirurgia" @change="escolherTipo()">
+          <option value="">Selecione o tipo de cirurgia...</option>
+          <template x-for="c in categorias" :key="c.id">
+            <option :value="c.id" x-text="c.nome + ' — R$ ' + parseFloat(c.valor).toFixed(2)"></option>
+          </template>
+        </select>
+        <input type="hidden" name="categoria_ids" :value="tipoCirurgia" :disabled="!tipoCirurgia">
+        <small style="color:var(--muted);">Preço pela faixa de peso deste paciente.{% if papel_ativo == "admin" %} <a href="{% url 'financeiro:catalogo' %}">Cadastrar tipos de cirurgia</a>{% endif %}</small>
+      </div>
+      <div class="full"><label>Procedimento (descrição)</label>{{ form.proc }}</div>
       <div><label>Anestesista</label>{{ form.anestesista }}</div>
       <div class="full"><label>Descrição da cirurgia</label>{{ form.desc_cir }}</div>
       <div class="full"><label>Pós-operatório</label>{{ form.pos_op }}</div>
     </div>
 
-    <div style="margin-top:10px; display:flex; gap:18px;">
-      <label style="display:flex; align-items:center; gap:8px;">
-        <input type="checkbox" name="plantao" x-model="plantao"> 🌙 Plantão (+50% sobre procedimentos)
-      </label>
-      <label style="display:flex; align-items:center; gap:8px;">
-        <input type="checkbox" name="outra_cidade" x-model="outraCidade"> 📍 Deslocamento outra cidade (+R$50)
-      </label>
-    </div>
-
     <div class="form-grid" style="margin-top:10px;">
-      <div>
-        <label>Procedimentos (preço já pela faixa de peso do paciente)</label>
-        <div class="select-list" style="border:1.5px solid var(--border-2); border-radius:7px; max-height:220px; overflow-y:auto; padding:8px;">
-          {% for c in categorias %}
-          <label style="display:flex; justify-content:space-between; padding:4px 0;">
-            <span><input type="checkbox" name="categoria_ids" value="{{ c.id }}" x-model="categoriasSel"> {{ c.nome }}</span>
-          </label>
-          {% empty %}<p class="empty" style="padding:0;">Nenhum procedimento cadastrado.</p>{% endfor %}
-        </div>
-      </div>
-      <div>
-        <label>Insumos utilizados</label>
-        <div class="select-list" style="border:1.5px solid var(--border-2); border-radius:7px; max-height:220px; overflow-y:auto; padding:8px;">
-          {% for i in insumos %}
-          <div style="padding:4px 0;">
-            <label style="display:flex; justify-content:space-between;">
-              <span><input type="checkbox" name="insumo_ids" value="{{ i.id }}" x-model="insumosSel"> {{ i.nome }}</span>
-              <span>R$ {{ i.valor }} · {{ i.qtd }} un.</span>
-            </label>
-            <template x-if="insumosSel.includes('{{ i.id }}')">
-              <input type="number" name="qtd_{{ i.id }}" min="1" value="1" style="width:80px; margin-top:4px;" x-on:input="qtyTick++">
-            </template>
-          </div>
-          {% empty %}<p class="empty" style="padding:0;">Nenhum insumo cadastrado.</p>{% endfor %}
-        </div>
+      <div class="full">
+        {% include "components/_insumos_busca.html" with rotulo="Insumos utilizados" %}
       </div>
     </div>
 
-    <div class="total-box" style="border:1.5px solid var(--primary); border-radius:8px; padding:12px 16px; margin-top:14px; display:flex; justify-content:space-between; align-items:center;">
+    <div class="total-box" style="border:1.5px solid var(--primary); padding:12px 16px; margin-top:14px; display:flex; justify-content:space-between; align-items:center;">
       <span>Total estimado</span>
       <strong x-text="'R$ ' + total().toFixed(2)"></strong>
     </div>
@@ -67,20 +45,18 @@
 <details class="card" style="box-shadow:none; border:1px solid var(--border); margin-bottom:8px;">
   <summary style="cursor:pointer; display:flex; justify-content:space-between;">
     <span>{{ c.data|date:"d/m/Y" }} · {{ c.proc }}
-      {% if c.plantao %}<span class="badge" style="background:#fef3c7;">🌙</span>{% endif %}
-      {% if c.outra_cidade %}<span class="badge" style="background:#dbeafe;">📍</span>{% endif %}
     </span>
     <strong>R$ {{ c.total }}</strong>
   </summary>
   <div class="form-grid" style="margin-top:10px;">
-    <div><label>Clínica</label>{{ c.clinica|default:"—" }}</div>
+    {% if c.clinica %}<div><label>Clínica</label>{{ c.clinica }}</div>{% endif %}
     <div><label>Anestesista</label>{{ c.anestesista|default:"—" }}</div>
     <div class="full"><label>Descrição</label>{{ c.desc_cir|default:"—" }}</div>
     <div class="full"><label>Pós-operatório</label>{{ c.pos_op|default:"—" }}</div>
   </div>
   <div style="margin-top:8px;">
-    {% for item in c.procedimentos %}<span class="badge" style="background:#EDEBDE;">{{ item.nome }} · R$ {{ item.valor }}</span>{% endfor %}
-    {% for item in c.insumos %}<span class="badge" style="background:#EDEBDE;">{{ item.nome }} ×{{ item.qtd }}</span>{% endfor %}
+    {% for item in c.procedimentos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }}{% if item.qtd and item.qtd != "1" %} ×{{ item.qtd|floatformat:"-3" }}{% if item.unidade and item.unidade != "un." %} {{ item.unidade }}{% endif %}{% endif %} · R$ {{ item.subtotal|default:item.valor }}</span>{% endfor %}
+    {% for item in c.insumos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }} ×{{ item.qtd|floatformat:"-3" }}{% if item.unidade and item.unidade != "un." %} {{ item.unidade }}{% endif %}</span>{% endfor %}
   </div>
   <form method="post" hx-post="{% url 'pacientes:cirurgia_excluir' paciente.pk c.pk %}" hx-target="#ficha-conteudo" style="margin-top:8px;">
     {% csrf_token %}
@@ -88,26 +64,30 @@
   </form>
 </details>
 {% empty %}
-<div class="empty"><span class="icon">🔪</span>Nenhuma cirurgia registrada ainda.</div>
+<div class="empty">Nenhuma cirurgia registrada ainda.</div>
 {% endfor %}
 
 <script>
   function totalBoxCirurgia(categoriasPrecos, insumosPrecos) {
     return {
-      plantao: false, outraCidade: false, categoriasSel: [], insumosSel: [], qtyTick: 0,
+      insumosSel: [], qtyTick: 0,
+      categorias: categoriasPrecos, tipoCirurgia: "", proc: "",
+      // Tipo escolhido: vira a descrição do procedimento e entra na cobrança.
+      escolherTipo() {
+        const c = this.categorias.find(c => c.id === this.tipoCirurgia);
+        if (c) this.proc = c.nome;
+      },
       precosCategorias: Object.fromEntries(categoriasPrecos.map(c => [c.id, parseFloat(c.valor)])),
       precosInsumos: Object.fromEntries(insumosPrecos.map(i => [i.id, parseFloat(i.valor)])),
       total() {
         void this.qtyTick;
-        const totalProc = this.categoriasSel.reduce((soma, id) => soma + (this.precosCategorias[id] || 0), 0);
+        const totalProc = this.precosCategorias[this.tipoCirurgia] || 0;
         const totalInsumos = this.insumosSel.reduce((soma, id) => {
           const input = document.querySelector(`input[name="qtd_${id}"]`);
-          const qtd = input ? parseInt(input.value || "1") : 1;
+          const qtd = input ? (parseFloat(String(input.value || "1").replace(",", ".")) || 0) : 1;
           return soma + (this.precosInsumos[id] || 0) * qtd;
         }, 0);
-        const acrescimoPlantao = this.plantao ? totalProc * 0.5 : 0;
-        const acrescimoDeslocamento = this.outraCidade ? 50 : 0;
-        return totalProc + totalInsumos + acrescimoPlantao + acrescimoDeslocamento;
+        return totalProc + totalInsumos;
       },
     };
   }

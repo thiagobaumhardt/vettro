@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block title %}Novo Atendimento — Vettro{% endblock %}
+{% block content %}
+
+<div class="card" x-data="formAtendimento({{ servicos_json }}, {{ insumos_json }}, {{ atendimentos_json }}, {{ vacinas_json }}, {{ especie_por_paciente_json }}, {{ doses_rotulos_json }}, {{ estado_json }}, {{ condicoes_por_paciente_json }}, {{ consentimento_whatsapp_json }})">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <h2 style="margin:0;" x-text="titulos[tipo] || 'Novo Atendimento'">Novo Atendimento</h2>
+    {% if voltar == "paciente" %}
+    <a :href="'/pacientes/' + pacienteId + '/?aba=anamnese'" class="btn-secondary btn">← Voltar ao paciente</a>
+    {% else %}
+    <a href="{% url 'atendimentos:lista' %}" class="btn-secondary btn">← Voltar</a>
+    {% endif %}
+  </div>
+  <form method="post" action="{% url 'atendimentos:novo' %}">
+    {% csrf_token %}
+    <input type="hidden" name="voltar" value="{{ voltar }}">
+    <div class="form-grid">
+      <div><label>Tipo de atendimento</label>{{ form.tipo }}</div>
+      <div>
+        <label>Paciente</label>{{ form.paciente }}
+        <div x-show="condicoes().length" x-cloak style="margin-top:4px;">
+          <template x-for="c in condicoes()" :key="c">
+            <span class="badge" style="background:var(--c-alerta);" x-text="'' + c"></span>
+          </template>
+        </div>
+      </div>
+
+      <div class="full" x-show="tipo === 'retorno'" x-cloak>
+        <label>Retorno do atendimento</label>
+        <select name="retorno_de" x-model="retornoId" x-bind:required="tipo === 'retorno'" x-bind:disabled="tipo !== 'retorno'">
+          <option value="" x-text="pacienteId ? (anteriores().length ? 'Selecione o atendimento de origem' : 'Nenhum atendimento anterior deste paciente') : 'Selecione o paciente primeiro'"></option>
+          <template x-for="a in anteriores()" :key="a.id">
+            <option :value="a.id" x-text="'#' + a.numero + ' · ' + a.data + ' · ' + a.tipo"></option>
+          </template>
+        </select>
+      </div>
+
+      <div><label x-text="tipo === 'vacinacao' ? 'Data da vacinação' : 'Data'">Data</label>{{ form.data }}</div>
+      <div><label>Hora</label>{{ form.hora }}</div>
+
+      <template x-if="tipo === 'vacinacao'">
+        <div class="full form-grid" style="padding:0;">
+          <div>
+            <label>Vacina</label>
+            <select name="vacina" x-model="vacinaId" x-on:change="dose = ''; sugerirProxima()" required>
+              <option value="" x-text="vacinasDisponiveis().length ? 'Selecione a vacina' : 'Nenhuma vacina cadastrada para esta espécie'"></option>
+              <template x-for="v in vacinasDisponiveis()" :key="v.id">
+                <option :value="v.id" x-text="v.nome"></option>
+              </template>
+            </select>
+            <small style="color:var(--muted);"><a href="{% url 'atendimentos:vacinas' %}">Gerenciar vacinas</a></small>
+          </div>
+          <div>
+            <label>Dose</label>
+            <select name="dose" x-model="dose" x-on:change="sugerirProxima()" required>
+              <option value="">Selecione a dose</option>
+              <template x-for="d in dosesDisponiveis()" :key="d">
+                <option :value="d" x-text="dosesRotulos[d]"></option>
+              </template>
+            </select>
+          </div>
+          <div>
+            <label>Revacinar em</label>
+            <input type="date" name="data_proxima_dose" x-model="proxima" x-bind:required="protocoloTemProxima()">
+            <small style="color:var(--muted);" x-show="vacinaId && dose && !protocoloTemProxima()">Protocolo concluído — sem próxima dose.</small>
+          </div>
+        </div>
+      </template>
+
+      <div x-show="tipo !== 'vacinacao'">
+        <label>Data de retorno (opcional)</label>
+        <input type="date" name="data_retorno" x-model="dataRetorno" x-bind:disabled="tipo === 'vacinacao'">
+        <div style="display:flex; gap:6px; margin-top:4px;">
+          <template x-for="dias in [7, 15, 30]" :key="dias">
+            <button type="button" class="btn-secondary btn" style="padding:2px 8px; font-size:.8rem;" @click="retornoEm(dias)" x-text="'+' + dias + ' dias'"></button>
+          </template>
+          <button type="button" class="btn-secondary btn" style="padding:2px 8px; font-size:.8rem;" x-show="dataRetorno" @click="dataRetorno = ''">Limpar</button>
+        </div>
+      </div>
+
+      <div x-show="alvo()">
+        <label>Mandar lembrete por WhatsApp</label>
+        <select name="lembrete_dias_antes" x-model="lembreteDias" x-bind:disabled="!alvo()">
+          <option value="">Não enviar lembrete</option>
+          {% for dias, rotulo in opcoes_lembrete %}
+          <option value="{{ dias }}" :disabled="noPassado({{ dias }})" x-text="'{{ rotulo }}' + (noPassado({{ dias }}) ? ' (data já passou)' : '')">{{ rotulo }}</option>
+          {% endfor %}
+        </select>
+        <small x-show="lembreteAtivo() && dataLembrete()" x-text="'Envio em ' + dataLembrete()"
+               :style="lembreteNoPassado() ? 'color:var(--danger-hover)' : 'color:var(--muted)'"></small>
+        <small x-show="lembreteAtivo() && lembreteNoPassado()" style="color:var(--danger-hover);"> — essa data já passou, escolha outra opção.</small>
+        {% if not whatsapp_habilitado %}
+        <small x-show="lembreteAtivo()" style="display:block; color:var(--c-atencao-texto);">O WhatsApp não está habilitado para esta clínica — o lembrete fica agendado, mas só é enviado depois que o módulo for ligado.</small>
+        {% endif %}
+        <small x-show="lembreteAtivo() && pacienteId && !tutorAceitaWhatsapp()" style="display:block; color:var(--c-atencao-texto);">O tutor deste paciente não autorizou WhatsApp (ou não tem número) — o lembrete não será enviado. Marque o consentimento no cadastro do tutor, se ele autorizar.</small>
+      </div>
+
+      <div class="full">
+        <label style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" name="plantao" x-model="plantao" {% if form.plantao.value %}checked{% endif %}> Plantão (+50% sobre serviços)
+        </label>
+      </div>
+    </div>
+
+    <div class="form-grid" style="margin-top:10px;">
+      <div>
+        <label>Serviços</label>
+        <div class="select-list" style="border:1.5px solid var(--border-2); max-height:220px; overflow-y:auto; padding:8px;">
+          {% for s in servicos %}
+          <div style="padding:4px 0;">
+            <label style="display:flex; justify-content:space-between;">
+              <span><input type="checkbox" name="servico_ids" value="{{ s.id }}" x-model="servicosSel"> {{ s.nome }}</span>
+              <span>R$ {{ s.valor }}{% if s.unidade_cobranca %}/{{ s.unidade_cobranca }}{% endif %}</span>
+            </label>
+            {% if s.unidade_cobranca %}<template x-if="servicosSel.includes('{{ s.id }}')">
+              <span style="display:inline-flex; align-items:center; gap:6px; margin-top:4px;"><input type="number" name="qtd_servico_{{ s.id }}" min="0.001" step="any" value="1" style="width:90px;" x-on:input="qtyTick++"><small style="color:var(--muted);">{{ s.unidade_cobranca }}(s)</small></span>
+            </template>{% endif %}
+          </div>
+          {% empty %}<p class="empty" style="padding:0;">Nenhum serviço cadastrado.</p>{% endfor %}
+        </div>
+      </div>
+      <div>
+        {% include "components/_insumos_busca.html" with rotulo="Insumos" %}
+        <small style="color:var(--muted);" x-show="insumoDaVacina()">A vacina sai do estoque automaticamente (1 un.).</small>
+      </div>
+    </div>
+
+    <div class="full" style="margin-top:10px;"><label>Observações</label>{{ form.obs }}</div>
+
+    <div class="total-box" style="border:1.5px solid var(--primary); padding:12px 16px; margin-top:14px; display:flex; justify-content:space-between; align-items:center;">
+      <span>Total estimado</span>
+      <strong x-text="'R$ ' + total().toFixed(2)"></strong>
+    </div>
+
+    <div style="margin-top:14px;"><button type="submit" class="btn-primary btn">Registrar Atendimento</button></div>
+  </form>
+</div>
+
+<script>
+  function formAtendimento(servicosPrecos, insumosPrecos, atendimentos, vacinas, especiePorPaciente, dosesRotulos, estado, condicoesPorPaciente, consentimentoWhatsapp) {
+    return {
+      lembreteDias: String(estado.lembrete_dias_antes),
+      lembreteAtivo() { return this.lembreteDias !== ""; },
+      dataRetorno: estado.data_retorno,
+      titulos: {
+        consulta: "Consulta", vacinacao: "Vacina", retorno: "↩ Retorno",
+        aplicacao_medicacao: "Aplicação de medicação", curativo: "Curativo",
+        ambulatorial: "Atendimento ambulatorial", emergencia: "Emergência",
+      },
+      tutorAceitaWhatsapp() { return !!consentimentoWhatsapp[this.pacienteId]; },
+      // Data que o lembrete antecede: próxima dose (vacinação) ou retorno (demais tipos).
+      alvo() { return this.tipo === "vacinacao" ? this.proxima : this.dataRetorno; },
+      retornoEm(dias) {
+        const d = new Date((this.dataAtendimento || new Date().toISOString().slice(0, 10)) + "T00:00:00");
+        d.setDate(d.getDate() + dias);
+        const pad = n => String(n).padStart(2, "0");
+        this.dataRetorno = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      },
+      _dataLembrete(dias = this.lembreteDias) {
+        dias = parseInt(dias);
+        if (!this.alvo() || isNaN(dias)) return null;
+        const d = new Date(this.alvo() + "T00:00:00");
+        d.setDate(d.getDate() - dias);
+        return d;
+      },
+      dataLembrete() { const d = this._dataLembrete(); return d ? d.toLocaleDateString("pt-BR") : ""; },
+      // Com esta antecedência o lembrete cairia antes de hoje?
+      noPassado(dias) {
+        const d = this._dataLembrete(dias), hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        return d !== null && d < hoje;
+      },
+      lembreteNoPassado() { return this.noPassado(this.lembreteDias); },
+      condicoes() { return condicoesPorPaciente[this.pacienteId] || []; },
+      plantao: false, servicosSel: [], insumosSel: [], qtyTick: 0,
+      tipo: estado.tipo || "consulta", pacienteId: estado.paciente, retornoId: estado.retorno_de,
+      vacinaId: estado.vacina, dose: estado.dose, dataAtendimento: estado.data, proxima: estado.data_proxima_dose,
+      dosesRotulos,
+      precosServicos: Object.fromEntries(servicosPrecos.map(s => [s.id, parseFloat(s.valor)])),
+      precosInsumos: Object.fromEntries(insumosPrecos.map(i => [i.id, parseFloat(i.valor)])),
+
+      anteriores() { return atendimentos.filter(a => a.paciente === this.pacienteId); },
+      vacinasDisponiveis() {
+        const especie = especiePorPaciente[this.pacienteId];
+        return vacinas.filter(v => !v.especie || !especie || v.especie === especie);
+      },
+      vacinaSel() { return vacinas.find(v => v.id === this.vacinaId); },
+      dosesDisponiveis() { const v = this.vacinaSel(); return v ? v.doses : []; },
+      // Espelha Vacina.sugerir_proxima_dose (apps/atendimentos/models.py).
+      diasAteProxima() {
+        const v = this.vacinaSel();
+        if (!v || !this.dose) return null;
+        const iniciais = v.doses.filter(d => d !== "reforco").length;
+        if (this.dose !== "reforco" && parseInt(this.dose) < iniciais) return v.intervalo;
+        return v.reforco ? 365 : null;
+      },
+      protocoloTemProxima() { return this.diasAteProxima() !== null; },
+      sugerirProxima() {
+        const dias = this.diasAteProxima();
+        if (dias === null || !this.dataAtendimento) { this.proxima = ""; return; }
+        const d = new Date(this.dataAtendimento + "T00:00:00");
+        d.setDate(d.getDate() + dias);
+        const pad = n => String(n).padStart(2, "0");
+        this.proxima = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      },
+      insumoDaVacina() {
+        const v = this.tipo === "vacinacao" ? this.vacinaSel() : null;
+        return v && v.insumo && !this.insumosSel.includes(v.insumo) ? v.insumo : null;
+      },
+
+      total() {
+        void this.qtyTick;
+        const totalServicos = this.servicosSel.reduce((soma, id) => soma + (this.precosServicos[id] || 0) * (parseFloat(String((document.querySelector(`input[name="qtd_servico_${id}"]`) || {}).value || "1").replace(",", ".")) || 0), 0);
+        let totalInsumos = this.insumosSel.reduce((soma, id) => {
+          const input = document.querySelector(`input[name="qtd_${id}"]`);
+          const qtd = input ? (parseFloat(String(input.value || "1").replace(",", ".")) || 0) : 1;
+          return soma + (this.precosInsumos[id] || 0) * qtd;
+        }, 0);
+        const insumoVacina = this.insumoDaVacina();
+        if (insumoVacina) totalInsumos += this.precosInsumos[insumoVacina] || 0;
+        const acrescimo = this.plantao ? totalServicos * 0.5 : 0;
+        return totalServicos + totalInsumos + acrescimo;
+      },
+    };
+  }
+</script>
+{% endblock %}

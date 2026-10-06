@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Perfil profissional — Vettro{% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <h2 style="margin:0;">Perfil profissional — {{ pessoa.nome }}</h2>
+    {% if voltar_para != "core:meu_perfil" %}<a href="{% url voltar_para %}" class="btn-secondary btn">← Voltar</a>{% endif %}
+  </div>
+  <p style="color:var(--muted); margin-top:0;">Dados do profissional nesta clínica — usados também para assinar receitas e documentos.</p>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% if form.errors %}<p style="color:var(--danger-hover);">{% for campo, erros in form.errors.items %}{{ erros|join:", " }} {% endfor %}</p>{% endif %}
+
+    <div class="section-title">Identificação</div>
+    <div class="form-grid">
+      <div class="full"><label for="id_nome_completo">Nome completo (sai na assinatura)</label>{{ form.nome_completo }}</div>
+      <div><label for="id_crmv">CRMV</label>{{ form.crmv }}</div>
+      <div><label for="id_crmv_uf">UF do CRMV</label>{{ form.crmv_uf }}</div>
+      <div><label for="id_mapa">Registro no MAPA</label>{{ form.mapa }}</div>
+      <div><label for="id_telefone">Telefone de contato</label>{{ form.telefone }}</div>
+      <div>
+        <label for="id_data_admissao">Data de admissão</label>
+        {% if form.data_admissao %}{{ form.data_admissao }}
+        {% else %}<div style="padding:10px 0;">{{ perfil.data_admissao|date:"d/m/Y"|default:"—" }}</div>
+        <small style="color:var(--muted);">Definida pelo administrador da clínica.</small>{% endif %}
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:18px;">Endereço</div>
+    <div class="form-grid">
+      <div>
+        <label for="id_cep">CEP</label>{{ form.cep }}
+        {% if "tutores" in secoes_permitidas %}
+        <span hx-get="{% url 'tutores:cep_lookup' %}" hx-trigger="blur from:#id_cep" hx-include="#id_cep" hx-target="this" hx-swap="none"></span>
+        <small style="color:var(--muted);">Rua, bairro, cidade e UF são preenchidos pelo CEP.</small>
+        {% endif %}
+      </div>
+      <div></div>
+      <div class="full"><label for="id_endereco">Rua</label><span id="campo-endereco">{{ form.endereco }}</span></div>
+      <div><label for="id_numero">Número</label>{{ form.numero }}</div>
+      <div><label for="id_complemento">Complemento</label>{{ form.complemento }}</div>
+      <div><label for="id_bairro">Bairro</label><span id="campo-bairro">{{ form.bairro }}</span></div>
+      <div><label for="id_cidade">Cidade</label><span id="campo-cidade">{{ form.cidade }}</span></div>
+      <div><label for="id_uf">UF</label><span id="campo-uf">{{ form.uf }}</span></div>
+    </div>
+
+    <div class="section-title" style="margin-top:18px;">Assinatura</div>
+    <div class="form-grid">
+      <div class="full">
+        <label>Assinatura / carimbo</label>
+        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+          {% if perfil.assinatura %}<img src="{{ perfil.assinatura.url }}" alt="Assinatura atual" style="max-height:80px; max-width:240px; border:1px solid var(--border); padding:4px; background:var(--surface);">{% endif %}
+          <input type="file" name="assinatura" accept="image/png,image/jpeg">
+          {% if perfil.assinatura %}<label style="display:flex; align-items:center; gap:6px; margin:0;"><input type="checkbox" name="assinatura-clear"> Remover</label>{% endif %}
+        </div>
+        <small style="color:var(--muted);">PNG com fundo transparente, até 2MB. Dica: assine num papel branco, fotografe bem de perto e recorte.<br>
+        Sai nas receitas simples/livres e nos documentos. A <strong>receita controlada</strong> sempre sai sem ela, para assinar à mão.</small>
+      </div>
+    </div>
+    <div style="margin-top:14px;"><button type="submit" class="btn-primary btn">Salvar</button></div>
+  </form>
+</div>
+{% endblock %}

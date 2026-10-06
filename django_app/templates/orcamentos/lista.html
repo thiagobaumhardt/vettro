@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Orçamentos — Vettro{% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <h2 style="margin:0;">Orçamentos</h2>
+    <a href="{% url 'orcamentos:novo' %}" class="btn-primary btn">+ Novo Orçamento</a>
+  </div>
+  <form method="get" style="margin-bottom:16px;">
+    <input type="search" name="q" value="{{ termo }}" placeholder="Buscar por nº, tutor ou paciente...">
+  </form>
+  {% if pagina.object_list %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Nº</th><th>Data</th><th>Tutor</th><th>Paciente</th><th style="text-align:right;">Total</th><th>Validade</th><th>Ações</th></tr></thead>
+      <tbody>
+        {% for o in pagina.object_list %}
+        <tr>
+          <td><a href="{% url 'orcamentos:detalhe' o.pk %}"><strong>#{{ o.numero }}</strong></a></td>
+          <td>{{ o.criado_em|date:"d/m/Y" }}</td>
+          <td>{{ o.tutor_nome }}</td>
+          <td>{{ o.pac_nome|default:"—" }}</td>
+          <td style="text-align:right; white-space:nowrap;">R$ {{ o.total }}</td>
+          <td>{% if o.vencido %}<span class="badge" style="background:var(--c-alerta);">Vencido {{ o.valido_ate|date:"d/m" }}</span>{% else %}{{ o.valido_ate|date:"d/m/Y" }}{% endif %}</td>
+          <td style="white-space:nowrap;">
+            <a href="{% url 'orcamentos:pdf' o.pk %}" target="_blank" class="btn-secondary btn">Imprimir</a>
+            <form method="post" action="{% url 'orcamentos:excluir' o.pk %}" style="display:inline;">
+              {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir o orçamento #{{ o.numero }}?">Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if pagina.has_other_pages %}
+  <div style="display:flex; justify-content:center; gap:10px; margin-top:14px;">
+    {% if pagina.has_previous %}<a class="btn-secondary btn" href="?q={{ termo|urlencode }}&pagina={{ pagina.previous_page_number }}">← Anterior</a>{% endif %}
+    <span style="color:var(--muted);">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+    {% if pagina.has_next %}<a class="btn-secondary btn" href="?q={{ termo|urlencode }}&pagina={{ pagina.next_page_number }}">Próxima →</a>{% endif %}
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="empty">Nenhum orçamento encontrado.</div>
+  {% endif %}
+</div>
+{% endblock %}

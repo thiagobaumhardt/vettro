@@ -51,6 +51,14 @@ class Clinica(TenantMixin):
             "estoque": self.modulo_estoque,
             "atendimentos": self.modulo_atendimentos,
             "agenda": self.modulo_agenda,
+            # Menu 📣 Lembretes só faz sentido com a Meta Business configurada.
+            "lembretes": self.modulo_whatsapp_lembrete,
+            # Orçamento é parte do financeiro (preços do catálogo de Serviços).
+            "orcamentos": self.modulo_financeiro,
+            # Documentos/atestados são emitidos pra pacientes.
+            "documentos": self.modulo_pacientes,
+            # Venda de balcão sai do estoque.
+            "vendas": self.modulo_estoque,
         }
         return {secao for secao, ativo in mapa.items() if ativo}
 
@@ -75,6 +83,9 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         default=False,
         help_text="Administra a plataforma (provisiona clínicas) — não é o mesmo que admin de uma clínica.",
     )
+    # Senha provisória (definida por outra pessoa): obriga a pessoa a trocar
+    # no próximo acesso — ver apps.contas.middleware.ExigirTrocaDeSenhaMiddleware.
+    trocar_senha = models.BooleanField(default=False)
     criado_em = models.DateTimeField(auto_now_add=True)
 
     objects = UsuarioManager()

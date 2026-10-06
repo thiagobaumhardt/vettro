@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Perfil clínico — Vettro{% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <div class="section-title" style="margin:0;">Nova condição clínica</div>
+    <a href="{% url 'pacientes:lista' %}" class="btn-secondary btn">← Pacientes</a>
+  </div>
+  <form method="post" style="display:flex; gap:10px; align-items:flex-start;">
+    {% csrf_token %}
+    <div style="flex:1;">
+      {{ form.nome }}
+      {% if form.nome.errors %}<p style="color:var(--danger-hover); margin:4px 0 0;">{{ form.nome.errors|join:", " }}</p>{% endif %}
+    </div>
+    <button type="submit" class="btn-primary btn">Adicionar</button>
+  </form>
+</div>
+
+<div class="card">
+  <div class="section-title">Condições cadastradas</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Condição</th><th>Pacientes</th><th>Ações</th></tr></thead>
+      <tbody>
+        {% for c in condicoes %}
+        <tr>
+          <td>{{ c.nome }}</td>
+          <td>{{ c.total_pacientes }}</td>
+          <td>
+            <form method="post" action="{% url 'pacientes:condicao_excluir' c.pk %}" style="display:inline;">
+              {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir a condição {{ c.nome }}? Ela será removida de {{ c.total_pacientes }} paciente(s).">Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="3" class="empty">Nenhuma condição cadastrada.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

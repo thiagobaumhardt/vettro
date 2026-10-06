@@ -1,0 +1,6 @@
+{# Atendimento vinculado a um exame/foto — link pro detalhe do atendimento, ou "—". #}
+{% if atendimento %}
+{% url 'pacientes:registro' paciente.pk 'atendimento' atendimento.pk as url_atendimento %}
+<a href="{{ url_atendimento }}" hx-get="{{ url_atendimento }}" hx-target="#ficha-conteudo" hx-push-url="true"
+   @click="aba = 'historico'">#{{ atendimento.numero }} · {{ atendimento.get_tipo_display }}</a>
+{% else %}<span style="color:var(--muted);">—</span>{% endif %}

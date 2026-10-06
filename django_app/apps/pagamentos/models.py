@@ -69,16 +69,28 @@ class NotaFiscalEmitida(models.Model):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Origem: NFS-e sai de uma Cobrança (serviço); NFC-e de uma Venda de balcão.
     cobranca = models.ForeignKey(
-        "financeiro.Cobranca", on_delete=models.PROTECT, related_name="notas_fiscais",
+        "financeiro.Cobranca", on_delete=models.PROTECT, related_name="notas_fiscais", null=True, blank=True,
+    )
+    venda = models.ForeignKey(
+        "vendas.Venda", on_delete=models.PROTECT, related_name="notas_fiscais", null=True, blank=True,
     )
     tipo = models.CharField(max_length=4, choices=TIPO_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pendente")
+    # True = emitida pelo emissor de SIMULAÇÃO (sem valor fiscal), enquanto
+    # não há conta Focus NFe — ver apps.pagamentos.notas.
+    simulacao = models.BooleanField(default=False)
     numero = models.CharField(max_length=20, blank=True)
     chave_acesso = models.CharField(max_length=44, blank=True)
+    # Snapshot do que foi enviado ao emissor (prestador, tomador, itens, totais).
+    dados = models.JSONField(default=dict, blank=True)
+    valor_total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     url_pdf = models.URLField(blank=True)
     url_xml = models.URLField(blank=True)
-    mensagem_erro = models.CharField(max_length=300, blank=True)
+    mensagem_erro = models.CharField(max_length=500, blank=True)
+    emitida_em = models.DateTimeField(null=True, blank=True)
+    emitida_por_nome = models.CharField(max_length=150, blank=True)
     criado_em = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -87,4 +99,4 @@ class NotaFiscalEmitida(models.Model):
         verbose_name_plural = "Notas fiscais emitidas"
 
     def __str__(self):
-        return f"{self.get_tipo_display()} {self.numero or '(sem número)'} · Cobrança {self.cobranca_id}"
+        return f"{self.get_tipo_display()} {self.numero or '(sem número)'}"

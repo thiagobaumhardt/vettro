@@ -9,9 +9,9 @@ from django.core.exceptions import PermissionDenied
 # médicas da Ficha (Anamnese/Cirurgia/Exames/Fotos) — Notas/Ficha básica
 # ficam só em "pacientes".
 PERMISSOES_POR_PAPEL = {
-    "admin": {"tutores", "pacientes", "pacientes_clinico", "agenda", "atendimentos", "financeiro", "estoque"},
-    "vet": {"tutores", "pacientes", "pacientes_clinico", "agenda", "atendimentos", "financeiro", "estoque"},
-    "atendente": {"tutores", "pacientes", "agenda"},
+    "admin": {"tutores", "pacientes", "pacientes_clinico", "agenda", "atendimentos", "financeiro", "estoque", "lembretes", "orcamentos", "documentos", "vendas"},
+    "vet": {"tutores", "pacientes", "pacientes_clinico", "agenda", "atendimentos", "financeiro", "estoque", "lembretes", "orcamentos", "documentos", "vendas"},
+    "atendente": {"tutores", "pacientes", "agenda", "lembretes", "orcamentos", "vendas"},
     "motorista": {"agenda"},
 }
 

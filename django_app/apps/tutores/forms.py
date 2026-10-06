@@ -1,18 +1,21 @@
 from django import forms
 
+from apps.core.campos import TelefoneField
 from apps.core.validators import cpf_valido
 
 from .models import Tutor
 
 
 class TutorForm(forms.ModelForm):
+    tel = TelefoneField(label="WhatsApp")
+    tel2 = TelefoneField(label="Outro telefone", required=False)
     consentimento_dados = forms.BooleanField(label="Consentimento LGPD", required=False)
     consentimento_whatsapp = forms.BooleanField(label="Consentimento p/ lembrete de WhatsApp", required=False)
 
     class Meta:
         model = Tutor
         fields = [
-            "nome", "tel", "email", "cpf", "cep", "endereco", "numero", "complemento",
+            "nome", "tel", "tel2", "email", "cpf", "rg", "cep", "endereco", "numero", "complemento",
             "bairro", "cidade", "uf", "como_conheceu", "obs",
             "consentimento_dados", "consentimento_whatsapp",
         ]

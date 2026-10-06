@@ -1,0 +1,34 @@
+{% comment %}
+  Formulário "Anexar" das abas Exames e Fotos — usar dentro de x-data="{ anexando: ... }".
+  Parâmetros: url, accept, rotulo_arquivo, dica.
+  Envia: arquivos (vários), nome (opcional), atendimento (opcional, só do próprio paciente).
+{% endcomment %}
+<form x-show="anexando" x-cloak class="card" style="margin-bottom:18px;"
+      hx-post="{{ url }}" hx-target="#ficha-conteudo" hx-encoding="multipart/form-data">
+  {% csrf_token %}
+  <div class="form-grid">
+    <div class="full">
+      <label for="anexo-arquivos">{{ rotulo_arquivo }}</label>
+      <input id="anexo-arquivos" type="file" name="arquivos" accept="{{ accept }}" multiple required>
+      <small style="color:var(--muted);">{{ dica }}</small>
+    </div>
+    <div>
+      <label for="anexo-nome">Nome (opcional)</label>
+      <input id="anexo-nome" type="text" name="nome" maxlength="180" placeholder="Em branco = nome do arquivo">
+    </div>
+    <div>
+      <label for="anexo-atendimento">Vincular ao atendimento</label>
+      <select id="anexo-atendimento" name="atendimento">
+        <option value="">Sem vínculo</option>
+        {% for a in atendimentos_paciente %}
+        <option value="{{ a.pk }}">#{{ a.numero }} · {{ a.get_tipo_display }} · {{ a.data|date:"d/m/Y" }}</option>
+        {% endfor %}
+      </select>
+      {% if not atendimentos_paciente %}<small style="color:var(--muted);">Este paciente ainda não tem atendimentos.</small>{% endif %}
+    </div>
+  </div>
+  <div style="margin-top:14px; display:flex; gap:10px;">
+    <button type="submit" class="btn-primary btn">Enviar</button>
+    <button type="button" class="btn-secondary btn" @click="anexando = false">Cancelar</button>
+  </div>
+</form>

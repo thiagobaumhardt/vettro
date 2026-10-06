@@ -7,10 +7,10 @@
     {% csrf_token %}
 
     <div style="display:flex; align-items:center; gap:16px; margin-bottom:18px;">
-      <div class="avatar-circle" style="width:64px; height:64px; border-radius:50%; background:var(--border); display:flex; align-items:center; justify-content:center; font-size:1.6rem; overflow:hidden;">
-        {% if paciente.foto_perfil %}<img src="{{ paciente.foto_perfil.url }}" style="width:100%; height:100%; object-fit:cover;">{% else %}🐾{% endif %}
+      <div class="avatar-circle" style="width:64px; height:64px; background:var(--border); display:flex; align-items:center; justify-content:center; font-size:1.6rem; overflow:hidden;">
+        {% if paciente.foto_perfil %}<img src="{{ paciente.foto_perfil.url }}" style="width:100%; height:100%; object-fit:cover;">{% else %}{% endif %}
       </div>
-      <label class="btn-secondary btn" style="cursor:pointer;">📷 Escolher foto de perfil{{ form.foto_perfil }}</label>
+      <label class="btn-secondary btn" style="cursor:pointer;">Escolher foto de perfil{{ form.foto_perfil }}</label>
     </div>
 
     <div class="form-grid">
@@ -19,9 +19,9 @@
         <label for="id_especie">Espécie</label>
         <select name="especie" id="id_especie" x-model="especie" @change="raca = ''">
           <option value="">—</option>
-          <option value="cao" {% if form.especie.value == "cao" %}selected{% endif %}>🐶 Cão</option>
-          <option value="gato" {% if form.especie.value == "gato" %}selected{% endif %}>🐱 Gato</option>
-          <option value="outro" {% if form.especie.value == "outro" %}selected{% endif %}>🐾 Outro</option>
+          <option value="cao" {% if form.especie.value == "cao" %}selected{% endif %}>Cão</option>
+          <option value="gato" {% if form.especie.value == "gato" %}selected{% endif %}>Gato</option>
+          <option value="outro" {% if form.especie.value == "outro" %}selected{% endif %}>Outro</option>
         </select>
       </div>
       <div>
@@ -38,6 +38,7 @@
           <input type="text" name="raca" x-model="raca" placeholder="Raça (opcional)">
         </template>
       </div>
+      <div><label for="id_sexo">Sexo</label>{{ form.sexo }}</div>
       <div><label for="id_peso">Peso (kg)</label>{{ form.peso }}</div>
       <div><label for="id_data_nascimento">Data de nascimento</label>{{ form.data_nascimento }}</div>
       <div>

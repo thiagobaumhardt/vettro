@@ -6,7 +6,7 @@ from .models import CirurgiaCategoria, Servico
 class ServicoForm(forms.ModelForm):
     class Meta:
         model = Servico
-        fields = ["nome", "valor", "descricao", "codigo_servico_municipal"]
+        fields = ["nome", "valor", "unidade_cobranca", "descricao", "codigo_servico_municipal"]
 
 
 class CirurgiaCategoriaForm(forms.ModelForm):

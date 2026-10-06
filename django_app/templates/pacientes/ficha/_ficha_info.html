@@ -1,6 +1,6 @@
 {% if paciente.tutor %}
-<div style="background:#F8F7F0; border:1px solid var(--border); border-radius:8px; padding:12px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
-  <span>👤 <strong>{{ paciente.tutor.nome }}</strong> · {{ paciente.tutor.tel }}</span>
+<div style="background:var(--surface); border:1px solid var(--border); padding:12px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+  <span><strong>{{ paciente.tutor.nome }}</strong> · {{ paciente.tutor.tel }}</span>
   <a href="{% url 'tutores:detalhe' paciente.tutor.pk %}" class="btn-secondary btn">Ver tutor</a>
 </div>
 {% endif %}
@@ -16,3 +16,13 @@
 {% if paciente.obs %}
   <div style="margin-top:16px;"><label>Observações</label><p>{{ paciente.obs|linebreaksbr }}</p></div>
 {% endif %}
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-top:24px;">
+  <div class="section-title" style="margin:0;">Últimos atendimentos</div>
+  {% if total_historico > linha_do_tempo|length %}
+  <a href="{% url 'pacientes:ficha' paciente.pk %}?aba=historico"
+     @click="aba = 'historico'" hx-get="{% url 'pacientes:ficha_aba' paciente.pk 'historico' %}" hx-target="#ficha-conteudo" hx-push-url="{% url 'pacientes:ficha' paciente.pk %}?aba=historico">
+    Ver histórico completo ({{ total_historico }}) →</a>
+  {% endif %}
+</div>
+<div style="margin-top:12px;">{% include "pacientes/ficha/_linha_do_tempo.html" %}</div>

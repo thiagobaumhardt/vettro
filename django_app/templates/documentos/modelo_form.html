@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{% if modelo %}Editar{% else %}Novo{% endif %} modelo — Vettro{% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <h2 style="margin:0;">{% if modelo %}Editar modelo{% else %}Novo modelo{% endif %}</h2>
+    <a href="{% url 'documentos:lista' %}" class="btn-secondary btn">← Documentos</a>
+  </div>
+  <form method="post" style="display:grid; grid-template-columns:minmax(0, 3fr) minmax(220px, 1fr); gap:20px;">
+    {% csrf_token %}
+    <div>
+      {% if form.errors %}<p style="color:var(--danger-hover);">{% for campo, erros in form.errors.items %}{{ erros|join:", " }} {% endfor %}</p>{% endif %}
+      <label for="id_nome">Nome do modelo</label>{{ form.nome }}
+      <label for="id_texto" style="margin-top:12px;">Texto</label>{{ form.texto }}
+      <label style="display:flex; align-items:center; gap:8px; margin-top:10px;">{{ form.ativo }} Ativo (aparece na hora de emitir)</label>
+      <div style="margin-top:14px;"><button type="submit" class="btn-primary btn">Salvar modelo</button></div>
+    </div>
+    <aside style="background:var(--surface); border:1px solid var(--border); padding:12px 14px; align-self:start;">
+      <strong>Variáveis</strong>
+      <p style="color:var(--muted); font-size:.85rem; margin:4px 0 8px;">São preenchidas sozinhas ao emitir. O que não estiver no cadastro vira uma lacuna (__________) para completar.</p>
+      {% for chave, descricao in variaveis.items %}
+      <div style="font-size:.85rem; padding:2px 0;"><code>{{ "{" }}{{ chave }}{{ "}" }}</code> — {{ descricao }}</div>
+      {% endfor %}
+    </aside>
+  </form>
+</div>
+{% endblock %}

@@ -1,12 +1,14 @@
 from django import forms
 from django.db.models import Q
 
+from apps.core.campos import TelefoneField
 from apps.pacientes.models import Paciente
 
 from .models import Agendamento, BloqueioAgenda, Consultorio
 
 
 class AgendamentoForm(forms.ModelForm):
+    tutor_tel = TelefoneField(required=False)
     paciente = forms.ModelChoiceField(queryset=Paciente.objects.all(), required=False)
     consultorio = forms.ModelChoiceField(queryset=Consultorio.objects.filter(ativo=True), required=False)
 

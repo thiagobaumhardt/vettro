@@ -14,13 +14,15 @@ from . import services
 from .forms import TutorForm
 from .models import Tutor
 
+PAPEIS_VEEM_VALOR_A_PAGAR = {"admin", "vet", "atendente"}
+
 
 @requer_secao("tutores")
 def lista(request):
     termo = request.GET.get("q", "").strip()
     tutores = Tutor.objects.all()
     if termo:
-        tutores = tutores.filter(Q(nome__icontains=termo) | Q(tel__icontains=termo))
+        tutores = tutores.filter(Q(nome__icontains=termo) | Q(tel__icontains=termo) | Q(tel2__icontains=termo))
 
     contexto = {"tutores": tutores, "termo": termo}
     template = "tutores/_lista_resultado.html" if request.headers.get("HX-Request") else "tutores/lista.html"
@@ -60,7 +62,13 @@ def form_view(request, pk=None):
 def detalhe(request, pk):
     tutor = get_object_or_404(Tutor, pk=pk)
     pacientes = Paciente.objects.filter(tutor=tutor)
-    return render(request, "tutores/detalhe.html", {"tutor": tutor, "pacientes": pacientes})
+    contexto = {"tutor": tutor, "pacientes": pacientes}
+    # Só o TOTAL em aberto — o detalhe das cobranças continua admin only.
+    if request.session.get("papel") in PAPEIS_VEEM_VALOR_A_PAGAR:
+        from apps.financeiro.services import valor_a_pagar_do_tutor
+
+        contexto["valor_a_pagar"] = valor_a_pagar_do_tutor(tutor)
+    return render(request, "tutores/detalhe.html", contexto)
 
 
 @requer_secao("tutores")

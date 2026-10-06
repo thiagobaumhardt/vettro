@@ -28,8 +28,15 @@ def iniciar_pagamento_tef(cobranca, *, parcelas: int = 1, terminal_codigo: str =
     )
 
     if resultado.aprovado:
+        from django.utils import timezone
+
+        # Desconto via TEF ainda não suportado — cobra o total cheio (o
+        # desconto hoje só existe na baixa manual, financeiro.services.registrar_pagamento).
         cobranca.status = "pago"
-        cobranca.save(update_fields=["status"])
+        cobranca.valor_pago = cobranca.total
+        cobranca.pago_em = timezone.now()
+        cobranca.pago_por_nome = getattr(usuario, "nome", "")
+        cobranca.save(update_fields=["status", "valor_pago", "pago_em", "pago_por_nome"])
 
     return transacao
 

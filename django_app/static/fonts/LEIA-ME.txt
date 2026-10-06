@@ -1,0 +1,1 @@
+Coloque aqui RocaTwo-Regular.woff2 e RocaTwo-Bold.woff2 (fonte licenciada da marca Lume). O CSS (static/dist/styles.css) já as usa automaticamente.

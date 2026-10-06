@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Orçamento #{{ orcamento.numero }} — Vettro{% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+    <h2 style="margin:0;">Orçamento #{{ orcamento.numero }}</h2>
+    <div style="display:flex; gap:10px;">
+      <a href="{% url 'orcamentos:lista' %}" class="btn-secondary btn">← Orçamentos</a>
+      <a href="{% url 'orcamentos:pdf' orcamento.pk %}" target="_blank" class="btn-primary btn">Imprimir (PDF)</a>
+    </div>
+  </div>
+  <div class="form-grid">
+    <div><label>Tutor</label>{{ orcamento.tutor_nome }}{% if orcamento.tutor_tel %} · {{ orcamento.tutor_tel }}{% endif %}</div>
+    <div><label>Paciente</label>{{ orcamento.pac_nome|default:"—" }}</div>
+    <div><label>Emitido em</label>{{ orcamento.criado_em|date:"d/m/Y H:i" }}{% if orcamento.usuario_nome %} por {{ orcamento.usuario_nome }}{% endif %}</div>
+    <div><label>Válido até</label>{{ orcamento.valido_ate|date:"d/m/Y" }}{% if orcamento.vencido %} <span class="badge" style="background:var(--c-alerta);">Vencido</span>{% endif %}</div>
+  </div>
+  <div class="table-wrap" style="margin-top:16px;">
+    <table>
+      <thead><tr><th>Descrição</th><th style="text-align:right;">Qtd</th><th style="text-align:right;">Valor unit.</th></tr></thead>
+      <tbody>
+        {% for item in orcamento.itens %}
+        <tr><td>{{ item.descricao }}</td><td style="text-align:right;">{{ item.qtd|floatformat:"-3" }}</td><td style="text-align:right;">R$ {{ item.valor }}</td></tr>
+        {% endfor %}
+      </tbody>
+      <tfoot><tr><th colspan="2" style="text-align:right;">Total</th><th style="text-align:right;">R$ {{ orcamento.total }}</th></tr></tfoot>
+    </table>
+  </div>
+  {% if orcamento.obs %}<p style="margin-top:12px;"><strong>Observações:</strong> {{ orcamento.obs|linebreaksbr }}</p>{% endif %}
+</div>
+{% endblock %}

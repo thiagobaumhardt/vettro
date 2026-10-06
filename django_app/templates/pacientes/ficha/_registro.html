@@ -1,0 +1,120 @@
+{# Detalhe COMPLETO de um registro (Atendimento/Consulta/Cirurgia) — aberto pela linha do tempo da Ficha. #}
+<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:18px;">
+  <div>
+    <h3 style="margin:0;">{{ registro_titulo }}</h3>
+    <span style="color:var(--muted);">{{ registro.data|date:"d/m/Y" }} {{ registro.hora|time:"H:i" }}</span>
+    {% if registro.plantao %}<span class="badge" style="background:var(--c-aviso); margin-left:6px;">Plantão</span>{% endif %}
+  </div>
+  <a href="{% url 'pacientes:ficha' paciente.pk %}?aba=ficha" class="btn-secondary btn"
+     @click="aba = 'ficha'" hx-get="{% url 'pacientes:ficha_aba' paciente.pk 'ficha' %}" hx-target="#ficha-conteudo"
+     hx-push-url="{% url 'pacientes:ficha' paciente.pk %}?aba=ficha">← Voltar para a ficha</a>
+</div>
+
+{% for titulo, campos in registro_secoes %}
+<div class="section-title"{% if not forloop.first %} style="margin-top:22px;"{% endif %}>{{ titulo }}</div>
+<div class="form-grid">
+  {% for rotulo, valor, largo in campos %}
+  <div{% if largo %} class="full"{% endif %}>
+    <label>{{ rotulo }}</label>
+    <div{% if valor == "—" %} style="color:var(--muted);"{% endif %}>{{ valor|linebreaksbr }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endfor %}
+
+<div class="section-title" style="margin-top:22px;">Itens cobrados</div>
+{% if registro_servicos or registro_insumos %}
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Item</th><th>Tipo</th><th>Qtd.</th><th>Valor unit.</th><th style="text-align:right;">Subtotal</th></tr></thead>
+    <tbody>
+      {% for item in registro_servicos %}
+      <tr>
+        <td>{{ item.nome }}</td>
+        <td>{% if registro_tipo == "cirurgia" %}Procedimento{% else %}Serviço{% endif %}</td>
+        <td>{{ item.qtd|default:"1"|floatformat:"-3" }}{% if item.unidade and item.unidade != "un." %} {{ item.unidade }}{% endif %}</td>
+        <td>R$ {{ item.valor }}</td>
+        <td style="text-align:right;">R$ {{ item.subtotal|default:item.valor }}</td>
+      </tr>
+      {% endfor %}
+      {% for item in registro_insumos %}
+      <tr>
+        <td>{{ item.nome }}</td>
+        <td>Insumo (baixa no estoque)</td>
+        <td>{{ item.qtd|floatformat:"-3" }} {{ item.unidade|default:"" }}</td>
+        <td>R$ {{ item.valor }}</td>
+        <td style="text-align:right;">{% if item.subtotal %}R$ {{ item.subtotal }}{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p style="color:var(--muted);">Nenhum serviço ou insumo cobrado.</p>
+{% endif %}
+
+<div class="total-box" style="border:1px solid var(--primary); padding:12px 16px; margin-top:16px; display:flex; justify-content:space-between; align-items:center;">
+  <span>Total</span>
+  <strong>R$ {{ registro.total }}</strong>
+</div>
+
+{% if registro_tipo == "atendimento" %}
+<div class="section-title" style="margin-top:22px;">Exames deste atendimento</div>
+{% if registro_exames %}
+<div class="table-wrap">
+  <table>
+    <tbody>
+      {% for e in registro_exames %}
+      <tr>
+        <td>{{ e.nome }}</td>
+        <td style="color:var(--muted);">{{ e.criado_em|date:"d/m/Y H:i" }}</td>
+        <td style="text-align:right;"><a href="{{ e.arquivo.url }}" target="_blank" class="btn-secondary btn">Abrir</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p style="color:var(--muted);">Nenhum exame vinculado. Anexe pela aba Exames escolhendo o atendimento #{{ registro.numero }}.</p>
+{% endif %}
+
+<div class="section-title" style="margin-top:22px;">Fotos deste atendimento</div>
+{% if registro_fotos %}
+<div x-data="{ lightbox: null }" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px;">
+  {% for f in registro_fotos %}
+  <img src="{{ f.imagem.url }}" alt="{{ f.nome }}" title="{{ f.nome }}" style="width:100%; aspect-ratio:1; object-fit:cover; cursor:zoom-in;" @click="lightbox = '{{ f.imagem.url }}'">
+  {% endfor %}
+  <div class="modal-backdrop" x-show="lightbox" x-cloak @click="lightbox = null" style="z-index:300;">
+    <img :src="lightbox" style="max-width:90vw; max-height:90vh;">
+  </div>
+</div>
+{% else %}
+<p style="color:var(--muted);">Nenhuma foto vinculada. Anexe pela aba Fotos escolhendo o atendimento #{{ registro.numero }}.</p>
+{% endif %}
+{% endif %}
+
+{% if papel_ativo == "admin" %}
+<div class="section-title" style="margin-top:22px;">Cobrança</div>
+{% if registro_cobranca %}
+{% with c=registro_cobranca %}
+<div class="form-grid">
+  <div><label>Situação</label><div><span class="badge" style="background:{% if c.status == 'pago' %}var(--c-ok){% else %}var(--c-aviso){% endif %};">{{ c.get_status_display }}</span></div></div>
+  <div><label>Valor cobrado</label><div>R$ {{ c.total }}</div></div>
+  <div><label>Desconto</label><div>{% if c.desconto_valor %}R$ {{ c.desconto_valor }}{% if c.desconto_tipo == "percentual" %} ({{ c.desconto_informado|floatformat:"-2" }}%){% endif %}{% else %}—{% endif %}</div></div>
+  <div><label>Motivo do desconto</label><div>{{ c.desconto_motivo|default:"—" }}</div></div>
+  <div><label>Valor pago</label><div>{% if c.valor_pago is not None %}R$ {{ c.valor_pago }}{% else %}—{% endif %}</div></div>
+  <div><label>Pago em</label><div>{% if c.pago_em %}{{ c.pago_em|date:"d/m/Y H:i" }}{% if c.pago_por_nome %} por {{ c.pago_por_nome }}{% endif %}{% else %}—{% endif %}</div></div>
+</div>
+{% endwith %}
+{% else %}
+<p style="color:var(--muted);">Nenhuma cobrança vinculada a este registro.</p>
+{% endif %}
+{% endif %}
+
+{% if registro_tipo == "consulta" %}
+<form method="post" hx-post="{% url 'pacientes:anamnese_excluir' paciente.pk registro.pk %}" hx-target="#ficha-conteudo"
+      hx-push-url="{% url 'pacientes:ficha' paciente.pk %}?aba=anamnese" @htmx:after-request="aba = 'anamnese'" style="margin-top:18px;">
+  {% csrf_token %}
+  <button type="submit" class="btn-danger btn" data-confirm="Excluir este registro de consulta?">Excluir consulta</button>
+</form>
+{% endif %}

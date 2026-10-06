@@ -1,0 +1,450 @@
+<title>Nota Fiscal e Maquininha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Livvic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --chao: #F4F6F3;
+    --papel: #FFFFFF;
+    --tinta: #1D2622;
+    --tinta-suave: #56625C;
+    --linha: #DCE2DD;
+    --verde: #1F6F5C;        /* nota fiscal */
+    --verde-fundo: #E3F1EC;
+    --ambar: #A45A12;        /* dinheiro / maquininha */
+    --ambar-fundo: #FBEEDD;
+    --azul: #3A5A8C;         /* Vettro (sistema) */
+    --azul-fundo: #E6ECF6;
+    --alerta: #9A3412;
+    --alerta-fundo: #FDEBDD;
+    --sombra: 0 1px 2px rgba(29, 38, 34, .06), 0 6px 18px rgba(29, 38, 34, .06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --chao: #121714; --papel: #1A211D; --tinta: #E7ECE8; --tinta-suave: #A3B0A9; --linha: #2E3833;
+      --verde: #6CCBAE; --verde-fundo: #183A31; --ambar: #F0B26B; --ambar-fundo: #3B2A16;
+      --azul: #9DB8E6; --azul-fundo: #1E2A40; --alerta: #F6A07A; --alerta-fundo: #3D2217;
+      --sombra: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --chao: #121714; --papel: #1A211D; --tinta: #E7ECE8; --tinta-suave: #A3B0A9; --linha: #2E3833;
+    --verde: #6CCBAE; --verde-fundo: #183A31; --ambar: #F0B26B; --ambar-fundo: #3B2A16;
+    --azul: #9DB8E6; --azul-fundo: #1E2A40; --alerta: #F6A07A; --alerta-fundo: #3D2217;
+    --sombra: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25);
+  }
+
+  body { background: var(--chao); color: var(--tinta); font: 16px/1.6 "Livvic", "Segoe UI", system-ui, sans-serif; }
+  .pagina { max-width: 860px; margin: 0 auto; padding: 40px 20px 72px; }
+  h1, h2, h3 { font-family: "Fraunces", Georgia, "Times New Roman", serif; line-height: 1.15; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(2rem, 5vw, 2.9rem); font-weight: 650; letter-spacing: -.01em; }
+  h2 { font-size: 1.65rem; font-weight: 650; margin-bottom: 12px; }
+  h3 { font-size: 1.15rem; font-weight: 650; }
+  p { margin: 0 0 12px; max-width: 66ch; }
+  .rotulo { font-size: .74rem; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--tinta-suave); }
+  section { margin-top: 56px; }
+  .lede { font-size: 1.12rem; color: var(--tinta-suave); margin-top: 12px; }
+
+  /* Resposta curta */
+  .resposta { margin-top: 28px; display: grid; gap: 10px; }
+  .resposta div { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
+  .resposta b { font-weight: 600; }
+  .marca { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: .8rem; font-weight: 700; margin-top: 3px; }
+
+  /* Duas coisas diferentes */
+  .duas { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 18px; }
+  .coisa { background: var(--papel); border: 1px solid var(--linha); border-radius: 12px; padding: 20px; box-shadow: var(--sombra); }
+  .coisa header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .pastilha { font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 3px 9px; border-radius: 99px; }
+  .coisa dl { margin: 12px 0 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; font-size: .94rem; }
+  .coisa dt { color: var(--tinta-suave); }
+  .coisa dd { margin: 0; }
+  .pag { color: var(--ambar); } .pag-f { background: var(--ambar-fundo); color: var(--ambar); }
+  .nota { color: var(--verde); } .nota-f { background: var(--verde-fundo); color: var(--verde); }
+  .sis { color: var(--azul); } .sis-f { background: var(--azul-fundo); color: var(--azul); }
+  .ponte { margin-top: 16px; padding: 14px 16px; border-radius: 10px; background: var(--papel); border: 1px dashed var(--linha); font-size: .95rem; }
+
+  /* Simulador */
+  .controles { display: flex; flex-wrap: wrap; gap: 18px; margin: 18px 0 20px; }
+  .grupo { display: flex; flex-direction: column; gap: 6px; }
+  .alternar { display: inline-flex; background: var(--papel); border: 1px solid var(--linha); border-radius: 10px; padding: 3px; }
+  .alternar button { font: inherit; font-size: .92rem; border: 0; background: transparent; color: var(--tinta-suave); padding: 7px 14px; border-radius: 8px; cursor: pointer; }
+  .alternar button[aria-pressed="true"] { background: var(--tinta); color: var(--chao); }
+  .alternar button:focus-visible { outline: 2px solid var(--verde); outline-offset: 2px; }
+  .legenda { display: flex; flex-wrap: wrap; gap: 14px; font-size: .85rem; color: var(--tinta-suave); margin-bottom: 10px; }
+  .legenda span { display: inline-flex; align-items: center; gap: 6px; }
+  .ponto { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .fluxo { list-style: none; margin: 0; padding: 0; background: var(--papel); border: 1px solid var(--linha); border-radius: 12px; box-shadow: var(--sombra); overflow: hidden; }
+  .fluxo li { display: grid; grid-template-columns: 40px 118px 1fr; gap: 12px; align-items: start; padding: 14px 18px; border-top: 1px solid var(--linha); }
+  .fluxo li:first-child { border-top: 0; }
+  .fluxo .n { font-family: "Fraunces", Georgia, serif; font-size: 1.25rem; font-weight: 650; color: var(--tinta-suave); font-variant-numeric: tabular-nums; }
+  .fluxo .onde { font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 99px; justify-self: start; margin-top: 3px; white-space: nowrap; }
+  .fluxo .txt b { font-weight: 600; }
+  .fluxo .txt small { display: block; color: var(--tinta-suave); font-size: .86rem; }
+  .aviso-cenario { margin-top: 14px; padding: 14px 16px; border-radius: 10px; background: var(--alerta-fundo); color: var(--tinta); font-size: .95rem; }
+  .aviso-cenario strong { color: var(--alerta); }
+  @media (max-width: 560px) {
+    .fluxo li { grid-template-columns: 30px 1fr; }
+    .fluxo .onde { grid-column: 2; }
+    .fluxo .txt { grid-column: 2; }
+  }
+
+  /* Tabelas */
+  .tabela { overflow-x: auto; margin-top: 16px; background: var(--papel); border: 1px solid var(--linha); border-radius: 12px; box-shadow: var(--sombra); }
+  table { width: 100%; border-collapse: collapse; font-size: .93rem; min-width: 560px; }
+  th, td { text-align: left; padding: 12px 16px; border-top: 1px solid var(--linha); vertical-align: top; }
+  thead th { border-top: 0; font-size: .74rem; letter-spacing: .07em; text-transform: uppercase; color: var(--tinta-suave); font-weight: 600; }
+  tbody th { font-weight: 600; }
+  .sim { color: var(--verde); font-weight: 600; } .nao { color: var(--alerta); font-weight: 600; }
+  .indicado { background: var(--verde-fundo); }
+
+  .quadro { margin-top: 18px; padding: 18px 20px; border-radius: 12px; border-left: 4px solid var(--verde); background: var(--papel); box-shadow: var(--sombra); }
+  .quadro.ambar { border-left-color: var(--ambar); }
+  .quadro h3 { margin-bottom: 6px; }
+
+  .passos { counter-reset: passo; list-style: none; padding: 0; margin: 18px 0 0; display: grid; gap: 12px; }
+  .passos li { counter-increment: passo; display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: start; background: var(--papel); border: 1px solid var(--linha); border-radius: 12px; padding: 14px 16px; }
+  .passos li::before { content: counter(passo); font-family: "Fraunces", Georgia, serif; font-size: 1.5rem; font-weight: 650; color: var(--verde); line-height: 1; padding-top: 2px; }
+  .passos b { font-weight: 600; }
+  .passos small { display: block; color: var(--tinta-suave); }
+
+  /* Fluxo padrão das clínicas */
+  .trilho { position: relative; margin-top: 22px; display: grid; gap: 0; }
+  .etapa { position: relative; display: grid; grid-template-columns: 52px 1fr; gap: 14px; padding-bottom: 22px; }
+  .etapa:last-child { padding-bottom: 0; }
+  .etapa::before { content: ""; position: absolute; left: 25px; top: 44px; bottom: 0; width: 2px; background: var(--linha); }
+  .etapa:last-child::before { display: none; }
+  .no { width: 52px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-family: "Fraunces", Georgia, serif; font-size: 1.25rem; font-weight: 650; position: relative; z-index: 1; }
+  .etapa .corpo { background: var(--papel); border: 1px solid var(--linha); border-radius: 12px; padding: 14px 16px; box-shadow: var(--sombra); }
+  .etapa .corpo h3 { font-size: 1.05rem; margin-bottom: 4px; }
+  .etapa .corpo p { margin: 0; font-size: .95rem; color: var(--tinta-suave); }
+  .quem { display: inline-block; font-size: .7rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; margin-bottom: 6px; }
+  .quem-equipe { background: var(--chao); color: var(--tinta-suave); border: 1px solid var(--linha); }
+  .bifurca { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 10px; }
+  .bifurca div { border: 1px solid var(--linha); border-radius: 10px; padding: 10px 12px; font-size: .9rem; background: var(--chao); }
+  .bifurca b { display: block; font-weight: 600; color: var(--tinta); margin-bottom: 2px; }
+  .bifurca .uso { font-size: .78rem; color: var(--ambar); font-weight: 600; }
+  .variacoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; margin-top: 22px; }
+  .variacao { border: 1px dashed var(--linha); border-radius: 12px; padding: 14px 16px; background: var(--papel); }
+  .variacao h3 { font-size: 1rem; margin-bottom: 6px; }
+  .variacao p { margin: 0; font-size: .92rem; color: var(--tinta-suave); }
+
+  .nota-rodape { margin-top: 48px; font-size: .85rem; color: var(--tinta-suave); border-top: 1px solid var(--linha); padding-top: 16px; }
+  @media (prefers-reduced-motion: no-preference) { .fluxo li { transition: background .2s; } }
+</style>
+
+<main class="pagina">
+  <div class="rotulo">Lume Veterinária · Vettro</div>
+  <h1>Nota fiscal e maquininha</h1>
+  <p class="lede">Duas coisas que acontecem no mesmo momento, mas que não dependem uma da outra.</p>
+
+  <div class="resposta">
+    <div><span class="marca nota-f">✓</span><span><b>Nota fiscal:</b> sim, precisa de um emissor (o Focus NFe ou outro). O Vettro não conversa sozinho com a prefeitura nem com a SEFAZ.</span></div>
+    <div><span class="marca pag-f">✓</span><span><b>Maquininha Sicredi:</b> não precisa contratar nada agora. Você continua digitando o valor na máquina, e ela funciona sem a internet da clínica.</span></div>
+    <div><span class="marca sis-f">✓</span><span><b>A ligação entre as duas é o Vettro:</b> você registra "pago" no sistema e ele emite a nota. A maquininha não emite nota, e a nota não cobra o cartão.</span></div>
+  </div>
+
+  <section id="diferenca">
+    <h2>São duas coisas diferentes</h2>
+    <p>Uma trata do <b>dinheiro</b> que sai do cartão do tutor. A outra trata do <b>documento</b> que avisa o governo sobre aquela venda ou serviço.</p>
+    <div class="duas">
+      <article class="coisa">
+        <header><span class="pastilha pag-f">Dinheiro</span><h3>Pagamento na maquininha</h3></header>
+        <p>Passa o cartão, aprova a compra e manda o dinheiro para a conta da Lume.</p>
+        <dl>
+          <dt>Quem faz</dt><dd>Sicredi (a sua maquininha)</dd>
+          <dt>Obrigatório?</dt><dd>Não. É só uma forma de receber, como Pix ou dinheiro.</dd>
+          <dt>Internet</dt><dd>A da própria máquina (chip ou Wi-Fi), não a do Vettro.</dd>
+          <dt>Custo</dt><dd>A taxa que a Sicredi já cobra hoje.</dd>
+        </dl>
+      </article>
+      <article class="coisa">
+        <header><span class="pastilha nota-f">Documento</span><h3>Nota fiscal</h3></header>
+        <p>Registra oficialmente o serviço prestado ou o produto vendido, e é a base do imposto.</p>
+        <dl>
+          <dt>Quem autoriza</dt><dd>Prefeitura (serviço, NFS-e) ou SEFAZ (produto, NFC-e)</dd>
+          <dt>Obrigatório?</dt><dd>Sim, por lei.</dd>
+          <dt>Internet</dt><dd>Precisa para enviar ao governo.</dd>
+          <dt>Custo</dt><dd>O emissor escolhido (Focus NFe ou outro) e o certificado digital A1.</dd>
+        </dl>
+      </article>
+    </div>
+    <p class="ponte">A nota só registra <b>como</b> o tutor pagou: "cartão de crédito", "Pix", "dinheiro". Ela não precisa que a maquininha esteja ligada ao sistema para ser emitida.</p>
+  </section>
+
+  <section id="fluxo-padrao">
+    <div class="rotulo">O que o mercado faz</div>
+    <h2>O fluxo que as clínicas usam</h2>
+    <p>É o caminho mais comum em clínicas veterinárias e pequenos estabelecimentos: maquininha comum com o valor digitado, Pix, e nota de serviço emitida pelo próprio sistema no fechamento da conta. É também o fluxo planejado para a Lume.</p>
+
+    <div class="trilho">
+      <div class="etapa">
+        <span class="no sis-f">1</span>
+        <div class="corpo">
+          <span class="quem quem-equipe">Veterinária</span>
+          <h3>Atendimento registrado no sistema</h3>
+          <p>Consulta, vacina, curativo... com os serviços e insumos usados. O sistema monta a conta do tutor.</p>
+        </div>
+      </div>
+      <div class="etapa">
+        <span class="no sis-f">2</span>
+        <div class="corpo">
+          <span class="quem quem-equipe">Recepção ou veterinária</span>
+          <h3>Fechar a conta</h3>
+          <p>Confere o total, aplica desconto se houver (com motivo) e informa o valor ao tutor.</p>
+        </div>
+      </div>
+      <div class="etapa">
+        <span class="no pag-f">3</span>
+        <div class="corpo">
+          <span class="quem pag-f">Tutor paga</span>
+          <h3>Pagamento, fora do sistema</h3>
+          <p>O dinheiro não passa pelo sistema. Cada forma usa o seu próprio canal:</p>
+          <div class="bifurca">
+            <div><b>Pix</b>QR code da maquininha ou do banco da clínica.<br><span class="uso">Muito usado</span></div>
+            <div><b>Cartão</b>Valor digitado na maquininha comum (Sicredi, Stone, Cielo...).<br><span class="uso">Muito usado</span></div>
+            <div><b>Dinheiro</b>Troco no caixa.<br><span class="uso">Cada vez menos</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="etapa">
+        <span class="no sis-f">4</span>
+        <div class="corpo">
+          <span class="quem sis-f">No sistema</span>
+          <h3>Marcar como pago</h3>
+          <p>"Receber pagamento" e a forma usada: Pix, cartão de crédito, débito ou dinheiro. É esse clique que liga o dinheiro à nota.</p>
+        </div>
+      </div>
+      <div class="etapa">
+        <span class="no nota-f">5</span>
+        <div class="corpo">
+          <span class="quem nota-f">Automático</span>
+          <h3>Sistema emite a nota de serviço (NFS-e)</h3>
+          <p>O sistema envia ao emissor (Focus NFe), que envia à prefeitura. A nota volta autorizada em segundos.</p>
+        </div>
+      </div>
+      <div class="etapa">
+        <span class="no nota-f">6</span>
+        <div class="corpo">
+          <span class="quem nota-f">Tutor recebe</span>
+          <h3>Nota enviada ao tutor</h3>
+          <p>PDF por e-mail ou WhatsApp, ou impresso na hora, se ele pedir.</p>
+        </div>
+      </div>
+      <div class="etapa">
+        <span class="no nota-f">7</span>
+        <div class="corpo">
+          <span class="quem quem-equipe">Contador, todo mês</span>
+          <h3>Contabilidade recebe as notas</h3>
+          <p>Os arquivos XML vão para o contador (pelo painel do emissor ou por e-mail), e ele calcula os impostos do mês.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="variacoes">
+      <div class="variacao">
+        <h3>🛒 Venda no balcão (ração, antipulgas)</h3>
+        <p>Mesmo fluxo, sem atendimento: produtos, pagamento e "Finalizar venda". A nota é de <b>produto (NFC-e)</b>, e só se aplica quando a clínica vende produtos com regularidade. O contador define.</p>
+      </div>
+      <div class="variacao">
+        <h3>📶 Internet caiu</h3>
+        <p>O passo 3 continua igual, porque a maquininha tem conexão própria. Os passos 1, 2 e 4 são anotados no papel e lançados quando a internet volta. A nota (5) sai nesse momento.</p>
+      </div>
+      <div class="variacao">
+        <h3>⏳ Tutor paga depois</h3>
+        <p>A conta fica "pendente" no sistema. Quando ele pagar, você faz o passo 4, e a nota sai nesse momento. Confirme com o contador se a nota deve sair no atendimento ou no pagamento.</p>
+      </div>
+    </div>
+
+    <div class="quadro" style="margin-top:22px;">
+      <h3>O que é menos comum em clínicas do porte da Lume</h3>
+      <p style="margin:0"><b>Maquininha integrada (TEF):</b> fica mais em supermercados, farmácias de rede e lojas grandes. <b>Nota digitada à mão no site da prefeitura:</b> ainda existe em clínicas que emitem pouca nota, mas toma tempo e esquecer uma é fácil. E emitir nota "só quando o tutor pede" é comum, mas <b>não é o correto</b>: a lei exige nota para todo serviço.</p>
+    </div>
+  </section>
+
+  <section id="simulador">
+    <h2>Como fica no dia a dia</h2>
+    <p>Escolha o tipo de maquininha e se a clínica está com internet. O exemplo é uma consulta de R$ 180,00 paga no cartão.</p>
+
+    <div class="controles">
+      <div class="grupo">
+        <span class="rotulo" id="rot-maq">Maquininha</span>
+        <div class="alternar" role="group" aria-labelledby="rot-maq">
+          <button type="button" id="maq-avulsa" data-maq="avulsa" aria-pressed="true">Comum (digita o valor)</button>
+          <button type="button" id="maq-tef" data-maq="tef" aria-pressed="false">Integrada ao sistema (TEF)</button>
+        </div>
+      </div>
+      <div class="grupo">
+        <span class="rotulo" id="rot-net">Internet da clínica</span>
+        <div class="alternar" role="group" aria-labelledby="rot-net">
+          <button type="button" id="net-sim" data-net="sim" aria-pressed="true">Funcionando</button>
+          <button type="button" id="net-nao" data-net="nao" aria-pressed="false">Caiu</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="legenda">
+      <span><i class="ponto" style="background:var(--azul)"></i>Vettro</span>
+      <span><i class="ponto" style="background:var(--ambar)"></i>Maquininha / dinheiro</span>
+      <span><i class="ponto" style="background:var(--verde)"></i>Nota fiscal</span>
+    </div>
+    <ol class="fluxo" id="fluxo" aria-live="polite"></ol>
+    <div class="aviso-cenario" id="aviso" hidden></div>
+  </section>
+
+  <section id="emissor">
+    <h2>Preciso contratar o Focus NFe?</h2>
+    <p>Para a nota sair <b>sozinha pelo Vettro</b>, sim: é preciso um emissor, um serviço que conversa com as prefeituras e com a SEFAZ no lugar do sistema. O Focus NFe foi o escolhido no planejamento do Vettro, mas existem outros do mesmo tipo.</p>
+    <div class="tabela">
+      <table>
+        <thead><tr><th>Opção</th><th>Como funciona</th><th>Contrato</th><th>Nota automática no Vettro</th></tr></thead>
+        <tbody>
+          <tr>
+            <th>Emissor gratuito do governo</th>
+            <td>Portal nacional da NFS-e (gov.br) ou site da prefeitura. Você digita cada nota à mão.</td>
+            <td>Nenhum</td>
+            <td class="nao">Não. Tudo digitado à mão.</td>
+          </tr>
+          <tr class="indicado">
+            <th>Focus NFe <span class="rotulo">(previsto no Vettro)</span></th>
+            <td>O Vettro manda os dados e o Focus devolve a nota autorizada, com PDF e XML.</td>
+            <td>Mensalidade/uso</td>
+            <td class="sim">Sim</td>
+          </tr>
+          <tr>
+            <th>Outros emissores (NFE.io, PlugNotas, eNotas…)</th>
+            <td>Mesmo modelo do Focus.</td>
+            <td>Mensalidade/uso</td>
+            <td class="sim">Sim, mas exige adaptar o Vettro ao emissor escolhido.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="quadro">
+      <h3>Recomendação</h3>
+      <p>Seguir com o <b>Focus NFe</b>, desde que ele atenda o <b>município da Lume</b> para NFS-e. Esse é o único ponto que pode mudar a escolha. Pergunte isso ao Focus antes de contratar, e compare preço por nota e mensalidade, porque os valores mudam e não os tenho atualizados.</p>
+      <p style="margin:0">Também é preciso: <b>certificado digital A1</b> (e-CNPJ) e as respostas do contador (lista em <code>docs/perguntas-contador-notas-fiscais.txt</code>).</p>
+    </div>
+  </section>
+
+  <section id="maquininha">
+    <h2>E a maquininha da Sicredi?</h2>
+    <p>Existem dois jeitos de usar maquininha com um sistema. Integrar é uma <b>comodidade</b>, não uma exigência da nota.</p>
+    <div class="tabela">
+      <table>
+        <thead><tr><th></th><th>Comum (como hoje)</th><th>Integrada (TEF)</th></tr></thead>
+        <tbody>
+          <tr><th>Como cobra</th><td>Você digita o valor na máquina</td><td>O Vettro envia o valor para o aparelho</td></tr>
+          <tr><th>Registrar "pago" no Vettro</th><td>Você clica em "Receber pagamento"</td><td>Automático</td></tr>
+          <tr><th>Sem internet na clínica</th><td class="sim">Funciona (pela internet da máquina)</td><td class="nao">Não funciona; volta para o jeito comum</td></tr>
+          <tr><th>O que contratar</th><td>Nada além do que já tem</td><td>Um serviço de TEF (SiTef ou PayGo) e um aparelho compatível</td></tr>
+          <tr><th>Erro de digitação no valor</th><td>Pode acontecer</td><td>Não acontece</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="quadro ambar">
+      <h3>Recomendação</h3>
+      <p>Começar com a <b>maquininha comum</b>. Ela resolve o seu requisito de funcionar sem internet, e o Vettro já tem o botão manual "Receber pagamento". A integração (TEF) pode vir depois, e mesmo com ela a maquininha comum fica como reserva para quando a internet cair.</p>
+      <p style="margin:0">Se um dia quiser integrar, pergunte à Sicredi se o seu modelo funciona com <b>SiTef ou PayGo</b>. Nem toda maquininha comum aceita integração.</p>
+    </div>
+  </section>
+
+  <section id="sem-internet">
+    <h2>Quando a internet cai</h2>
+    <div class="duas">
+      <article class="coisa">
+        <header><span class="pastilha sis-f">Vettro</span><h3>O sistema não abre</h3></header>
+        <p>O Vettro fica na nuvem. Sem internet na clínica (ou no celular), a tela não carrega. Anote paciente, valor e forma de pagamento no papel ou no bloco de notas do celular, e registre quando a conexão voltar.</p>
+      </article>
+      <article class="coisa">
+        <header><span class="pastilha pag-f">Maquininha</span><h3>Continua cobrando</h3></header>
+        <p>A maquininha Sicredi usa a própria conexão (chip ou Wi-Fi). Você digita o valor normalmente. Confirme com a Sicredi se o seu modelo tem chip de celular, porque é isso que o deixa independente da internet da clínica.</p>
+      </article>
+      <article class="coisa">
+        <header><span class="pastilha nota-f">Nota</span><h3>Sai depois</h3></header>
+        <p>A nota precisa de internet para chegar ao governo. Ela é emitida quando você registrar o atendimento no Vettro. O prazo aceito para emitir depois do serviço depende do município: confirme com o contador.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="proximos">
+    <h2>Próximos passos</h2>
+    <ol class="passos">
+      <li><div><b>Conversar com o contador</b><small>Regime, inscrições, código de serviço e quais notas a Lume precisa emitir. A lista está em docs/perguntas-contador-notas-fiscais.txt.</small></div></li>
+      <li><div><b>Tirar o certificado digital A1 (e-CNPJ)</b><small>O A3 (token ou cartão) não serve para emissão automática.</small></div></li>
+      <li><div><b>Confirmar se o Focus NFe atende o município da Lume</b><small>Se atender, contratar e pedir o ambiente de homologação (testes com notas sem valor).</small></div></li>
+      <li><div><b>Passar o acesso de homologação para ligar no Vettro</b><small>Testamos notas de mentira antes de emitir de verdade.</small></div></li>
+      <li><div><b>Maquininha: manter como está</b><small>Integração (TEF) só se um dia quiser a comodidade.</small></div></li>
+    </ol>
+  </section>
+
+  <p class="nota-rodape">Regras de prazo, contingência e impostos (inclusive CBS/IBS da reforma tributária em 2026) variam por município e estado. Confirme os detalhes com o contador da Lume antes de emitir notas de verdade.</p>
+</main>
+
+<script>
+  const CENARIOS = {
+    "avulsa|sim": {
+      passos: [
+        ["sis", "Atendimento registrado no Vettro", "Gera a cobrança pendente de R$ 180,00."],
+        ["pag", "Você digita R$ 180,00 na maquininha Sicredi", "O tutor passa ou aproxima o cartão."],
+        ["pag", "A maquininha aprova", "O dinheiro vai para a conta da Lume, como hoje."],
+        ["sis", "Você clica em “Receber pagamento” e escolhe “Cartão de crédito”", "É aqui que o Vettro fica sabendo que foi pago."],
+        ["nota", "O Vettro envia os dados da nota ao emissor (Focus NFe)", "Tutor, serviço, valor e forma de pagamento."],
+        ["nota", "Prefeitura autoriza a NFS-e", "Leva alguns segundos."],
+        ["nota", "PDF da nota vai para o tutor", "Por e-mail ou WhatsApp."],
+      ],
+    },
+    "avulsa|nao": {
+      passos: [
+        ["pag", "Você digita R$ 180,00 na maquininha", "Ela aprova pela conexão própria (chip ou Wi-Fi)."],
+        ["sis", "Vettro fora do ar: anote no papel ou no celular", "Paciente, valor e “cartão de crédito”."],
+        ["sis", "A internet volta: registre o atendimento e o pagamento no Vettro", "Pode ser no mesmo dia, ao voltar para a clínica."],
+        ["nota", "O Vettro emite a nota nesse momento", "Prazo aceito para emitir depois: confirmar com o contador."],
+      ],
+      aviso: "<strong>Esse é o seu requisito:</strong> a cobrança não para. Só o registro e a nota ficam para depois.",
+    },
+    "tef|sim": {
+      passos: [
+        ["sis", "Atendimento registrado no Vettro", "Gera a cobrança pendente de R$ 180,00."],
+        ["sis", "Você clica em “Cobrar no cartão”", "O Vettro envia R$ 180,00 para o aparelho, sem digitar."],
+        ["pag", "O tutor passa o cartão e a compra é aprovada", "O Vettro recebe a confirmação e marca “pago” sozinho."],
+        ["nota", "A nota é emitida automaticamente", "Já com os dados do cartão (bandeira e autorização)."],
+      ],
+    },
+    "tef|nao": {
+      passos: [
+        ["pag", "A integração (TEF) não funciona sem internet", "O Vettro e o serviço de TEF estão fora do ar."],
+        ["pag", "Use a maquininha comum: digite R$ 180,00", "Por isso vale manter uma de reserva."],
+        ["sis", "Anote e registre no Vettro quando a internet voltar", "Pelo botão manual “Receber pagamento”, que continua existindo."],
+        ["nota", "O Vettro emite a nota nesse momento", ""],
+      ],
+      aviso: "<strong>Atenção:</strong> quem integra a maquininha ainda precisa de uma maquininha comum para quando a internet cair.",
+    },
+  };
+  const ROTULOS = { sis: ["Vettro", "sis-f"], pag: ["Maquininha", "pag-f"], nota: ["Nota fiscal", "nota-f"] };
+  const estado = { maq: "avulsa", net: "sim" };
+
+  function desenhar() {
+    const cenario = CENARIOS[`${estado.maq}|${estado.net}`];
+    const lista = document.getElementById("fluxo");
+    lista.replaceChildren(...cenario.passos.map(([onde, titulo, detalhe], i) => {
+      const li = document.createElement("li");
+      const [rotulo, classe] = ROTULOS[onde];
+      li.innerHTML = `<span class="n">${i + 1}</span><span class="onde ${classe}">${rotulo}</span>` +
+        `<span class="txt"><b></b><small></small></span>`;
+      li.querySelector("b").textContent = titulo;
+      li.querySelector("small").textContent = detalhe;
+      return li;
+    }));
+    const aviso = document.getElementById("aviso");
+    aviso.hidden = !cenario.aviso;
+    aviso.innerHTML = cenario.aviso || "";
+    document.querySelectorAll("[data-maq]").forEach(b => b.setAttribute("aria-pressed", b.dataset.maq === estado.maq));
+    document.querySelectorAll("[data-net]").forEach(b => b.setAttribute("aria-pressed", b.dataset.net === estado.net));
+  }
+  document.querySelectorAll("[data-maq]").forEach(b => b.addEventListener("click", () => { estado.maq = b.dataset.maq; desenhar(); }));
+  document.querySelectorAll("[data-net]").forEach(b => b.addEventListener("click", () => { estado.net = b.dataset.net; desenhar(); }));
+  desenhar();
+</script>

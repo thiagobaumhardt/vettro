@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Nova venda — Vettro{% endblock %}
+{% block content %}
+<form method="post" class="card" x-data="formVenda({{ produtos_json }}, {{ estado_json }})" @keydown.enter="if ($event.target.name !== 'codigo_barras') $event.preventDefault()">
+  {% csrf_token %}
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <h2 style="margin:0;">Nova venda</h2>
+    <a href="{% url 'vendas:lista' %}" class="btn-secondary btn">← Vendas</a>
+  </div>
+
+  <div class="form-grid">
+    <div>
+      <label>Código de barras</label>
+      <input type="text" name="codigo_barras" x-model="codigo" placeholder="Bipe ou digite e tecle Enter" autofocus
+             @keydown.enter.prevent="adicionarPorCodigo()" autocomplete="off">
+      <small style="color:var(--danger-hover);" x-show="erroCodigo" x-text="erroCodigo"></small>
+    </div>
+    <div>
+      <label>Ou escolha o produto</label>
+      <select @change="adicionar($event.target.value); $event.target.value = ''">
+        <option value="">+ Adicionar produto...</option>
+        <template x-for="p in produtos" :key="p.id">
+          <option :value="p.id" x-text="p.nome + ' — R$ ' + p.valor + '/' + p.unidade + ' (' + p.estoque.toLocaleString('pt-BR') + ' em estoque)'"></option>
+        </template>
+      </select>
+    </div>
+    <div><label>Cliente (opcional)</label><input type="text" name="cliente_nome" x-model="cliente" maxlength="150" placeholder="Nome de quem está comprando"></div>
+  </div>
+
+  <div class="table-wrap" style="margin-top:14px;">
+    <table>
+      <thead><tr><th>Produto</th><th style="width:110px;">Qtd</th><th style="width:130px; text-align:right;">Valor unit.</th><th style="width:130px; text-align:right;">Subtotal</th><th style="width:50px;"></th></tr></thead>
+      <tbody>
+        <template x-for="(item, i) in itens" :key="item.insumo">
+          <tr>
+            <td>
+              <input type="hidden" name="item_insumo" :value="item.insumo">
+              <span x-text="produto(item.insumo).nome"></span>
+              <small style="color:var(--danger-hover); display:block;" x-show="num(item.qtd) > produto(item.insumo).estoque"
+                     x-text="'Só há ' + produto(item.insumo).estoque.toLocaleString('pt-BR') + ' ' + produto(item.insumo).unidade + ' em estoque'"></small>
+            </td>
+            <td>
+              <input type="number" name="item_qtd" x-model="item.qtd" min="0.001" step="any" :max="produto(item.insumo).estoque" required style="width:90px;">
+              <small style="color:var(--muted);" x-text="produto(item.insumo).unidade"></small>
+            </td>
+            <td style="text-align:right;" x-text="'R$ ' + produto(item.insumo).valor"></td>
+            <td style="text-align:right;" x-text="'R$ ' + subtotalItem(item).toFixed(2)"></td>
+            <td><button type="button" class="btn-danger btn" @click="itens.splice(i, 1)" >Remover</button></td>
+          </tr>
+        </template>
+        <tr x-show="!itens.length"><td colspan="5" class="empty">Nenhum produto. Bipe o código de barras ou escolha na lista.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="form-grid" style="margin-top:14px;">
+    <div>
+      <label>Desconto (opcional)</label>
+      <div style="display:flex; gap:6px;">
+        <select name="desconto_tipo" x-model="tipo" style="width:80px;">
+          <option value="valor">R$</option>
+          <option value="percentual">%</option>
+        </select>
+        <input type="number" name="desconto" x-model="desconto" min="0" step="0.01" :max="tipo === 'percentual' ? 100 : subtotal()" placeholder="0,00">
+      </div>
+    </div>
+    <div x-show="valorDesconto() > 0">
+      <label>Motivo do desconto</label>
+      <input type="text" name="desconto_motivo" x-model="motivo" maxlength="200" :required="valorDesconto() > 0" placeholder="Ex: cliente fiel, produto com avaria...">
+    </div>
+    <div>
+      <label>Forma de pagamento</label>
+      <select name="forma_pagamento" x-model="forma" required>
+        <option value="">Selecione</option>
+        {% for valor, rotulo in formas %}<option value="{{ valor }}">{{ rotulo }}</option>{% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="total-box" style="border:1.5px solid var(--primary); padding:12px 16px; margin-top:14px;">
+    <div style="display:flex; justify-content:space-between;"><span>Subtotal</span><span x-text="'R$ ' + subtotal().toFixed(2)"></span></div>
+    <div style="display:flex; justify-content:space-between; color:var(--danger-hover);" x-show="valorDesconto() > 0">
+      <span>Desconto</span><span x-text="'− R$ ' + valorDesconto().toFixed(2)"></span>
+    </div>
+    <div style="display:flex; justify-content:space-between; font-size:1.15rem; margin-top:4px;"><strong>Total</strong><strong x-text="'R$ ' + (subtotal() - valorDesconto()).toFixed(2)"></strong></div>
+  </div>
+
+  <div style="margin-top:14px;"><button type="submit" class="btn-primary btn" :disabled="!itens.length || !forma">Finalizar venda</button></div>
+</form>
+
+<script>
+  function formVenda(produtos, estado) {
+    return {
+      produtos, itens: estado.itens.filter(i => produtos.some(p => p.id === i.insumo)),
+      forma: estado.forma, tipo: estado.tipo || "valor", desconto: estado.desconto, motivo: estado.motivo, cliente: estado.cliente,
+      codigo: "", erroCodigo: "",
+      produto(id) { return this.produtos.find(p => p.id === id) || { nome: "?", valor: "0", estoque: 0 }; },
+      adicionar(id) {
+        if (!id) return;
+        const existente = this.itens.find(i => i.insumo === id);
+        if (existente) existente.qtd = this.num(existente.qtd) + 1;
+        else this.itens.push({ insumo: id, qtd: 1 });
+      },
+      adicionarPorCodigo() {
+        const codigo = this.codigo.trim();
+        if (!codigo) return;
+        const p = this.produtos.find(p => p.codigo === codigo);
+        this.erroCodigo = p ? "" : "Nenhum produto em estoque com o código " + codigo;
+        if (p) this.adicionar(p.id);
+        this.codigo = "";
+      },
+      num(v) { return parseFloat(String(v).replace(",", ".")) || 0; },
+      subtotalItem(item) { return parseFloat(this.produto(item.insumo).valor) * this.num(item.qtd); },
+      subtotal() { return this.itens.reduce((soma, item) => soma + this.subtotalItem(item), 0); },
+      // Espelha apps.financeiro.services.calcular_desconto.
+      valorDesconto() {
+        const d = parseFloat(String(this.desconto).replace(",", ".")) || 0, sub = this.subtotal();
+        return Math.min(sub, this.tipo === "percentual" ? sub * Math.min(d, 100) / 100 : d);
+      },
+    };
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Novo Atendimento — Vettro{% endblock %}
+{% block content %}
+<div class="card" x-data="{ pacienteId: '{{ paciente_inicial|escapejs }}',
+    // Consulta e cirurgia ficam na ficha do paciente; os demais no formulário de atendimento.
+    destino(tipo) {
+      if (tipo === 'consulta') return this.pacienteId ? `/pacientes/${this.pacienteId}/?aba=anamnese&abrir=consulta` : '';
+      if (tipo === 'cirurgia') return this.pacienteId ? `/pacientes/${this.pacienteId}/?aba=cirurgias` : '';
+      return `{% url 'atendimentos:novo' %}?tipo=${tipo}` + (this.pacienteId ? `&paciente=${this.pacienteId}&voltar=paciente` : '');
+    } }">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <h2 style="margin:0;">Novo atendimento</h2>
+    <a href="{% url 'atendimentos:lista' %}" class="btn-secondary btn">← Atendimentos</a>
+  </div>
+
+  <label for="hub-paciente">1. Paciente</label>
+  <select id="hub-paciente" x-model="pacienteId" style="max-width:480px;">
+    <option value="">Selecione o paciente...</option>
+    {% for p in pacientes %}<option value="{{ p.pk }}">{{ p.nome }}{% if p.tutor %} — {{ p.tutor.nome }}{% endif %}</option>{% endfor %}
+  </select>
+
+  <label style="margin-top:18px;">2. Que tipo de atendimento é?</label>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:12px;">
+    <template x-for="t in [
+        ['consulta', '', 'Consulta', 'Ficha clínica: queixa, exame físico, serviços e insumos.'],
+        ['vacinacao', '', 'Vacina', 'Vacina, dose, revacinação e lembrete.'],
+        ['cirurgia', '', 'Procedimento cirúrgico', 'Escolha o tipo de cirurgia; preço pela faixa de peso.'],
+        ['retorno', '↩', 'Retorno', 'Vinculado ao atendimento de origem.'],
+        ['aplicacao_medicacao', '', 'Aplicação de medicação', 'Medicamento aplicado (em ml, comprimidos...).'],
+        ['curativo', '', 'Curativo', 'Material usado e data de retorno.'],
+        ['emergencia', '', 'Emergência', 'Atendimento de urgência, com plantão se for o caso.'],
+        ['ambulatorial', '', 'Ambulatorial', 'Fluidoterapia, internação por diária, oxigênio...'],
+      ]" :key="t[0]">
+      <a :href="destino(t[0]) || null" class="card"
+         :style="'margin:0; text-decoration:none; color:inherit; border:1.5px solid var(--border);' + (destino(t[0]) ? '' : ' opacity:.45; pointer-events:none;')">
+        <div style="font-size:1.6rem;" x-text="t[1]"></div>
+        <strong x-text="t[2]"></strong>
+        <p style="color:var(--muted); margin:4px 0 0; font-size:.88rem;" x-text="t[3]"></p>
+        <small style="color:var(--danger-hover);" x-show="!destino(t[0])">Selecione o paciente primeiro</small>
+      </a>
+    </template>
+  </div>
+</div>
+{% endblock %}

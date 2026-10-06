@@ -20,6 +20,22 @@ ALIMENTACAO_CHOICES = [
 ]
 
 
+class CondicaoClinica(models.Model):
+    """Catálogo de condições/perfil clínico da clínica (cardiopata, diabético,
+    agressivo...). Cada clínica começa com uma lista padrão (migração de dados
+    0003) e pode cadastrar as suas."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    nome = models.CharField(max_length=60, unique=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["nome"]
+
+    def __str__(self):
+        return self.nome
+
+
 class Paciente(models.Model):
     """Porte direto de backend/app/models.py:Paciente (ver §3 do plano).
     tutor é SET_NULL — excluir o tutor não apaga os pacientes vinculados,
@@ -32,9 +48,11 @@ class Paciente(models.Model):
     nome = models.CharField(max_length=150)
     especie = models.CharField(max_length=10, choices=ESPECIE_CHOICES)
     raca = models.CharField(max_length=100, blank=True)
+    sexo = models.CharField(max_length=6, choices=[("macho", "Macho"), ("femea", "Fêmea")], blank=True)
     peso = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
     data_nascimento = models.DateField(null=True, blank=True)
     obs = models.TextField("Observações", blank=True)
+    condicoes = models.ManyToManyField(CondicaoClinica, blank=True, related_name="pacientes")
     foto_perfil = models.ImageField(
         upload_to="pacientes/fotos_perfil/",
         storage=TenantFileSystemStorage(),
@@ -172,6 +190,10 @@ class Exame(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name="exames")
     nome = models.CharField(max_length=200)
+    # Atendimento (#numero) a que o exame se refere — opcional, escolhido ao anexar.
+    atendimento = models.ForeignKey(
+        "atendimentos.Atendimento", on_delete=models.SET_NULL, null=True, blank=True, related_name="exames"
+    )
     arquivo = models.FileField(
         upload_to="pacientes/exames/",
         storage=TenantFileSystemStorage(),
@@ -199,6 +221,10 @@ class Foto(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name="fotos")
     nome = models.CharField(max_length=200, blank=True)
+    # Atendimento (#numero) a que a foto se refere — opcional, escolhido ao anexar.
+    atendimento = models.ForeignKey(
+        "atendimentos.Atendimento", on_delete=models.SET_NULL, null=True, blank=True, related_name="fotos"
+    )
     imagem = models.ImageField(
         upload_to="pacientes/fotos/",
         storage=TenantFileSystemStorage(),

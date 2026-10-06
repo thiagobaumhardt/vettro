@@ -4,37 +4,30 @@
      x-data="totalBoxCobranca({{ servicos_json|default:'[]' }}, {{ insumos_json|default:'[]' }})">
   <div class="section-title">Nova Cobrança Manual</div>
   <form hx-post="{% url 'pacientes:cobranca_criar' paciente.pk %}" hx-target="#ficha-conteudo" hx-swap="innerHTML">
+    {% csrf_token %}
     <div class="form-grid">
       <div>
         <label>Serviços</label>
-        <div class="select-list" style="border:1.5px solid var(--border-2); border-radius:7px; max-height:200px; overflow-y:auto; padding:8px;">
+        <div class="select-list" style="border:1.5px solid var(--border-2); max-height:200px; overflow-y:auto; padding:8px;">
           {% for s in servicos %}
-          <label style="display:flex; justify-content:space-between; padding:4px 0;">
-            <span><input type="checkbox" name="servico_ids" value="{{ s.id }}" x-model="servicosSel"> {{ s.nome }}</span>
-            <span>R$ {{ s.valor }}</span>
-          </label>
+          <div style="padding:4px 0;">
+            <label style="display:flex; justify-content:space-between;">
+              <span><input type="checkbox" name="servico_ids" value="{{ s.id }}" x-model="servicosSel"> {{ s.nome }}</span>
+              <span>R$ {{ s.valor }}{% if s.unidade_cobranca %}/{{ s.unidade_cobranca }}{% endif %}</span>
+            </label>
+            {% if s.unidade_cobranca %}<template x-if="servicosSel.includes('{{ s.id }}')">
+              <span style="display:inline-flex; align-items:center; gap:6px; margin-top:4px;"><input type="number" name="qtd_servico_{{ s.id }}" min="0.001" step="any" value="1" style="width:90px;" x-on:input="qtyTick++"><small style="color:var(--muted);">{{ s.unidade_cobranca }}(s)</small></span>
+            </template>{% endif %}
+          </div>
           {% empty %}<p class="empty" style="padding:0;">Nenhum serviço cadastrado.</p>{% endfor %}
         </div>
       </div>
       <div>
-        <label>Insumos</label>
-        <div class="select-list" style="border:1.5px solid var(--border-2); border-radius:7px; max-height:200px; overflow-y:auto; padding:8px;">
-          {% for i in insumos %}
-          <div style="padding:4px 0;">
-            <label style="display:flex; justify-content:space-between;">
-              <span><input type="checkbox" name="insumo_ids" value="{{ i.id }}" x-model="insumosSel"> {{ i.nome }}</span>
-              <span>R$ {{ i.valor }} · {{ i.qtd }} un.</span>
-            </label>
-            <template x-if="insumosSel.includes('{{ i.id }}')">
-              <input type="number" name="qtd_{{ i.id }}" min="1" value="1" style="width:80px; margin-top:4px;" x-on:input="qtyTick++">
-            </template>
-          </div>
-          {% empty %}<p class="empty" style="padding:0;">Nenhum insumo cadastrado.</p>{% endfor %}
-        </div>
+        {% include "components/_insumos_busca.html" with rotulo="Insumos" %}
       </div>
     </div>
     <div class="full" style="margin-top:10px;"><label>Observações</label><textarea name="obs"></textarea></div>
-    <div class="total-box" style="border:1.5px solid var(--primary); border-radius:8px; padding:12px 16px; margin-top:14px; display:flex; justify-content:space-between; align-items:center;">
+    <div class="total-box" style="border:1.5px solid var(--primary); padding:12px 16px; margin-top:14px; display:flex; justify-content:space-between; align-items:center;">
       <span>Total</span>
       <strong x-text="'R$ ' + total().toFixed(2)"></strong>
     </div>
@@ -45,31 +38,73 @@
 <div class="section-title">Histórico de Cobranças</div>
 {% for c in historico %}
 <div class="card" style="box-shadow:none; border:1px solid var(--border);
-    border-left:3px solid {% if c.status == 'pago' %}#68a678{% else %}#f6ad55{% endif %}; margin-bottom:10px;">
+    border-left:3px solid {% if c.status == 'pago' %}var(--verde-oliva){% else %}var(--amarelo){% endif %}; margin-bottom:10px;">
   <div style="display:flex; justify-content:space-between;">
     <span>{{ c.criado_em|date:"d/m/Y H:i" }}
-      {% if c.status == "pago" %}<span class="badge badge-vet">✔ Pago</span>{% else %}<span class="badge" style="background:#feebc8; color:#7b341e;">⏳ Pendente</span>{% endif %}
+      {% if c.status == "pago" %}<span class="badge badge-vet">Pago</span>{% else %}<span class="badge" style="background:var(--c-aviso); color:var(--c-atencao-texto);">Pendente</span>{% endif %}
     </span>
-    <strong>R$ {{ c.total }}</strong>
+    <strong>
+      {% if c.status == "pago" and c.desconto_valor %}<s style="color:var(--muted); font-weight:normal;">R$ {{ c.total }}</s> R$ {{ c.valor_pago }}
+      {% else %}R$ {{ c.total }}{% endif %}
+    </strong>
   </div>
-  {% if c.tutor_nome %}<p style="color:var(--muted); margin:4px 0;">{{ c.tutor_nome }}</p>{% endif %}
-  {% for item in c.servicos %}<span class="badge" style="background:#EDEBDE;">{{ item.nome }} · R$ {{ item.valor }}</span>{% endfor %}
-  {% for item in c.insumos %}<span class="badge" style="background:#EDEBDE;">{{ item.nome }} ×{{ item.qtd }}</span>{% endfor %}
-  {% if c.obs %}<p style="margin-top:6px;">{{ c.obs }}</p>{% endif %}
-  <div style="margin-top:8px; display:flex; gap:8px;">
-    {% if c.status != "pago" %}
-    <form method="post" hx-post="{% url 'financeiro:cobranca_pagar' c.pk %}" hx-target="#ficha-conteudo">
-      {% csrf_token %}<button type="submit" class="btn-secondary btn">✔ Marcar como Pago</button>
+  {% if c.status == "pago" %}
+  <p style="color:var(--muted); margin:4px 0; font-size:.85rem;">
+    Pago{% if c.pago_em %} em {{ c.pago_em|date:"d/m/Y H:i" }}{% endif %}{% if c.pago_por_nome %} · baixa por {{ c.pago_por_nome }}{% endif %}
+    {% if c.desconto_valor %}<br>Desconto de R$ {{ c.desconto_valor }}{% if c.desconto_tipo == "percentual" %} ({{ c.desconto_informado|floatformat:"-2" }}%){% endif %} — {{ c.desconto_motivo }}{% endif %}
+  </p>
+  {% with nota=c.notas_fiscais.all.0 %}
+    {% include "pagamentos/_nota_status.html" %}
+    {% if not nota or nota.status == "erro" %}
+    <form method="post" action="{% url 'notas:emitir_cobranca' c.pk %}" style="margin:-6px 0 8px;">{% csrf_token %}
+      <button type="submit" class="btn-secondary btn">{% if nota %}Tentar emitir de novo{% else %}Emitir nota de serviço (NFS-e){% endif %}</button>
     </form>
+    {% endif %}
+  {% endwith %}
+  {% endif %}
+  {% if c.tutor_nome %}<p style="color:var(--muted); margin:4px 0;">{{ c.tutor_nome }}</p>{% endif %}
+  {% for item in c.servicos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }}{% if item.qtd and item.qtd != "1" %} ×{{ item.qtd|floatformat:"-3" }}{% if item.unidade and item.unidade != "un." %} {{ item.unidade }}{% endif %}{% endif %} · R$ {{ item.subtotal|default:item.valor }}</span>{% endfor %}
+  {% for item in c.insumos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }} ×{{ item.qtd|floatformat:"-3" }}{% if item.unidade and item.unidade != "un." %} {{ item.unidade }}{% endif %}</span>{% endfor %}
+  {% if c.obs %}<p style="margin-top:6px;">{{ c.obs }}</p>{% endif %}
+  <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; align-items:flex-start;">
+    {% if c.status != "pago" %}
+    <div x-data="{ aberto: false, tipo: 'valor', desconto: '', total: {{ c.total|stringformat:'s' }},
+                   get valorDesconto() { const d = parseFloat(String(this.desconto).replace(',', '.')) || 0;
+                                         return Math.min(this.total, this.tipo === 'percentual' ? this.total * Math.min(d, 100) / 100 : d); } }">
+      <button type="button" class="btn-secondary btn" x-show="!aberto" @click="aberto = true">Receber pagamento</button>
+      <form x-show="aberto" x-cloak hx-post="{% url 'financeiro:cobranca_pagar' c.pk %}" hx-target="#ficha-conteudo"
+            style="border:1px solid var(--border); padding:12px; min-width:280px;">
+        <label>Desconto (opcional)</label>
+        <div style="display:flex; gap:6px;">
+          <select name="desconto_tipo" x-model="tipo" style="width:80px;">
+            <option value="valor">R$</option>
+            <option value="percentual">%</option>
+          </select>
+          <input type="number" name="desconto" x-model="desconto" min="0" step="0.01" :max="tipo === 'percentual' ? 100 : total" placeholder="0,00">
+        </div>
+        <div x-show="valorDesconto > 0" style="margin-top:8px;">
+          <label>Motivo do desconto</label>
+          <input type="text" name="desconto_motivo" maxlength="200" :required="valorDesconto > 0" placeholder="Ex: cliente antigo, pagamento à vista...">
+        </div>
+        <p style="margin:10px 0 6px;">
+          Total R$ {{ c.total }}<span x-show="valorDesconto > 0" x-text="' − R$ ' + valorDesconto.toFixed(2)"></span>
+          → <strong x-text="'R$ ' + (total - valorDesconto).toFixed(2)"></strong>
+        </p>
+        <div style="display:flex; gap:6px;">
+          <button type="submit" class="btn-primary btn">Confirmar pagamento</button>
+          <button type="button" class="btn-secondary btn" @click="aberto = false; desconto = ''">Cancelar</button>
+        </div>
+      </form>
+    </div>
     {% else %}
-    <span style="color:var(--muted); font-size:.85rem;">✔ Pagamento confirmado</span>
+    <span style="color:var(--muted); font-size:.85rem;">Pagamento confirmado</span>
     {% endif %}
     <button class="btn-danger btn" data-confirm="Excluir esta cobrança?"
             hx-post="{% url 'pacientes:cobranca_excluir' paciente.pk c.pk %}" hx-target="#ficha-conteudo">Excluir</button>
   </div>
 </div>
 {% empty %}
-<div class="empty"><span class="icon">💰</span>Nenhuma cobrança ainda.</div>
+<div class="empty">Nenhuma cobrança ainda.</div>
 {% endfor %}
 
 <script>
@@ -80,10 +115,10 @@
       precosInsumos: Object.fromEntries(insumosPrecos.map(i => [i.id, parseFloat(i.valor)])),
       total() {
         void this.qtyTick;
-        const totalServicos = this.servicosSel.reduce((soma, id) => soma + (this.precosServicos[id] || 0), 0);
+        const totalServicos = this.servicosSel.reduce((soma, id) => soma + (this.precosServicos[id] || 0) * (parseFloat(String((document.querySelector(`input[name="qtd_servico_${id}"]`) || {}).value || "1").replace(",", ".")) || 0), 0);
         const totalInsumos = this.insumosSel.reduce((soma, id) => {
           const input = document.querySelector(`input[name="qtd_${id}"]`);
-          const qtd = input ? parseInt(input.value || "1") : 1;
+          const qtd = input ? (parseFloat(String(input.value || "1").replace(",", ".")) || 0) : 1;
           return soma + (this.precosInsumos[id] || 0) * qtd;
         }, 0);
         return totalServicos + totalInsumos;

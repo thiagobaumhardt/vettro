@@ -23,7 +23,7 @@
           </div>
           <div><label>Nome do paciente (se avulso)</label><input type="text" name="pac_nome" x-model="pacNome"></div>
           <div><label>Nome do tutor</label><input type="text" name="tutor_nome" x-model="tutorNome"></div>
-          <div><label>Telefone do tutor</label><input type="text" name="tutor_tel" x-model="tutorTel"></div>
+          <div><label>Telefone do tutor</label><input type="text" name="tutor_tel" x-model="tutorTel" data-mascara="telefone" inputmode="tel" placeholder="+55 (51) 9 9999-9999"></div>
           <div>
             <label>Consultório (opcional)</label>
             <select name="consultorio">
@@ -36,7 +36,7 @@
           <div class="full"><label>Queixa</label>{{ form.queixa }}</div>
           <div class="full">
             <label>Serviços</label>
-            <div class="select-list" style="border:1.5px solid var(--border-2); border-radius:7px; max-height:150px; overflow-y:auto; padding:8px;">
+            <div class="select-list" style="border:1.5px solid var(--border-2); max-height:150px; overflow-y:auto; padding:8px;">
               {% for s in servicos %}
               <label style="display:block; padding:2px 0;"><input type="checkbox" name="servico_ids" value="{{ s.id }}"> {{ s.nome }}</label>
               {% endfor %}

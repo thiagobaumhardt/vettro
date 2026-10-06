@@ -7,16 +7,18 @@
 @tailwind utilities;
 
 @layer base {
+  /* Visual reto em todo o sistema: nada arredondado (pedido do usuário, 2026-10). */
+  *, *::before, *::after { border-radius: 0 !important; }
   body { @apply font-body; }
   h1, h2 { @apply font-heading; }
 }
 
 @layer components {
-  .card { @apply bg-white/95 rounded-[10px] p-[22px] shadow-[0_4px_20px_rgba(60,64,40,.18)] mb-[18px]; }
-  .btn { @apply inline-flex items-center gap-1.5 px-5 py-2 rounded-md text-sm cursor-pointer transition-colors; }
+  .card { @apply bg-white rounded-none p-6 border border-[#E3E5DB] mb-[18px]; }
+  .btn { @apply inline-flex items-center gap-1.5 px-5 py-2 rounded-none text-sm cursor-pointer transition-colors; }
   .btn-primary { @apply btn bg-primary text-white hover:bg-primary-hover; }
   .btn-secondary { @apply btn bg-secondary text-text hover:bg-secondary-hover; }
   .btn-danger { @apply btn bg-danger text-white hover:bg-danger-hover; }
   /* Acento terroso — chamadas/CTA pontuais, igual "AGENDE A CONSULTA" no material da marca */
-  .btn-accent { @apply btn bg-accent text-white rounded-full hover:bg-accent-hover; }
+  .btn-accent { @apply btn bg-accent text-white hover:bg-accent-hover; }
 }

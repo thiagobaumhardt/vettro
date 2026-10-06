@@ -1,15 +1,21 @@
 from django import forms
 
-from .models import AnamneseHist, CirurgiaHist, Nota, Paciente
+from .models import AnamneseHist, CirurgiaHist, CondicaoClinica, Nota, Paciente
 
 
 class PacienteForm(forms.ModelForm):
     class Meta:
         model = Paciente
-        fields = ["tutor", "nome", "especie", "raca", "peso", "data_nascimento", "obs", "foto_perfil"]
+        fields = ["tutor", "nome", "especie", "raca", "sexo", "peso", "data_nascimento", "obs", "foto_perfil"]
         widgets = {
             "data_nascimento": forms.DateInput(attrs={"type": "date"}),
         }
+
+
+class CondicaoClinicaForm(forms.ModelForm):
+    class Meta:
+        model = CondicaoClinica
+        fields = ["nome"]
 
 
 class NotaForm(forms.ModelForm):
@@ -35,4 +41,5 @@ class AnamneseForm(forms.ModelForm):
 class CirurgiaForm(forms.ModelForm):
     class Meta:
         model = CirurgiaHist
-        fields = ["proc", "clinica", "anestesista", "desc_cir", "pos_op"]
+        fields = ["proc", "anestesista", "desc_cir", "pos_op"]
+        widgets = {"proc": forms.TextInput(attrs={"x-model": "proc", "placeholder": "Preenchido pelo tipo de cirurgia — pode detalhar"})}

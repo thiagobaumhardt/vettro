@@ -1,0 +1,69 @@
+<div id="atendimentos-grid">
+  <p style="color:var(--muted); margin:0 0 8px;">{{ pagina.paginator.count }} atendimento{{ pagina.paginator.count|pluralize }} · mais recentes primeiro</p>
+  {% if pagina.object_list %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Nº</th><th>Data</th><th>Tipo</th><th>Paciente</th><th>Tutor</th>
+          <th>Detalhes</th><th style="text-align:right;">Total</th><th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in pagina.object_list %}
+        <tr>
+          <td><strong>#{{ a.numero }}</strong></td>
+          <td style="white-space:nowrap;">{{ a.data|date:"d/m/Y" }} {{ a.hora|time:"H:i" }}</td>
+          <td>
+            {{ a.get_tipo_display }}
+            
+          </td>
+          <td style="white-space:nowrap;">
+            {% if a.pac_especie == "Cão" %}{% elif a.pac_especie == "Gato" %}{% else %}{% endif %}
+            {% if a.paciente_id %}<a href="{% url 'pacientes:ficha' a.paciente_id %}">{{ a.pac_nome }}</a>{% else %}{{ a.pac_nome }}{% endif %}
+          </td>
+          <td>{{ a.tutor_nome|default:"—" }}{% if a.tutor_tel %}<br><small style="color:var(--muted);">{{ a.tutor_tel }}</small>{% endif %}</td>
+          <td>
+            {% if a.tipo == "retorno" %}↩ Retorno de {% if a.retorno_de %}#{{ a.retorno_de.numero }}{% else %}<em>excluído</em>{% endif %}{% endif %}
+            {% if a.tipo == "vacinacao" %}
+              {{ a.vacina_nome }} · {{ a.get_dose_display }}
+              {% if a.data_proxima_dose %}<br><small style="color:var(--muted);">Próxima: {{ a.data_proxima_dose|date:"d/m/Y" }}
+                {% if a.lembrete_enviado_em %}· lembrete enviado {{ a.lembrete_enviado_em|date:"d/m" }}
+                {% elif a.data_lembrete %}· lembrete em {{ a.data_lembrete|date:"d/m/Y" }}{% endif %}</small>{% endif %}
+            {% endif %}
+            {% if a.data_retorno %}<small style="color:var(--muted); display:block;">Retorno em {{ a.data_retorno|date:"d/m/Y" }}
+              {% if a.lembrete_enviado_em %}· lembrete enviado {{ a.lembrete_enviado_em|date:"d/m" }}
+              {% elif a.data_lembrete %}· lembrete em {{ a.data_lembrete|date:"d/m/Y" }}{% endif %}</small>{% endif %}
+            {% for item in a.servicos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }}</span>{% endfor %}
+            {% for item in a.insumos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }} ×{{ item.qtd|floatformat:"-3" }}{% if item.unidade and item.unidade != "un." %} {{ item.unidade }}{% endif %}</span>{% endfor %}
+            {% if a.obs %}<br><small style="color:var(--muted);">{{ a.obs|truncatechars:80 }}</small>{% endif %}
+          </td>
+          <td style="text-align:right; white-space:nowrap;">R$ {{ a.total }}</td>
+          <td>
+            <form method="post" action="{% url 'atendimentos:excluir' a.pk %}">
+              {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir o atendimento #{{ a.numero }}? Os insumos voltam ao estoque.">Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagina.has_other_pages %}
+  <div style="display:flex; justify-content:center; align-items:center; gap:10px; margin-top:14px;">
+    {% if pagina.has_previous %}
+    <a class="btn-secondary btn" href="?{{ filtros_query }}&pagina={{ pagina.previous_page_number }}"
+       hx-get="?{{ filtros_query }}&pagina={{ pagina.previous_page_number }}" hx-target="#atendimentos-grid" hx-swap="outerHTML" hx-push-url="true">← Anterior</a>
+    {% endif %}
+    <span style="color:var(--muted);">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+    {% if pagina.has_next %}
+    <a class="btn-secondary btn" href="?{{ filtros_query }}&pagina={{ pagina.next_page_number }}"
+       hx-get="?{{ filtros_query }}&pagina={{ pagina.next_page_number }}" hx-target="#atendimentos-grid" hx-swap="outerHTML" hx-push-url="true">Próxima →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="empty">Nenhum atendimento encontrado.</div>
+  {% endif %}
+</div>

@@ -1,9 +1,9 @@
 <header class="topbar">
-  <button type="button" class="hamburger" @click="sidebarAberta = !sidebarAberta" aria-label="Abrir menu">☰</button>
+  <button type="button" class="hamburger" @click="sidebarAberta = !sidebarAberta" aria-label="Abrir menu">Menu</button>
   <strong>{{ clinica_nome_ativa }}</strong>
   <div class="spacer"></div>
   <div class="user-menu">
-    <span>{{ request.user.nome }}</span>
+    <a href="{% url 'core:meu_perfil' %}" title="Meu perfil profissional (CRMV e assinatura)">{{ request.user.nome }}</a>
     <span class="badge {% if papel_ativo == 'admin' %}badge-admin{% else %}badge-vet{% endif %}">
       {% if papel_ativo == "admin" %}Admin
       {% elif papel_ativo == "vet" %}Veterinária/o
@@ -14,6 +14,7 @@
     {% if request.user.vinculos.count > 1 %}
       <a href="{% url 'contas:escolher_clinica' %}" class="btn-secondary btn">Trocar de clínica</a>
     {% endif %}
+    <a href="{% url 'contas:trocar_senha' %}" class="btn-secondary btn" title="Trocar minha senha">Senha</a>
     <a href="{% url 'contas:logout' %}" class="btn-secondary btn">Sair</a>
   </div>
 </header>

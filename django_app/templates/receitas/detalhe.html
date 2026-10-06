@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ receita.get_tipo_display }} — {{ receita.pac_nome }} — Vettro{% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+    <h2 style="margin:0;">{{ receita.get_tipo_display }} — {{ receita.pac_nome }}</h2>
+    <div style="display:flex; gap:10px;">
+      <a href="{% url 'pacientes:ficha' paciente.pk %}?aba=receitas" class="btn-secondary btn">← Receitas do paciente</a>
+      <a href="{% url 'receitas:pdf' paciente.pk receita.pk %}" target="_blank" class="btn-primary btn">Imprimir</a>
+    </div>
+  </div>
+  <p style="color:var(--muted); margin-top:0;">
+    Emitida em {{ receita.criado_em|date:"d/m/Y H:i" }} por {{ receita.vet_nome }}{% if receita.vet_crmv %} ({{ receita.vet_crmv }}){% endif %}
+    {% if receita.tipo == "controlada" %} · 2 vias (farmácia e tutor){% endif %}
+  </p>
+  <iframe src="{% url 'receitas:pdf' paciente.pk receita.pk %}" title="Pré-visualização da receita"
+          style="width:100%; height:75vh; border:1px solid var(--border);"></iframe>
+</div>
+{% endblock %}

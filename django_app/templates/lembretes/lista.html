@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Lembretes — Vettro{% endblock %}
+{% block content %}
+<form method="post" x-data="{ texto: '{{ texto|escapejs }}', busca: '', selecionados: [{% for s in selecionados %}'{{ s|escapejs }}',{% endfor %}] }">
+  {% csrf_token %}
+  <div class="card">
+    <h2>Lembretes por WhatsApp</h2>
+    <label>Mensagem</label>
+    <textarea name="texto" rows="5" maxlength="{{ limite_texto }}" x-model="texto"
+              placeholder="Ex: Olá, {{ variavel_nome }}! A campanha de vacinação antirrábica começa segunda-feira. Agende pelo nosso WhatsApp."></textarea>
+    <div style="display:flex; justify-content:space-between; color:var(--muted); font-size:.85rem; margin-top:4px;">
+      <span>Use <code>{{ variavel_nome }}</code> para inserir o primeiro nome do tutor. Quebras de linha viram espaço (regra do WhatsApp).</span>
+      <span x-text="texto.length + '/{{ limite_texto }}'"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+      <div class="section-title" style="margin:0;">Destinatários <span style="color:var(--muted);" x-text="'(' + selecionados.length + ' selecionado' + (selecionados.length === 1 ? '' : 's') + ')'"></span></div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn-secondary btn"
+                @click="selecionados = [...document.querySelectorAll('input[name=tutor_ids]:not(:disabled)')].filter(el => el.closest('tr').style.display !== 'none').map(el => el.value)">Selecionar todos visíveis</button>
+        <button type="button" class="btn-secondary btn" @click="selecionados = []">Limpar seleção</button>
+      </div>
+    </div>
+    <input type="search" x-model="busca" placeholder="Filtrar por nome ou telefone..." style="margin-bottom:12px;">
+    <div class="table-wrap" style="max-height:420px; overflow-y:auto;">
+      <table>
+        <thead><tr><th style="width:40px;"></th><th>Tutor</th><th>WhatsApp</th><th>Situação</th></tr></thead>
+        <tbody>
+          {% for t in tutores %}
+          <tr x-show="!busca || '{{ t.nome|lower|escapejs }} {{ t.tel|escapejs }}'.includes(busca.toLowerCase())">
+            <td><input type="checkbox" name="tutor_ids" value="{{ t.pk }}" x-model="selecionados"
+                       {% if not t.consentimento_whatsapp or not t.tel %}disabled{% endif %}></td>
+            <td>{{ t.nome }}</td>
+            <td>{{ t.tel|default:"—" }}</td>
+            <td>
+              {% if t.consentimento_whatsapp and t.tel %}<span class="badge" style="background:var(--c-ok);">Autorizado</span>
+              {% elif not t.tel %}<span class="badge" style="background:var(--c-neutro);">Sem telefone</span>
+              {% else %}<span class="badge" style="background:var(--c-alerta);" title="O tutor não deu consentimento para receber WhatsApp (LGPD). Marque no cadastro dele, se ele autorizar.">Sem consentimento</span>{% endif %}
+            </td>
+          </tr>
+          {% empty %}<tr><td colspan="4" class="empty">Nenhum tutor cadastrado.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:14px;">
+      <button type="submit" class="btn-primary btn" :disabled="!texto.trim() || !selecionados.length"
+              :data-confirm="'Enviar este lembrete por WhatsApp para ' + selecionados.length + ' tutor(es)?'">Enviar</button>
+    </div>
+  </div>
+</form>
+
+<div class="card">
+  <div class="section-title">Últimos envios</div>
+  {% if historico %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Data</th><th>Mensagem</th><th>Por</th><th>Resultado</th></tr></thead>
+      <tbody>
+        {% for l in historico %}
+        <tr>
+          <td style="white-space:nowrap;">{{ l.criado_em|date:"d/m/Y H:i" }}</td>
+          <td>{{ l.texto|truncatechars:90 }}</td>
+          <td>{{ l.usuario_nome|default:"—" }}</td>
+          <td>
+            {{ l.enviados }}/{{ l.total }} enviado{{ l.total|pluralize }}
+            {% if l.enviados < l.total %}<details><summary style="cursor:pointer; color:var(--danger-hover);">Falhas</summary>
+              {% for e in l.envios.all %}{% if not e.enviado %}<div>{{ e.tutor_nome }} · {{ e.telefone }}</div>{% endif %}{% endfor %}
+            </details>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">Nenhum lembrete enviado ainda.</div>
+  {% endif %}
+</div>
+{% endblock %}

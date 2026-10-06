@@ -3,6 +3,12 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+# Variáveis de django_app/.env (dev) — em produção vêm do ambiente real e têm
+# prioridade (override=False).
+from dotenv import load_dotenv  # noqa: E402
+
+load_dotenv(BASE_DIR / ".env", override=False)
+
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-insecure-secret-troque-em-producao")
 DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
@@ -32,6 +38,11 @@ TENANT_APPS = [
     "apps.pacientes",
     "apps.atendimentos",
     "apps.agenda",
+    "apps.lembretes",
+    "apps.orcamentos",
+    "apps.receitas",
+    "apps.documentos",
+    "apps.vendas",
     "apps.auditoria",
     "apps.usuarios_clinica",
     "apps.dashboard",
@@ -59,6 +70,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.contas.middleware.ExigirTrocaDeSenhaMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.core.middleware.PermissionsPolicyMiddleware",

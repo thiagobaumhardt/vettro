@@ -1,0 +1,52 @@
+{% if "atendimentos" in secoes_permitidas %}
+<div style="margin-bottom:16px;">
+  <a href="{% url 'atendimentos:novo' %}" class="btn-primary btn">+ Registrar vacinação</a>
+</div>
+{% endif %}
+
+<div class="section-title">Próximas doses</div>
+{% if proximas %}
+<div class="table-wrap" style="margin-bottom:20px;">
+  <table>
+    <thead><tr><th>Vacina</th><th>Última dose</th><th>Próxima dose</th><th>Situação</th></tr></thead>
+    <tbody>
+      {% for p in proximas %}
+      <tr>
+        <td>{{ p.aplicacao.vacina_nome }}</td>
+        <td>{{ p.aplicacao.get_dose_display }} em {{ p.aplicacao.data|date:"d/m/Y" }}</td>
+        <td>{{ p.aplicacao.data_proxima_dose|date:"d/m/Y" }}</td>
+        <td>
+          {% if p.atrasada %}<span class="badge" style="background:var(--c-alerta);">Atrasada</span>
+          {% elif p.dias <= 7 %}<span class="badge" style="background:var(--c-aviso);">Em {{ p.dias }} dia{{ p.dias|pluralize }}</span>
+          {% else %}<span class="badge" style="background:var(--c-ok);">Em dia</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty" style="margin-bottom:20px;">Nenhuma dose agendada.</div>
+{% endif %}
+
+<div class="section-title">Histórico de vacinação</div>
+{% if aplicacoes %}
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Nº</th><th>Data</th><th>Vacina</th><th>Dose</th><th>Próxima dose</th></tr></thead>
+    <tbody>
+      {% for a in aplicacoes %}
+      <tr>
+        <td>#{{ a.numero }}</td>
+        <td>{{ a.data|date:"d/m/Y" }}</td>
+        <td>{{ a.vacina_nome }}</td>
+        <td>{{ a.get_dose_display }}</td>
+        <td>{{ a.data_proxima_dose|date:"d/m/Y"|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty">Nenhuma vacina registrada.</div>
+{% endif %}

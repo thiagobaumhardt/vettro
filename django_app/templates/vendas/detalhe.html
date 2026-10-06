@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Venda #{{ venda.numero }} — Vettro{% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+    <h2 style="margin:0;">Venda #{{ venda.numero }} — R$ {{ venda.total }}
+      {% if venda.cancelada_em %}<span class="badge" style="background:var(--c-alerta);">Cancelada</span>{% endif %}
+    </h2>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <a href="{% url 'vendas:lista' %}" class="btn-secondary btn">← Vendas</a>
+      <a href="{% url 'vendas:nova' %}" class="btn-secondary btn">+ Nova venda</a>
+      <a href="{% url 'vendas:comprovante' venda.pk %}" target="_blank" class="btn-primary btn">Imprimir comprovante</a>
+    </div>
+  </div>
+  {% include "pagamentos/_nota_status.html" %}
+  {% if not nota or nota.status == "erro" %}{% if not venda.cancelada_em %}
+  <form method="post" action="{% url 'notas:emitir_venda' venda.pk %}" style="margin:-4px 0 14px;">{% csrf_token %}
+    <button type="submit" class="btn-secondary btn">{% if nota %}Tentar emitir de novo{% else %}Emitir nota de venda (NFC-e){% endif %}</button>
+  </form>
+  {% endif %}{% endif %}
+  <iframe src="{% url 'vendas:comprovante' venda.pk %}" title="Comprovante da venda"
+          style="width:100%; height:75vh; border:1px solid var(--border);"></iframe>
+</div>
+{% endblock %}

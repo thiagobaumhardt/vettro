@@ -1,59 +1,83 @@
 /*
   Fallback hand-escrito enquanto o build real do Tailwind não roda neste
-  ambiente (sem Node/npm disponível). Reencoda o design system da marca
-  real Lume (ver identidade visual — Apresentação Lume, Studio Ananda Souza,
-  2026), aplicado em cima da mesma estrutura de classes já usada em todos os
-  templates (.card, .btn-*, .badge etc.) — nenhum template precisou mudar.
+  ambiente (sem Node/npm). Design system da marca Lume — cores MEDIDAS nas
+  imagens da identidade (paleta "Vitalidade / Tranquilidade / Clareza / Luz /
+  Proximidade" e página de tipografia), aplicadas sobre as mesmas classes que
+  os templates já usam (.card, .btn-*, .badge...).
 
-  IMPORTANTE — duas ressalvas sobre fidelidade à marca:
-  1) Cores: o material da Lume não trouxe códigos hex oficiais pra paleta
-     própria (só nomes: verde-escuro, verde-oliva, verde-claro, marfim,
-     amarelo, terroso). Os valores abaixo são uma estimativa visual feita a
-     partir da apresentação — não são os hex exatos de um guia de marca. Se
-     vocês tiverem os valores exatos (Figma/Canva/PDF com swatches), me
-     passem que eu ajusto com precisão.
-  2) Tipografia: a marca usa Roca Two (títulos) + Livvic (textos). Roca Two
-     é uma fonte PAGA (fundição TipoType) — sem confirmação de licença de
-     uso web, uso aqui a Fraunces (Google Fonts, gratuita, eixo "soft"
-     arredondado) como substituta temporária de visual próximo. Livvic é a
-     fonte real da marca e já está aplicada de verdade.
+  Tipografia: Roca Two (títulos e destaques) + Livvic (textos e apoio).
+  Roca Two é PAGA e não está no Google Fonts: o @font-face abaixo usa os
+  arquivos de static/fonts/ (RocaTwo-Regular.woff2 / RocaTwo-Bold.woff2) ou a
+  fonte instalada no computador, se houver. Sem nenhum dos dois, cai na
+  Fraunces "SOFT" (Google Fonts, arredondada), a substituta mais próxima.
 */
 
+@font-face {
+  font-family: "Roca Two";
+  src: local("Roca Two"), local("RocaTwo-Regular"), url("../fonts/RocaTwo-Regular.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Roca Two";
+  src: local("Roca Two Bold"), local("RocaTwo-Bold"), url("../fonts/RocaTwo-Bold.woff2") format("woff2");
+  font-weight: 600 700; font-style: normal; font-display: swap;
+}
+
 :root {
-  /* Paleta nomeada da Lume (estimativa visual, ver ressalva acima) */
-  --verde-escuro: #4B5530;      /* Confiança */
-  --verde-escuro-2: #333B22;    /* extremo mais escuro, usado em gradientes */
-  --verde-oliva: #7C8752;       /* Vitalidade — cor principal da marca */
-  --verde-oliva-hover: #626D3F;
-  --verde-claro: #D9DEBB;       /* Tranquilidade */
-  --marfim: #F3F0D8;            /* Clareza — fundo base */
-  --amarelo: #E5AE3E;           /* Luz — acento pontual */
-  --terroso: #BC7440;           /* Proximidade — acento/CTA */
-  --terroso-hover: #A25F31;
+  /* Paleta da Lume — valores medidos na identidade visual */
+  --verde-oliva: #949C56;       /* Vitalidade — cor principal */
+  --verde-claro: #E5E8C5;       /* Tranquilidade */
+  --marfim: #F5EFCB;            /* Clareza */
+  --amarelo: #EFC15A;           /* Luz — detalhes */
+  --terroso: #C17D46;           /* Proximidade — chamadas pontuais */
+  --verde-escuro: #545936;      /* texto e títulos da identidade */
+  --verde-profundo: #60663C;    /* faixa escura da identidade */
+  --fundo-externo: #DEE3BC;     /* fundo atrás dos cartões na identidade */
+  --branco-gelo: #F6F7F3;       /* fundo das telas */
 
-  /* Aliases usados nos templates (mantidos pra não precisar tocar em cada
-     arquivo — só os valores mudaram pra bater com a Lume de verdade) */
-  --bg: var(--marfim);
-  --text: #2B2B20;
-  --primary: var(--verde-oliva);
-  --primary-hover: var(--verde-oliva-hover);
-  --sidebar-from: var(--verde-escuro);
-  --sidebar-to: var(--verde-escuro-2);
-  --sidebar-active: #5C6640;
-  --card-bg: rgba(255, 255, 255, .96);
-  --border: #E3DFC4;
-  --border-2: #CAC6A0;
-  --muted: #8B8768;
-  --muted-2: #6B6850;
-  --btn-secondary-bg: #EDE9CD;
-  --btn-secondary-hover: #E2DCB8;
-  --danger: #fc8181;
-  --danger-hover: #e53e3e;
+  /* Derivadas (mesma família de cor, para estados e contraste) */
+  --verde-escuro-hover: #444929;
+  --verde-oliva-suave: #C9CE9C;
+  --amarelo-suave: #F8E5B4;
+  --terroso-suave: #F1DAC4;
+  --terroso-escuro: #8A4E22;
+  --perigo: #A9442B;            /* vermelho-terra, para excluir/erro */
+  --perigo-hover: #8C3520;
+  --perigo-suave: #F4D6C8;
+
+  /* Aliases usados nos templates */
+  --bg: var(--branco-gelo);
+  --text: var(--verde-escuro);
+  --primary: var(--verde-escuro);         /* botões: marfim sobre verde escuro (contraste 6:1) */
+  --primary-hover: var(--verde-escuro-hover);
+  --sidebar-bg: #313518;
+  --sidebar-active: #6E7443;
+  --card-bg: #FFFFFF;
+  --surface: #FFFFFF;                     /* campos e áreas internas dos cartões */
+  --border: #E3E5DB;
+  --border-2: #CDD0C0;
+  --muted: #7C7D5A;
+  --muted-2: #62653F;
+  --btn-secondary-bg: var(--verde-claro);
+  --btn-secondary-hover: var(--verde-oliva-suave);
+  --danger: var(--perigo);
+  --danger-hover: var(--perigo-hover);
   --accent: var(--terroso);
-  --accent-hover: var(--terroso-hover);
+  --accent-hover: var(--terroso-escuro);
 
-  --font-heading: 'Fraunces', 'Georgia', serif;
-  --font-body: 'Livvic', 'Segoe UI', sans-serif;
+  /* Fundos semânticos para selos/avisos (substituem os azuis/vermelhos genéricos) */
+  --c-neutro: var(--verde-claro);
+  --c-ok: #DCE5BE;
+  --c-info: #EEF0D8;
+  --c-info-borda: var(--verde-oliva-suave);
+  --c-aviso: var(--amarelo-suave);
+  --c-aviso-borda: var(--amarelo);
+  --c-alerta: var(--perigo-suave);
+  --c-alerta-texto: var(--perigo-hover);
+  --c-atencao-texto: var(--terroso-escuro);
+
+  --font-heading: "Roca Two", "Fraunces", Georgia, serif;
+  --font-body: "Livvic", "Segoe UI", system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -63,11 +87,16 @@ body {
   font-family: var(--font-body);
   background: var(--bg);
   color: var(--text);
+  line-height: 1.5;
 }
 
-a { color: inherit; }
+a { color: var(--verde-escuro); text-decoration-color: var(--verde-oliva); }
+a:hover { color: var(--verde-escuro-hover); }
 
-h1, h2, .brand, .login-card h1 { font-family: var(--font-heading); font-weight: 600; }
+h1, h2, h3, .brand, .login-card h1 {
+  font-family: var(--font-heading); font-weight: 600; color: var(--verde-escuro);
+  font-variation-settings: "SOFT" 100, "WONK" 0; letter-spacing: -.005em;
+}
 
 .app-shell { display: flex; min-height: 100vh; }
 .app-content { flex: 1; padding: 24px; max-width: 1200px; }
@@ -75,42 +104,44 @@ h1, h2, .brand, .login-card h1 { font-family: var(--font-heading); font-weight: 
 /* --- Sidebar --- */
 .sidebar {
   width: 232px;
-  background: linear-gradient(180deg, var(--sidebar-from), var(--sidebar-to));
-  color: #fff;
+  background: var(--sidebar-bg);
+  color: var(--marfim);
   display: flex;
   flex-direction: column;
   padding: 18px 0;
 }
-.sidebar .brand { padding: 0 18px 18px; font-weight: 600; font-size: 1.3rem; }
+.sidebar .brand { padding: 0 18px 18px; font-size: 1.45rem; color: var(--marfim); }
 .sidebar nav { display: flex; flex-direction: column; gap: 2px; }
 .sidebar a {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 18px; text-decoration: none; color: var(--verde-claro);
-  font-size: .92rem;
+  font-size: .92rem; border-left: 3px solid transparent;
 }
-.sidebar a.active, .sidebar a:hover { background: var(--sidebar-active); color: #fff; }
+.sidebar a:hover { background: rgba(245, 239, 203, .08); color: var(--marfim); }
+.sidebar a.active { background: var(--sidebar-active); color: var(--marfim); border-left-color: var(--amarelo); font-weight: 600; }
 
 /* --- Topbar --- */
 .topbar {
   display: flex; align-items: center; gap: 16px;
   padding: 14px 24px; border-bottom: 1px solid var(--border);
-  background: var(--card-bg);
+  background: #FFFFFF;
 }
+.topbar strong { font-family: var(--font-heading); font-size: 1.1rem; font-weight: 600; }
 .topbar .spacer { flex: 1; }
 .topbar .user-menu { display: flex; align-items: center; gap: 10px; font-size: .88rem; }
-.hamburger { display: none; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text); }
+.hamburger { display: none; background: none; border: 1px solid var(--border-2); padding: 6px 12px; font-family: inherit; font-weight: 600; font-size: .85rem; cursor: pointer; color: var(--text); }
 
 /* --- Cards / forms --- */
 .card {
   background: var(--card-bg);
-  border-radius: 10px;
-  padding: 22px;
-  box-shadow: 0 4px 20px rgba(60, 64, 40, .18);
+  border-radius: 0;
+  padding: 24px;
+  border: 1px solid var(--border);
   margin-bottom: 18px;
 }
 .section-title {
-  font-size: .78rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .04em; color: var(--muted-2);
+  font-size: .76rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--muted-2);
   border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 14px;
 }
 h2 { color: var(--verde-escuro); }
@@ -120,35 +151,45 @@ h2 { color: var(--verde-escuro); }
 
 label { display: block; font-size: .85rem; margin-bottom: 4px; color: var(--muted-2); }
 input, select, textarea {
-  width: 100%; padding: 9px 12px; border-radius: 7px;
-  border: 1.5px solid var(--border-2); font-size: .95rem; font-family: inherit;
+  width: 100%; padding: 10px 12px; border-radius: 0;
+  border: 1px solid var(--border-2); font-size: .95rem; font-family: inherit;
+  background: var(--surface); color: var(--text);
 }
-input:focus, select:focus, textarea:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+input[type="checkbox"], input[type="radio"] { width: auto; accent-color: var(--verde-escuro); }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--verde-escuro); box-shadow: inset 0 0 0 1px var(--verde-escuro); }
+
+/* --- Tables --- */
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+thead th { font-size: .76rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-2); font-weight: 600; }
+tbody tr:hover { background: rgba(229, 232, 197, .45); }
 
 /* --- Buttons --- */
 .btn {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 9px 20px; border-radius: 7px; border: none;
-  font-size: .9rem; cursor: pointer; text-decoration: none;
+  padding: 10px 20px; border-radius: 0; border: 1px solid transparent;
+  font-size: .88rem; font-family: inherit; font-weight: 600; letter-spacing: .01em; cursor: pointer; text-decoration: none;
   transition: background .15s;
 }
-.btn-primary { background: var(--primary); color: #fff; }
-.btn-primary:hover { background: var(--primary-hover); }
-.btn-secondary { background: var(--btn-secondary-bg); color: var(--text); }
-.btn-secondary:hover { background: var(--btn-secondary-hover); }
-.btn-danger { background: var(--danger); color: #fff; }
-.btn-danger:hover { background: var(--danger-hover); }
-/* Acento terroso — usado em chamadas/CTA pontuais, igual "AGENDE A CONSULTA" no material da marca */
-.btn-accent { background: var(--accent); color: #fff; border-radius: 20px; }
-.btn-accent:hover { background: var(--accent-hover); }
+.btn:focus-visible { outline: 2px solid var(--amarelo); outline-offset: 2px; }
+.btn-primary { background: var(--primary); color: var(--marfim); }
+.btn-primary:hover { background: var(--primary-hover); color: var(--marfim); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+.btn-secondary { background: #FFFFFF; color: var(--verde-escuro); border: 1px solid var(--border-2); }
+.btn-secondary:hover { background: var(--btn-secondary-hover); color: var(--verde-escuro); }
+.btn-danger { background: var(--danger); color: var(--marfim); }
+.btn-danger:hover { background: var(--danger-hover); color: var(--marfim); }
+/* Acento terroso — chamadas pontuais, como as pílulas da identidade */
+.btn-accent { background: var(--accent); color: #FFF8EC; }
+.btn-accent:hover { background: var(--accent-hover); color: #FFF8EC; }
 
 /* --- Badges --- */
 .badge {
-  display: inline-block; padding: 2px 10px; border-radius: 20px;
-  font-size: .75rem; font-weight: 600;
+  display: inline-block; padding: 2px 10px; border-radius: 0;
+  font-size: .75rem; font-weight: 600; background: var(--c-neutro); color: var(--verde-escuro);
 }
-.badge-admin { background: #dbeafe; color: #1e40af; }
-.badge-vet { background: var(--verde-claro); color: var(--verde-escuro); }
+.badge-admin { background: var(--amarelo); color: var(--verde-escuro); }
+.badge-vet { background: var(--verde-oliva); color: var(--marfim); }
 
 /* --- Empty state --- */
 .empty { text-align: center; color: var(--muted); padding: 40px 0; }
@@ -157,72 +198,130 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--primary); o
 /* --- Login --- */
 .login-wrap {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, var(--sidebar-from), var(--sidebar-to));
+  background: linear-gradient(135deg, var(--verde-oliva), var(--verde-profundo));
+  padding: 16px;
 }
 .login-card {
-  background: var(--card-bg); border-radius: 12px; padding: 36px 32px;
-  width: 100%; max-width: 360px; box-shadow: 0 10px 40px rgba(0,0,0,.3);
+  background: #FFFFFF; border-radius: 0; padding: 36px 32px;
+  width: 100%; max-width: 380px; box-shadow: 0 10px 40px rgba(40, 44, 20, .35);
 }
-.login-card h1 { text-align: center; margin: 0 0 4px; font-size: 2rem; color: var(--verde-escuro); }
-.login-card .subtitle { text-align: center; color: var(--muted); margin-bottom: 20px; font-size: .88rem; }
+.login-card h1 { text-align: center; margin: 0 0 4px; font-size: 2.2rem; }
+.login-card .subtitle { text-align: center; color: var(--muted); margin-bottom: 20px; font-size: .9rem; }
 .login-error {
-  background: #fff5f5; border: 1px solid var(--danger); color: #9b2c2c;
-  border-radius: 7px; padding: 10px 12px; font-size: .85rem; margin-bottom: 14px;
+  background: var(--c-alerta); border: 1px solid var(--perigo); color: var(--c-alerta-texto);
+  border-radius: 0; padding: 10px 12px; font-size: .85rem; margin-bottom: 14px;
 }
 
 /* --- Clinic picker --- */
 .clinica-lista { display: flex; flex-direction: column; gap: 10px; }
 .clinica-opcao {
   display: block; width: 100%; text-align: left; padding: 14px 16px;
-  border: 1.5px solid var(--border-2); border-radius: 8px; background: #fff;
-  cursor: pointer; font-size: .95rem;
+  border: 1.5px solid var(--border-2); border-radius: 0; background: var(--surface);
+  cursor: pointer; font-size: .95rem; font-family: inherit; color: var(--text);
 }
-.clinica-opcao:hover { border-color: var(--primary); background: #F8F7EA; }
+.clinica-opcao:hover { border-color: var(--verde-oliva); background: var(--verde-claro); }
 
 /* --- Toast / Confirm --- */
-#toast-region {
-  position: fixed; bottom: 20px; right: 20px; z-index: 100;
-}
+#toast-region { position: fixed; bottom: 20px; right: 20px; z-index: 100; }
 #toast {
-  padding: 12px 18px; border-radius: 8px; color: #fff; font-size: .9rem;
-  box-shadow: 0 6px 20px rgba(0,0,0,.2);
+  padding: 12px 18px; border-radius: 0; color: var(--marfim); font-size: .9rem;
+  box-shadow: 0 6px 20px rgba(40, 44, 20, .25); max-width: 420px;
 }
-#toast.ok { background: var(--primary); }
-#toast.erro { background: var(--danger-hover); }
+#toast.ok { background: var(--verde-escuro); }
+#toast.erro { background: var(--perigo); }
 
 .modal-backdrop {
-  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  position: fixed; inset: 0; background: rgba(40, 44, 20, .45);
   display: flex; align-items: center; justify-content: center; z-index: 200;
 }
-.modal-card {
-  background: #fff; border-radius: 10px; padding: 24px; max-width: 380px; width: 90%;
-}
+.modal-card { background: #FFFFFF; border-radius: 0; padding: 24px; max-width: 380px; width: 90%; }
 .modal-card .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
 
-/* --- Responsivo / mobile (Fase 5) --- */
+[x-cloak] { display: none !important; }
+
+/* --- Responsivo / mobile --- */
 @media (max-width: 640px) {
   .form-grid { grid-template-columns: 1fr; }
-
   .hamburger { display: inline-flex; }
-
   .sidebar {
     position: fixed; top: 0; bottom: 0; left: 0; z-index: 50;
     transform: translateX(-100%); transition: transform .2s ease;
   }
   .sidebar.aberta { transform: translateX(0); }
-
-  .sidebar-backdrop {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 40;
-  }
+  .sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(40, 44, 20, .45); z-index: 40; }
   .sidebar-backdrop.aberta { display: block; }
-
   .app-content { padding: 14px; }
   .topbar { padding: 10px 14px; }
   .card { padding: 16px; }
-
-  .table-wrap { overflow-x: auto; }
-
   .agenda-grid { grid-template-columns: 1fr !important; }
 }
 
 .table-wrap { overflow-x: auto; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* Busca de insumos (components/_insumos_busca.html) */
+.ib { position: relative; }
+.ib-campo { position: relative; }
+.ib-campo input[type=search] { border-radius: 0; height: 42px; }
+
+.ib-menu {
+  position: absolute; left: 0; right: 0; z-index: 30; margin-top: 6px; padding: 6px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 0;
+  box-shadow: 0 8px 20px rgba(84, 89, 54, .10); max-height: 300px; overflow-y: auto;
+}
+.ib-opcao {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%;
+  padding: 9px 12px; border: 0; border-radius: 0; background: none; color: var(--text);
+  font: inherit; text-align: left; cursor: pointer;
+}
+.ib-opcao.ativo { background: var(--verde-claro); }
+.ib-nome { font-weight: 600; }
+.ib-meta { font-size: .8rem; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ib-chip { padding: 1px 8px; border-radius: 0; background: var(--c-ok); color: var(--verde-escuro); font-size: .75rem; }
+.ib-chip.baixo { background: var(--perigo-suave); color: var(--perigo); }
+.ib-vazio { margin: 0; padding: 10px 12px; color: var(--muted); }
+.ib-lista { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.ib-item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 0;
+}
+.ib-item .ib-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ib-qtd { display: inline-flex; align-items: center; border: 1.5px solid var(--border-2); border-radius: 0; overflow: hidden; }
+.ib-qtd button { width: 30px; height: 32px; border: 0; background: var(--btn-secondary-bg); color: var(--verde-escuro); font-size: 1rem; cursor: pointer; }
+.ib-qtd button:hover { background: var(--btn-secondary-hover); }
+.ib-qtd input { width: 64px; height: 32px; border: 0; border-radius: 0; text-align: center; padding: 0 4px; -moz-appearance: textfield; }
+.ib-qtd input::-webkit-outer-spin-button, .ib-qtd input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.ib-subtotal { min-width: 84px; text-align: right; font-weight: 600; }
+.ib-remover { padding: 6px 10px; border: 0; border-radius: 0; background: none; color: var(--muted); cursor: pointer; font: inherit; font-size: .85rem; }
+.ib-remover:hover { background: var(--perigo-suave); color: var(--perigo); }
+.ib-nenhum { display: block; margin-top: 8px; color: var(--muted); font-size: .85rem; }
+@media (max-width: 560px) {
+  .ib-item { flex-wrap: wrap; }
+  .ib-item .ib-info { flex-basis: 100%; }
+  .ib-subtotal { flex: 1; }
+}
+
+/* Abas da Ficha do paciente — destaque controlado no navegador (Alpine), já que o
+   conteúdo troca por HTMX sem recarregar a barra de abas. */
+.aba-ficha { border-radius: 0; transition: none; }
+.aba-ficha.ativa { background: var(--primary); color: var(--marfim); }
+
+/* Visual reto: nada arredondado (pedido do usuário, 2026-10). */
+*, *::before, *::after { border-radius: 0 !important; }
+
+/* Linha do tempo da Ficha: cada registro é clicável e abre o detalhe. */
+.tl-link { display: block; padding: 8px 10px; margin-left: -10px; color: inherit; text-decoration: none; }
+a.tl-link:hover { background: var(--bg); color: inherit; }
+a.tl-link:hover .tl-ver { text-decoration: underline; }
+.tl-ver { margin-left: 8px; color: var(--verde-escuro); font-weight: 600; font-size: .85rem; }
+
+/* Aba Receitas: os 3 tipos como botões grandes, sempre visíveis. */
+.receita-opcao {
+  display: flex; flex-direction: column; gap: 4px; padding: 16px 18px;
+  background: var(--surface); border: 1px solid var(--border-2); border-top: 3px solid var(--primary);
+  color: var(--text); text-decoration: none;
+}
+.receita-opcao strong { font-size: 1rem; }
+.receita-opcao span { color: var(--muted); font-size: .85rem; }
+.receita-opcao:hover { background: var(--primary); border-color: var(--primary); color: var(--marfim); }
+.receita-opcao:hover span { color: var(--verde-claro); }

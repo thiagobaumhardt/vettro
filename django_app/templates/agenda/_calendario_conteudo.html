@@ -29,13 +29,13 @@
             <a href="{% url 'agenda:calendario' %}?ano={{ ano }}&mes={{ mes }}&dia={{ data_iso }}&consultorio={{ consultorio_id }}"
                hx-get="{% url 'agenda:calendario' %}?ano={{ ano }}&mes={{ mes }}&dia={{ data_iso }}&consultorio={{ consultorio_id }}"
                hx-target="#agenda-calendario" hx-select="#agenda-calendario" hx-swap="outerHTML"
-               style="display:block; padding:6px; border-radius:6px; text-decoration:none; color:inherit; position:relative;
-                      {% if dia == dia_selecionado.day and mes == dia_selecionado.month and ano == dia_selecionado.year %}background:var(--primary); color:#fff;
-                      {% elif dia == hoje.day and mes == hoje.month and ano == hoje.year %}background:#fce4ec;{% endif %}">
+               style="display:block; padding:6px; text-decoration:none; color:inherit; position:relative;
+                      {% if dia == dia_selecionado.day and mes == dia_selecionado.month and ano == dia_selecionado.year %}background:var(--primary); color:var(--marfim);
+                      {% elif dia == hoje.day and mes == hoje.month and ano == hoje.year %}background:var(--c-alerta);{% endif %}">
               {{ dia }}
               {% with data_atual=data_iso %}
-              {% for db in dias_bloqueados %}{% if db|date:"Y-m-d" == data_atual %}🔒{% endif %}{% endfor %}
-              {% for de in dias_com_evento %}{% if de|date:"Y-m-d" == data_atual %}<span style="display:inline-block; width:5px; height:5px; border-radius:50%; background:currentColor; margin-left:2px;"></span>{% endif %}{% endfor %}
+              {% for db in dias_bloqueados %}{% if db|date:"Y-m-d" == data_atual %}{% endif %}{% endfor %}
+              {% for de in dias_com_evento %}{% if de|date:"Y-m-d" == data_atual %}<span style="display:inline-block; width:5px; height:5px; background:currentColor; margin-left:2px;"></span>{% endif %}{% endfor %}
               {% endwith %}
             </a>
             {% endwith %}
@@ -51,29 +51,29 @@
 <div class="card">
   <div class="section-title">Agendamentos de {{ dia_selecionado|date:"d/m/Y" }}</div>
   {% if dia_selecionado in dias_bloqueados %}
-  <div class="login-error">🔒 A agenda deste consultório está fechada nesse dia.</div>
+  <div class="login-error">A agenda deste consultório está fechada nesse dia.</div>
   {% endif %}
   {% for a in do_dia %}
   <div class="card" style="box-shadow:none; border:1px solid var(--border);
-      border-left:3px solid {% if a.status == 'cancelado' %}#fc8181{% elif a.status == 'realizado' %}#68a678{% else %}var(--primary){% endif %}; margin-bottom:10px;">
+      border-left:3px solid {% if a.status == 'cancelado' %}var(--perigo){% elif a.status == 'realizado' %}var(--verde-oliva){% else %}var(--primary){% endif %}; margin-bottom:10px;">
     <div style="display:flex; justify-content:space-between;">
       <strong>{{ a.hora|time:"H:i"|default:"—" }} · {{ a.pac_nome }}</strong>
       <span class="badge">{{ a.get_status_display }}</span>
     </div>
     <p style="color:var(--muted); margin:4px 0;">
       {{ a.tutor_nome }} {% if a.tutor_tel %}· {{ a.tutor_tel }}{% endif %}
-      {% if a.consultorio %}· 🏥 {{ a.consultorio.nome }}{% endif %}
+      {% if a.consultorio %}· {{ a.consultorio.nome }}{% endif %}
     </p>
     {% if a.queixa %}<p>{{ a.queixa }}</p>{% endif %}
     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
       {% if a.status != "realizado" and a.status != "cancelado" %}
-      <form method="post" action="{% url 'agenda:status' a.pk %}"><input type="hidden" name="status" value="realizado">{% csrf_token %}<button class="btn-secondary btn">✔ Realizado</button></form>
-      <form method="post" action="{% url 'agenda:status' a.pk %}"><input type="hidden" name="status" value="cancelado">{% csrf_token %}<button class="btn-danger btn" data-confirm="Cancelar este agendamento?">✕ Cancelar</button></form>
+      <form method="post" action="{% url 'agenda:status' a.pk %}"><input type="hidden" name="status" value="realizado">{% csrf_token %}<button class="btn-secondary btn">Realizado</button></form>
+      <form method="post" action="{% url 'agenda:status' a.pk %}"><input type="hidden" name="status" value="cancelado">{% csrf_token %}<button class="btn-danger btn" data-confirm="Cancelar este agendamento?">Cancelar</button></form>
       {% endif %}
-      <form method="post" action="{% url 'agenda:excluir' a.pk %}"><button class="btn-danger btn" data-confirm="Excluir este agendamento?">🗑 Excluir</button>{% csrf_token %}</form>
+      <form method="post" action="{% url 'agenda:excluir' a.pk %}"><button class="btn-danger btn" data-confirm="Excluir este agendamento?">Excluir</button>{% csrf_token %}</form>
     </div>
   </div>
   {% empty %}
-  <div class="empty"><span class="icon">📅</span>Nenhum agendamento neste dia.</div>
+  <div class="empty">Nenhum agendamento neste dia.</div>
   {% endfor %}
 </div>

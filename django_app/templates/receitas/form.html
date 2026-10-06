@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ tipo_rotulo }} — {{ paciente.nome }} — Vettro{% endblock %}
+{% block content %}
+<form method="post" class="card" x-data="formReceita({{ itens|length }})">
+  {% csrf_token %}
+  <input type="hidden" name="tipo" value="{{ tipo }}">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+    <h2 style="margin:0;">{{ tipo_rotulo }} — {{ paciente.nome }}</h2>
+    <a href="{% url 'pacientes:ficha' paciente.pk %}?aba=receitas" class="btn-secondary btn">← Voltar</a>
+  </div>
+  <p style="color:var(--muted); margin-top:0;">
+    Tutor(a): {{ paciente.tutor.nome|default:"—" }} · Assinatura: <strong>{{ perfil.nome_completo|default:request.user.nome }}</strong>
+    {% if perfil.crmv_formatado %}· {{ perfil.crmv_formatado }}{% else %}· <span style="color:var(--danger-hover);">sem CRMV</span>{% endif %}
+    {% if not perfil.assinatura %}· <span style="color:var(--danger-hover);">sem imagem de assinatura</span>{% endif %}
+    — <a href="{% url 'core:meu_perfil' %}">editar meu perfil</a>
+  </p>
+  {% if tipo == "controlada" %}
+  <div style="background:var(--c-aviso); padding:10px 14px; margin-bottom:14px;">
+    Receita controlada: o PDF sai em <strong>2 vias</strong> (1ª via farmácia, 2ª via tutor), as duas com seu nome completo e CRMV.
+  </div>
+  {% endif %}
+
+  {% if tipo == "livre" %}
+    <label>Texto da receita</label>
+    <textarea name="texto" rows="14" required placeholder="Digite a prescrição...">{{ texto }}</textarea>
+  {% else %}
+    <template x-for="(linha, i) in linhas" :key="linha">
+      <div class="card" style="box-shadow:none; border:1px solid var(--border); border-left:3px solid var(--primary); margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <strong x-text="'Medicamento ' + (i + 1)"></strong>
+          <button type="button" class="btn-danger btn" x-show="linhas.length > 1" @click="linhas.splice(i, 1)">Remover</button>
+        </div>
+        <div class="form-grid">
+          <div><label>Uso</label>
+            <select name="item_uso" required>
+              {% for valor, rotulo in usos %}<option value="{{ valor }}">{{ rotulo }}</option>{% endfor %}
+            </select>
+          </div>
+          <div><label>Nome do medicamento</label><input type="text" name="item_medicamento" maxlength="300" required></div>
+          <div><label>Farmácia</label>
+            <select name="item_farmacia">
+              <option value="">—</option>
+              {% for valor, rotulo in farmacias %}<option value="{{ valor }}">{{ rotulo }}</option>{% endfor %}
+            </select>
+          </div>
+          <div><label>Concentração</label><input type="text" name="item_concentracao" maxlength="300" placeholder="Ex: 50mg"></div>
+          <div><label>Quantidade</label><input type="text" name="item_quantidade" maxlength="300" required placeholder="Ex: 1 caixa, 30 comprimidos"></div>
+          <div><label>Periodicidade</label><input type="text" name="item_periodicidade" maxlength="300" placeholder="Ex: de 8 em 8 horas"></div>
+          <div><label>Tempo / período de uso</label><input type="text" name="item_tempo_uso" maxlength="300" placeholder="Ex: por 7 dias"></div>
+          <div class="full"><label>Observação</label><textarea name="item_obs" rows="2" maxlength="300"></textarea></div>
+        </div>
+      </div>
+    </template>
+    {% if tipo == "controlada" %}
+    <p style="color:var(--muted); margin:6px 0 0;">Receita controlada tem 1 medicamento por receita.</p>
+    {% else %}
+    <button type="button" class="btn-secondary btn" @click="linhas.push(proximo++)">+ Adicionar medicamento</button>
+    {% endif %}
+  {% endif %}
+
+  <div style="margin-top:18px;"><button type="submit" class="btn-primary btn">Salvar e imprimir receita</button></div>
+</form>
+
+{% if tipo != "livre" and itens.0.medicamento %}
+{# POST voltou com erro: repõe o que foi digitado nos campos gerados pelo Alpine. #}
+{{ itens|json_script:"itens-digitados" }}
+<script>
+  document.addEventListener("alpine:initialized", () => requestAnimationFrame(() => {
+    const itens = JSON.parse(document.getElementById("itens-digitados").textContent);
+    const campos = ["uso", "medicamento", "farmacia", "concentracao", "quantidade", "periodicidade", "tempo_uso", "obs"];
+    campos.forEach(campo => {
+      document.querySelectorAll(`[name="item_${campo}"]`).forEach((el, i) => { if (itens[i]) el.value = itens[i][campo] || ""; });
+    });
+  }));
+</script>
+{% endif %}
+<script>
+  function formReceita(quantidade) {
+    const linhas = Array.from({ length: Math.max(1, quantidade) }, (_, i) => i);
+    return { linhas, proximo: linhas.length };
+  }
+</script>
+{% endblock %}

@@ -38,7 +38,8 @@
               </select>
             </form>
           </td>
-          <td>
+          <td style="white-space:nowrap;">
+            <a href="{% url 'core:perfil_usuario' v.usuario_id %}" class="btn-secondary btn" title="Dados do profissional, CRMV e assinatura">Perfil profissional</a>
             <form method="post" action="{% url 'usuarios_clinica:remover' v.pk %}" style="display:inline;">
               {% csrf_token %}
               <button type="submit" class="btn-danger btn" data-confirm="Remover o acesso de {{ v.usuario.nome }} a esta clínica?">Remover</button>

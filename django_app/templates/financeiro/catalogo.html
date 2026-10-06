@@ -9,6 +9,9 @@
     <div class="form-grid">
       <div><label>Nome</label>{{ servico_form.nome }}</div>
       <div><label>Valor</label>{{ servico_form.valor }}</div>
+      <div><label>Cobrado por (opcional)</label>{{ servico_form.unidade_cobranca }}
+        <small style="color:var(--muted);">Ex.: "hora" para oxigenoterapia — no atendimento você informa quantas horas. Em branco = por vez.</small>
+      </div>
       <div><label>Código de serviço municipal (NFS-e, opcional)</label>{{ servico_form.codigo_servico_municipal }}</div>
       <div class="full"><label>Descrição</label>{{ servico_form.descricao }}</div>
     </div>
@@ -27,7 +30,7 @@
       <tbody>
         {% for s in servicos %}
         <tr>
-          <td>{{ s.nome }}</td><td>R$ {{ s.valor }}</td>
+          <td>{{ s.nome }}</td><td>R$ {{ s.valor }}{% if s.unidade_cobranca %} <small style="color:var(--muted);">/ {{ s.unidade_cobranca }}</small>{% endif %}</td>
           <td>
             <a href="{% url 'financeiro:servico_editar' s.pk %}" class="btn-secondary btn">Editar</a>
             <form method="post" action="{% url 'financeiro:servico_excluir' s.pk %}" style="display:inline;">
@@ -42,6 +45,7 @@
   </div>
 </div>
 
+{% if papel_ativo == "admin" %}
 <div class="card">
   <div class="section-title">{% if editando_categoria %}Editar Procedimento Cirúrgico{% else %}Novo Procedimento Cirúrgico{% endif %}</div>
   <form method="post" action="{% if editando_categoria %}{% url 'financeiro:categoria_editar' editando_categoria.pk %}{% else %}{% url 'financeiro:categoria_novo' %}{% endif %}">
@@ -60,6 +64,7 @@
     </div>
   </form>
 </div>
+{% endif %}
 
 <div class="card">
   <div class="section-title">Procedimentos Cirúrgicos cadastrados</div>
@@ -71,12 +76,12 @@
         <tr>
           <td>{{ c.nome }}</td>
           <td>{{ c.valor_p|default:"—" }}</td><td>{{ c.valor_m|default:"—" }}</td><td>{{ c.valor_g|default:"—" }}</td>
-          <td>
+          <td>{% if papel_ativo == "admin" %}
             <a href="{% url 'financeiro:categoria_editar' c.pk %}" class="btn-secondary btn">Editar</a>
             <form method="post" action="{% url 'financeiro:categoria_excluir' c.pk %}" style="display:inline;">
               {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir {{ c.nome }}?">Excluir</button>
             </form>
-          </td>
+          {% else %}—{% endif %}</td>
         </tr>
         {% empty %}<tr><td colspan="5" class="empty">Nenhum procedimento cadastrado.</td></tr>
         {% endfor %}

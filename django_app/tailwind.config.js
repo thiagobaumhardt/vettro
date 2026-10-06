@@ -1,30 +1,32 @@
-/** Paleta e tipografia da marca real Lume (ver Apresentação Lume, Studio
- * Ananda Souza, 2026) — hex estimados visualmente (o material não trouxe
- * hex oficiais, ver ressalva em static/dist/styles.css). Roca Two (títulos
- * da marca) é fonte paga sem confirmação de licença web — Fraunces é
- * substituta temporária gratuita. Livvic (textos) é a fonte real da marca. */
+/** Paleta e tipografia da marca Lume — cores MEDIDAS nas imagens da
+ * identidade visual (ver static/dist/styles.css, que é o fallback em uso
+ * enquanto o build do Tailwind não roda). Títulos: Roca Two (paga; arquivos
+ * em static/fonts/), com Fraunces "SOFT" de substituta. Textos: Livvic. */
 module.exports = {
   content: ["./templates/**/*.html", "./apps/**/templates/**/*.html"],
   theme: {
     extend: {
       fontFamily: {
-        heading: ["Fraunces", "Georgia", "serif"],
+        heading: ['"Roca Two"', "Fraunces", "Georgia", "serif"],
         body: ["Livvic", "Segoe UI", "sans-serif"],
       },
       colors: {
-        bg: "#F3F0D8",
-        text: "#2B2B20",
-        primary: { DEFAULT: "#7C8752", hover: "#626D3F" },
-        sidebar: { from: "#4B5530", to: "#333B22", active: "#5C6640" },
-        secondary: { DEFAULT: "#EDE9CD", hover: "#E2DCB8" },
-        accent: { DEFAULT: "#BC7440", hover: "#A25F31" },
-        danger: { DEFAULT: "#fc8181", hover: "#e53e3e" },
-        border: { DEFAULT: "#E3DFC4", 2: "#CAC6A0" },
-        muted: { DEFAULT: "#8B8768", 2: "#6B6850" },
-        "verde-claro": "#D9DEBB",
-        marfim: "#F3F0D8",
-        amarelo: "#E5AE3E",
-        terroso: "#BC7440",
+        "verde-oliva": "#949C56",   // Vitalidade — principal
+        "verde-claro": "#E5E8C5",   // Tranquilidade
+        marfim: "#F5EFCB",          // Clareza
+        amarelo: "#EFC15A",         // Luz
+        terroso: "#C17D46",         // Proximidade
+        "verde-escuro": "#545936",  // texto/títulos
+        "verde-profundo": "#60663C",
+        bg: "#E5E8C5",
+        text: "#545936",
+        primary: { DEFAULT: "#545936", hover: "#444929" },
+        sidebar: { from: "#545936", to: "#60663C", active: "#6E7443" },
+        secondary: { DEFAULT: "#E5E8C5", hover: "#C9CE9C" },
+        accent: { DEFAULT: "#C17D46", hover: "#8A4E22" },
+        danger: { DEFAULT: "#A9442B", hover: "#8C3520" },
+        border: { DEFAULT: "#DCD6AE", 2: "#C3BE8F" },
+        muted: { DEFAULT: "#7C7D5A", 2: "#62653F" },
       },
     },
   },

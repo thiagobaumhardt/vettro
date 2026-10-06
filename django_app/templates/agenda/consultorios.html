@@ -27,7 +27,7 @@
         {% for c in consultorios %}
         <tr>
           <td>{{ c.nome }}</td><td>{{ c.endereco|default:"—" }}</td>
-          <td>{% if c.ativo %}<span class="badge badge-vet">Ativo</span>{% else %}<span class="badge" style="background:#fed7d7;color:#9b2c2c;">Inativo</span>{% endif %}</td>
+          <td>{% if c.ativo %}<span class="badge badge-vet">Ativo</span>{% else %}<span class="badge" style="background:var(--c-alerta);color:var(--c-alerta-texto);">Inativo</span>{% endif %}</td>
           <td>
             <form method="post" action="{% url 'agenda:consultorio_excluir' c.pk %}" style="display:inline;">
               {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir o consultório {{ c.nome }}?">Excluir</button>
@@ -42,7 +42,7 @@
 </div>
 
 <div class="card">
-  <div class="section-title">🔒 Fechar agenda</div>
+  <div class="section-title">Fechar agenda</div>
   <p style="color:var(--muted);">Bloqueia novos agendamentos — de um consultório específico ou de todos de uma vez (bloqueio geral), por dia inteiro ou só um turno, uma vez só ou repetindo toda semana — ação restrita ao admin da clínica.</p>
   <form method="post" action="{% url 'agenda:bloqueio_novo' %}">
     {% csrf_token %}
@@ -62,9 +62,9 @@
 <div class="card">
   <div class="section-title">Fechamentos ativos/futuros</div>
   {% for b in bloqueios %}
-  <div class="card" style="box-shadow:none; border:1px solid var(--border); border-left:3px solid #fc8181; margin-bottom:8px;">
+  <div class="card" style="box-shadow:none; border:1px solid var(--border); border-left:3px solid var(--perigo); margin-bottom:8px;">
     <div style="display:flex; justify-content:space-between;">
-      <strong>🏥 {% if b.consultorio %}{{ b.consultorio.nome }}{% else %}Todos os consultórios{% endif %} · {{ b.get_turno_display }}</strong>
+      <strong>{% if b.consultorio %}{{ b.consultorio.nome }}{% else %}Todos os consultórios{% endif %} · {{ b.get_turno_display }}</strong>
       {% if b.recorrente %}
         <span>Toda(o) {{ b.get_dia_semana_display }} · a partir de {{ b.data_inicio|date:"d/m/Y" }}{% if b.data_fim %} até {{ b.data_fim|date:"d/m/Y" }}{% endif %}</span>
       {% else %}
@@ -77,7 +77,7 @@
     </form>
   </div>
   {% empty %}
-  <div class="empty"><span class="icon">🔓</span>Nenhum fechamento ativo.</div>
+  <div class="empty">Nenhum fechamento ativo.</div>
   {% endfor %}
 </div>
 {% endblock %}

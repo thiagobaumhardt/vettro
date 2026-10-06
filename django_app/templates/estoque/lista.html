@@ -3,33 +3,42 @@
 {% block content %}
 
 {% if alertas.zerados or alertas.baixos %}
-<div class="card" style="background:#FFFBEA; border:1px dashed #fcd34d;">
-  <div class="section-title">⚠️ Estoque baixo</div>
-  {% for i in alertas.zerados %}<span class="badge" style="background:#fed7d7; color:#9b2c2c;">{{ i.nome }} (zerado)</span>{% endfor %}
-  {% for i in alertas.baixos %}<span class="badge" style="background:#feebc8; color:#7b341e;">{{ i.nome }} ({{ i.qtd }})</span>{% endfor %}
+<div class="card" style="background:var(--c-aviso); border:1px dashed var(--c-aviso-borda);">
+  <div class="section-title">Estoque baixo</div>
+  {% for i in alertas.zerados %}<span class="badge" style="background:var(--c-alerta); color:var(--c-alerta-texto);">{{ i.nome }} (zerado)</span>{% endfor %}
+  {% for i in alertas.baixos %}<span class="badge" style="background:var(--c-aviso); color:var(--c-atencao-texto);">{{ i.nome }} ({{ i.qtd|floatformat:"-3" }} {{ i.unidade_rotulo }})</span>{% endfor %}
+</div>
+{% endif %}
+{% if alertas.sem_ncm %}
+<div class="card" style="background:var(--c-info); border:1px dashed var(--c-info-borda);">
+  <div class="section-title">Produtos sem NCM ({{ alertas.sem_ncm|length }})</div>
+  <p style="margin:0 0 8px; font-size:.88rem; color:var(--muted);">Sem NCM não dá para emitir a nota fiscal da venda no balcão. Produtos que entram pelo XML do fornecedor já vêm com NCM — estes foram cadastrados à mão.</p>
+  {% for i in alertas.sem_ncm %}{% if papel_ativo == "admin" %}<a href="{% url 'estoque:editar' i.pk %}" class="badge" style="background:var(--c-info); color:var(--verde-escuro); text-decoration:none;">{{ i.nome }} →</a>{% else %}<span class="badge" style="background:var(--c-info); color:var(--verde-escuro); text-decoration:none;">{{ i.nome }} →</span>{% endif %}{% endfor %}
 </div>
 {% endif %}
 {% if alertas.vencidos or alertas.vencendo %}
-<div class="card" style="background:#FFFBEA; border:1px dashed #fcd34d;">
-  <div class="section-title">📅 Validade de insumos</div>
-  {% for i in alertas.vencidos %}<span class="badge" style="background:#fed7d7; color:#9b2c2c;">{{ i.nome }} vencido</span>{% endfor %}
-  {% for i in alertas.vencendo %}<span class="badge" style="background:#feebc8; color:#7b341e;">{{ i.nome }} vence {{ i.data_validade|date:"d/m" }}</span>{% endfor %}
+<div class="card" style="background:var(--c-aviso); border:1px dashed var(--c-aviso-borda);">
+  <div class="section-title">Validade de insumos</div>
+  {% for i in alertas.vencidos %}<span class="badge" style="background:var(--c-alerta); color:var(--c-alerta-texto);">{{ i.nome }} vencido</span>{% endfor %}
+  {% for i in alertas.vencendo %}<span class="badge" style="background:var(--c-aviso); color:var(--c-atencao-texto);">{{ i.nome }} vence {{ i.data_validade|date:"d/m" }}</span>{% endfor %}
 </div>
 {% endif %}
 
 <div class="card">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
-    <h2 style="margin:0;">📦 Estoque</h2>
+    <h2 style="margin:0;">Estoque</h2>
     <div style="display:flex; gap:10px;">
-      <a href="{% url 'estoque:novo' %}" class="btn-primary btn">+ Novo Insumo</a>
-      <a href="{% url 'estoque:entrada_manual' %}" class="btn-secondary btn">📥 Entrada sem nota</a>
+      {% if papel_ativo == "admin" %}<a href="{% url 'estoque:novo' %}" class="btn-primary btn">+ Novo Insumo</a>{% endif %}
+      <a href="{% url 'estoque:entrada_manual' %}" class="btn-secondary btn">Entrada sem nota</a>
+      {% if papel_ativo == "admin" %}
       <form method="post" action="{% url 'estoque:importar_xml' %}" enctype="multipart/form-data" style="display:inline;">
         {% csrf_token %}
         <label class="btn-secondary btn" style="cursor:pointer;">
-          📄 Importar XML de NF-e
+          Importar XML de NF-e
           <input type="file" name="arquivo" accept=".xml" style="display:none;" onchange="this.form.submit()">
         </label>
       </form>
+      {% endif %}
     </div>
   </div>
 

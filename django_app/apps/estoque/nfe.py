@@ -1,9 +1,11 @@
 """Parser de NF-e (ENCAT/CONFAZ) pra importação de estoque — porte de
 backend/app/nfe.py, namespace-agnostic, aceita <nfeProc> completo ou <NFe>
-avulsa. Passa a capturar também o NCM de cada item (código de produto usado
-no cálculo de imposto — ver atualização do plano)."""
+avulsa. Captura também os dados fiscais de cada item que a clínica precisa
+pra revender o produto (NFC-e): NCM, origem da mercadoria e se o ICMS tem
+substituição tributária."""
 import xml.etree.ElementTree as ET
 from datetime import date
+from decimal import Decimal, InvalidOperation
 
 
 class NFeInvalidaError(Exception):
@@ -32,6 +34,29 @@ def _texto(elemento, nome_tag, default=None):
     return achado.text if achado is not None and achado.text else default
 
 
+# CST (regime normal) e CSOSN (Simples Nacional) que indicam ICMS com
+# substituição tributária — o ICMS da revenda já foi recolhido antes, e a
+# clínica revende com a regra "com ST" (em geral CFOP 5405 / CSOSN 500).
+CST_COM_ST = {"10", "30", "60", "70"}
+CSOSN_COM_ST = {"201", "202", "203", "500"}
+
+
+def _tributacao_icms(det) -> dict:
+    """Lê o grupo <ICMS> do item: origem da mercadoria (0 = nacional, 1/2 =
+    estrangeira...) e se há substituição tributária."""
+    icms = _achar(det, "ICMS")
+    grupo = next(iter(icms), None) if icms is not None else None
+    if grupo is None:
+        return {"origem": None, "tem_st": False}
+    cst, csosn = _texto(grupo, "CST"), _texto(grupo, "CSOSN")
+    try:
+        valor_st = Decimal(_texto(grupo, "vICMSST", "0")) + Decimal(_texto(grupo, "vICMSSTRet", "0"))
+    except InvalidOperation:
+        valor_st = Decimal("0")
+    tem_st = cst in CST_COM_ST or csosn in CSOSN_COM_ST or (cst == "90" and valor_st > 0)
+    return {"origem": _texto(grupo, "orig"), "tem_st": tem_st}
+
+
 def parsear_nfe(conteudo_xml: bytes) -> list[dict]:
     try:
         raiz = ET.fromstring(conteudo_xml)
@@ -55,13 +80,13 @@ def parsear_nfe(conteudo_xml: bytes) -> list[dict]:
         ncm = _texto(prod, "NCM")
 
         try:
-            quantidade = float(_texto(prod, "qCom", "0"))
-        except ValueError:
-            quantidade = 0.0
+            quantidade = Decimal(_texto(prod, "qCom", "0"))
+        except InvalidOperation:
+            quantidade = Decimal("0")
         try:
-            valor_unitario = float(_texto(prod, "vUnCom", "0"))
-        except ValueError:
-            valor_unitario = 0.0
+            valor_unitario = Decimal(_texto(prod, "vUnCom", "0"))
+        except InvalidOperation:
+            valor_unitario = Decimal("0")
 
         lote, validade = None, None
         rastro = _achar(det, "rastro")
@@ -78,8 +103,12 @@ def parsear_nfe(conteudo_xml: bytes) -> list[dict]:
             "nome": nome,
             "codigo_barras": codigo_barras,
             "ncm": ncm,
+            **_tributacao_icms(det),
             "quantidade": quantidade,
             "valor_unitario": valor_unitario,
+            # Unidade comercial da nota (CX, UN, FR...) — a quantidade e o
+            # valor unitário da NF-e estão nela, não na unidade de uso.
+            "unidade_comercial": _texto(prod, "uCom", ""),
             "lote": lote,
             "validade": validade,
         })

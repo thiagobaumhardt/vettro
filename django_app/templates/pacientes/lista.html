@@ -3,7 +3,7 @@
 {% block content %}
 <div class="card">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-    <h2 style="margin:0;">🐾 Pacientes</h2>
+    <h2 style="margin:0;">Pacientes</h2>
     <a href="{% url 'pacientes:novo' %}" class="btn-primary btn">+ Novo Paciente</a>
   </div>
   <input type="search" name="q" placeholder="Buscar por animal ou tutor..." value="{{ termo }}"

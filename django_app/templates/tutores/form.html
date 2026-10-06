@@ -7,12 +7,14 @@
     {% csrf_token %}
     <div class="form-grid">
       <div><label for="id_nome">Nome</label>{{ form.nome }}</div>
-      <div><label for="id_tel">Telefone</label>{{ form.tel }}</div>
+      <div><label for="id_tel">WhatsApp</label>{{ form.tel }}<small style="color:var(--muted);">Usado para os lembretes.</small></div>
+      <div><label for="id_tel2">Outro telefone</label>{{ form.tel2 }}</div>
       <div><label for="id_email">E-mail</label>{{ form.email }}</div>
       <div>
         <label for="id_cpf">CPF</label>{{ form.cpf }}
         {% if form.cpf.errors %}<p style="color:var(--danger-hover); font-size:.82rem;">{{ form.cpf.errors|join:", " }}</p>{% endif %}
       </div>
+      <div><label for="id_rg">RG</label>{{ form.rg }}</div>
       <div>
         <label for="id_cep">CEP</label>
         {{ form.cep }}
@@ -28,13 +30,13 @@
       <div><label for="id_uf">UF</label><span id="campo-uf">{{ form.uf }}</span></div>
       <div><label for="id_como_conheceu">Como conheceu</label>{{ form.como_conheceu }}</div>
       <div class="full"><label for="id_obs">Observações</label>{{ form.obs }}</div>
-      <div class="full" style="background:#FFFBEA; border:1px solid #fcd34d; border-radius:8px; padding:12px;">
+      <div class="full" style="background:var(--c-aviso); border:1px solid var(--c-aviso-borda); padding:12px;">
         <label style="display:flex; align-items:center; gap:8px; margin:0;">
           {{ form.consentimento_dados }}
           Tutor consente com o uso dos dados conforme a LGPD
         </label>
       </div>
-      <div class="full" style="background:#F0F7FF; border:1px solid #90cdf4; border-radius:8px; padding:12px;">
+      <div class="full" style="background:var(--c-info); border:1px solid var(--c-info-borda); padding:12px;">
         <label style="display:flex; align-items:center; gap:8px; margin:0;">
           {{ form.consentimento_whatsapp }}
           Tutor consente em receber lembrete de agendamento por WhatsApp

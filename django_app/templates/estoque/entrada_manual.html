@@ -1,15 +1,24 @@
 {% extends "base.html" %}
 {% block title %}Entrada de estoque — Vettro{% endblock %}
 {% block content %}
-<div class="card">
-  <h2>📥 Entrada de estoque sem nota fiscal</h2>
-  <p style="color:var(--muted);">Registra uma movimentação SD1 (entrada) sem vincular a uma NF-e — use pra compras informais ou ajuste de saldo inicial.</p>
+<div class="card" x-data="{ produtos: {{ produtos_json }}, insumoId: '{{ insumo_inicial|escapejs }}', lancarEm: '{{ lancar_em_inicial|escapejs }}', quantidade: '{{ form.quantidade.value|default:''|escapejs }}',
+     get p() { return this.produtos[this.insumoId]; },
+     get total() { const q = parseFloat(String(this.quantidade).replace(',', '.')) || 0; return this.p ? (this.lancarEm === 'embalagem' ? q * parseFloat(this.p.conteudo) : q) : 0; } }">
+  <h2>Entrada de estoque sem nota fiscal</h2>
+  <p style="color:var(--muted);">Registra uma movimentação SD1 (entrada) sem vincular a uma NF-e — use pra compras informais ou saldo inicial.</p>
   <form method="post">
     {% csrf_token %}
+    {% if form.errors %}<p style="color:var(--danger-hover);">{% for campo, erros in form.errors.items %}{{ erros|join:", " }} {% endfor %}</p>{% endif %}
     <div class="form-grid">
       <div class="full"><label>Insumo</label>{{ form.insumo }}</div>
       <div><label>Quantidade</label>{{ form.quantidade }}</div>
-      <div><label>Valor unitário (opcional)</label>{{ form.valor_unitario }}</div>
+      <div><label>Lançar em</label>{{ form.lancar_em }}
+        <small style="color:var(--muted);" x-show="p" x-text="'1 ' + (p ? p.embalagem : '') + ' = ' + (p ? p.conteudo.replace(/\.?0+$/, '').replace('.', ',') : '') + ' ' + (p ? p.unidade : '')"></small>
+      </div>
+      <div class="full" x-show="p && total > 0" style="padding:10px 14px; background:var(--c-info); border:1px solid var(--c-info-borda);">
+        Vai entrar no estoque: <strong x-text="total.toLocaleString('pt-BR', { maximumFractionDigits: 3 }) + ' ' + (p ? p.unidade : '')"></strong>
+      </div>
+      <div><label x-text="lancarEm === 'embalagem' ? 'Custo de cada embalagem (opcional)' : 'Custo de cada unidade (opcional)'">Custo (opcional)</label>{{ form.valor_unitario }}</div>
       <div><label>Lote (opcional)</label>{{ form.lote }}</div>
       <div><label>Validade (opcional)</label>{{ form.data_validade }}</div>
       <div class="full"><label>Observação</label>{{ form.observacao }}</div>

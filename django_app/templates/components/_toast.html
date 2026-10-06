@@ -1,7 +1,19 @@
 {# Toast global — views que mutam dados podem devolver um OOB swap desta
-   div (id="toast-region") pra disparar uma mensagem, ver §7 do plano. #}
+   div (id="toast-region") pra disparar uma mensagem, ver §7 do plano.
+   Também exibe as mensagens do django.contrib.messages da requisição. #}
 <div id="toast-region"
-     x-data="{ show:false, msg:'', ok:true }"
-     x-init="window.addEventListener('toast', e => { msg = e.detail.msg; ok = e.detail.ok ?? true; show = true; setTimeout(() => show = false, 2800) })">
+     x-data="{ show:false, msg:'', ok:true, timer:null }"
+     x-init="window.addEventListener('toast', e => { msg = e.detail.msg; ok = e.detail.ok ?? true; show = true; clearTimeout(timer); timer = setTimeout(() => show = false, ok ? 2800 : 6000) })">
   <div id="toast" :class="ok ? 'ok' : 'erro'" x-show="show" x-transition style="display:none;" x-text="msg"></div>
 </div>
+{% if messages %}
+<script>
+  document.addEventListener("alpine:initialized", () => {
+    const mensagens = [{% for m in messages %}{ msg: "{{ m.message|escapejs }}", ok: {% if m.level >= 30 %}false{% else %}true{% endif %} },{% endfor %}];
+    window.dispatchEvent(new CustomEvent("toast", { detail: {
+      msg: mensagens.map(m => m.msg).join(" · "),
+      ok: mensagens.every(m => m.ok),
+    } }));
+  });
+</script>
+{% endif %}
