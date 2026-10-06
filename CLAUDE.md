@@ -63,6 +63,8 @@ clínicas diferentes via `UsuarioClinica`. Cadastro de acesso novo é sempre por
    Anotações, Cobrança (admin only). **Cirurgias não tem aba**: entra por Atendimento →
    Procedimento cirúrgico. Clicar num item da linha do tempo abre o detalhe COMPLETO do
    registro (`pacientes:registro`, todos os campos + itens + cobrança + exames/fotos).
+   Botão **Imprimir** no detalhe (`pacientes:registro_pdf`) e na aba Histórico
+   (`pacientes:historico_pdf`, respeita o filtro da tela) — `apps/pacientes/pdf.py`.
    Exames e Fotos: histórico + "Anexar" com vínculo opcional a um atendimento
    (`Exame.atendimento` / `Foto.atendimento`, só do próprio paciente).
 3. **Serviços / Procedimentos Cirúrgicos** — catálogo, preço por faixa de peso (P/M/G) nas
@@ -76,7 +78,8 @@ clínicas diferentes via `UsuarioClinica`. Cadastro de acesso novo é sempre por
    cobrado por quantidade (`Servico.unidade_cobranca`, ex. oxigenoterapia por hora).
 5. **Atendimentos** — grade com filtros (tipo, espécie, período). Tipo: Consulta, Retorno
    (vincula o nº do atendimento de origem), Ambulatorial, Emergência, Aplicação de medicação,
-   Curativo, Vacinação (vacina do catálogo + dose 1/2/3/Anual + "revacinar em"). Na Ficha, a
+   Curativo, Vacinação (vacina do catálogo + dose 1/2/3/Anual + "revacinar em"; **sem plantão
+   e sem serviços** — só vacina + insumos, também ignorados no servidor). Na Ficha, a
    aba 🩺 Atendimento abre 6 botões: Consulta (= ficha de anamnese), Vacina, Procedimento
    cirúrgico (aba Cirurgias), Retorno, Aplicação de medicação, Curativos. Lembrete de WhatsApp:
    24h, 5 ou 30 dias antes da revacinação/retorno. Código `#numero` sequencial por clínica. Gera
@@ -117,8 +120,10 @@ clínicas diferentes via `UsuarioClinica`. Cadastro de acesso novo é sempre por
    Snapshots na Receita: tutor CPF/RG/cidade, sexo do animal, MAPA do vet.
    Assinatura: simples/livre saem com a **imagem da assinatura do cadastro** do vet; a
    **controlada sai SEMPRE sem a imagem** (assinatura manual obrigatória — `com_imagem=False`).
-13. **Documentos** (admin/vet) — modelos editáveis por clínica com variáveis `{paciente}`,
+13. **Documentos** — modelos editáveis por clínica com variáveis `{paciente}`,
    `{tutor}`... (7 modelos padrão na migração `documentos/0002`), emitidos por paciente.
+   **Menu Documentos (lista geral, modelos, excluir emitido): só admin.** Vet emite, vê e
+   imprime pela aba Documentos da Ficha.
 - **PDFs** (`apps/core/pdf.py`, ReportLab): cabeçalho (logo da clínica no canto **superior
   direito** em todo documento) + marca d'água da clínica
   (`core.ConfiguracaoClinica`, admin em ⚙️ Clínica) + assinatura/CRMV do

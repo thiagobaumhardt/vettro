@@ -95,21 +95,22 @@
         <small x-show="lembreteAtivo() && pacienteId && !tutorAceitaWhatsapp()" style="display:block; color:var(--c-atencao-texto);">O tutor deste paciente não autorizou WhatsApp (ou não tem número) — o lembrete não será enviado. Marque o consentimento no cadastro do tutor, se ele autorizar.</small>
       </div>
 
-      <div class="full">
+      {# Vacinação não tem plantão nem serviços — só a vacina e os insumos. #}
+      <div class="full" x-show="tipo !== 'vacinacao'">
         <label style="display:flex; align-items:center; gap:8px;">
-          <input type="checkbox" name="plantao" x-model="plantao" {% if form.plantao.value %}checked{% endif %}> Plantão (+50% sobre serviços)
+          <input type="checkbox" name="plantao" x-model="plantao" x-bind:disabled="tipo === 'vacinacao'" {% if form.plantao.value %}checked{% endif %}> Plantão (+50% sobre serviços)
         </label>
       </div>
     </div>
 
     <div class="form-grid" style="margin-top:10px;">
-      <div>
+      <div x-show="tipo !== 'vacinacao'">
         <label>Serviços</label>
         <div class="select-list" style="border:1.5px solid var(--border-2); max-height:220px; overflow-y:auto; padding:8px;">
           {% for s in servicos %}
           <div style="padding:4px 0;">
             <label style="display:flex; justify-content:space-between;">
-              <span><input type="checkbox" name="servico_ids" value="{{ s.id }}" x-model="servicosSel"> {{ s.nome }}</span>
+              <span><input type="checkbox" name="servico_ids" value="{{ s.id }}" x-model="servicosSel" x-bind:disabled="tipo === 'vacinacao'"> {{ s.nome }}</span>
               <span>R$ {{ s.valor }}{% if s.unidade_cobranca %}/{{ s.unidade_cobranca }}{% endif %}</span>
             </label>
             {% if s.unidade_cobranca %}<template x-if="servicosSel.includes('{{ s.id }}')">
@@ -119,7 +120,7 @@
           {% empty %}<p class="empty" style="padding:0;">Nenhum serviço cadastrado.</p>{% endfor %}
         </div>
       </div>
-      <div>
+      <div :class="tipo === 'vacinacao' && 'full'">
         {% include "components/_insumos_busca.html" with rotulo="Insumos" %}
         <small style="color:var(--muted);" x-show="insumoDaVacina()">A vacina sai do estoque automaticamente (1 un.).</small>
       </div>
@@ -218,6 +219,7 @@
         }, 0);
         const insumoVacina = this.insumoDaVacina();
         if (insumoVacina) totalInsumos += this.precosInsumos[insumoVacina] || 0;
+        if (this.tipo === "vacinacao") return totalInsumos;  // vacinação: sem serviços nem plantão
         const acrescimo = this.plantao ? totalServicos * 0.5 : 0;
         return totalServicos + totalInsumos + acrescimo;
       },

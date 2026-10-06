@@ -356,6 +356,47 @@ def registro(request, pk, tipo, registro_id):
     return render(request, "pacientes/ficha.html", {**contexto, "aba_ativa": "registro"})
 
 
+def _impresso_por(request) -> str:
+    return getattr(request.user, "nome", "") or request.user.get_username()
+
+
+def _resposta_pdf(conteudo: bytes, nome: str):
+    from django.http import HttpResponse
+
+    resposta = HttpResponse(conteudo, content_type="application/pdf")
+    resposta["Content-Disposition"] = f'inline; filename="{nome}.pdf"'
+    return resposta
+
+
+@requer_secao("pacientes")
+def registro_pdf(request, pk, tipo, registro_id):
+    """Botão Imprimir do detalhe do registro — mesmo conteúdo da tela, em PDF."""
+    from .pdf import pdf_registro
+
+    paciente = get_object_or_404(Paciente.objects.select_related("tutor"), pk=pk)
+    contexto = _contexto_registro(request, paciente, tipo, registro_id)
+    conteudo = pdf_registro(contexto, clinica_nome=request.session.get("clinica_nome", ""),
+                            impresso_por=_impresso_por(request))
+    return _resposta_pdf(conteudo, f"{tipo}-{paciente.nome}")
+
+
+@requer_secao("pacientes")
+def historico_pdf(request, pk):
+    """Botão Imprimir da aba Histórico — respeita o filtro (?categoria=) escolhido na tela."""
+    from .pdf import pdf_historico
+
+    paciente = get_object_or_404(Paciente.objects.select_related("tutor"), pk=pk)
+    eventos = pacientes_services.linha_do_tempo(paciente, secoes_permitidas(request))
+    categoria = request.GET.get("categoria", "")
+    if categoria in pacientes_services.CATEGORIAS_HISTORICO:
+        eventos = [e for e in eventos if e["categoria"] == categoria]
+    conteudo = pdf_historico(
+        paciente, eventos, filtro_rotulo=pacientes_services.CATEGORIAS_HISTORICO.get(categoria, ""),
+        clinica_nome=request.session.get("clinica_nome", ""), impresso_por=_impresso_por(request),
+    )
+    return _resposta_pdf(conteudo, f"historico-{paciente.nome}")
+
+
 RECENTES_NA_FICHA = 5
 
 

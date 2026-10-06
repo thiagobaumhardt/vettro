@@ -20,7 +20,7 @@
     {% if "atendimentos" in secoes_permitidas %}
     <a href="{% url 'atendimentos:lista' %}" class="{% if request.resolver_match.app_name == 'atendimentos' %}active{% endif %}">Atendimentos</a>
     {% endif %}
-    {% if "documentos" in secoes_permitidas %}
+    {% if "documentos" in secoes_permitidas and papel_ativo == "admin" %}
     <a href="{% url 'documentos:lista' %}" class="{% if request.resolver_match.app_name == 'documentos' %}active{% endif %}">Documentos</a>
     {% endif %}
     {% if "vendas" in secoes_permitidas %}

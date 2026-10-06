@@ -143,13 +143,14 @@ def novo(request):
         messages.error(request, erros or "Verifique os campos do formulário.")
         return _renderizar_form(request, form)
     dados = form.cleaned_data
+    vacinacao = dados["tipo"] == "vacinacao"  # vacinação não tem serviços nem plantão (só vacina + insumos)
     try:
         atendimento = services.criar_atendimento(
             paciente=dados["paciente"], tipo=dados["tipo"], retorno_de=dados["retorno_de"],
             vacina=dados["vacina"], dose=dados["dose"], data_proxima_dose=dados["data_proxima_dose"],
             data_retorno=dados["data_retorno"], lembrete_dias_antes=dados["lembrete_dias_antes"],
-            data=dados["data"], hora=dados["hora"], servico_ids=servicos_do_post(request.POST),
-            usos_insumos=usos_insumos_do_post(request.POST), plantao=dados["plantao"],
+            data=dados["data"], hora=dados["hora"], servico_ids=[] if vacinacao else servicos_do_post(request.POST),
+            usos_insumos=usos_insumos_do_post(request.POST), plantao=False if vacinacao else dados["plantao"],
             obs=dados["obs"], usuario=request.user,
         )
     except (EstoqueInsuficienteError, ItemNaoEncontradoError) as exc:

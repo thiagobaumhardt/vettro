@@ -1,7 +1,12 @@
 <div x-data="{ filtro: '' }">
   <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
     <div class="section-title" style="margin:0;">Histórico de atendimentos <span style="color:var(--muted); font-weight:normal;">({{ linha_do_tempo|length }})</span></div>
-    {% if "atendimentos" in secoes_permitidas %}<a href="{% url 'atendimentos:novo' %}" class="btn-primary btn">+ Novo atendimento</a>{% endif %}
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      {# Imprime o que está filtrado na tela (Todos, Vacinas, Consultas...). #}
+      <a :href="'{% url 'pacientes:historico_pdf' paciente.pk %}' + (filtro ? '?categoria=' + filtro : '')"
+         href="{% url 'pacientes:historico_pdf' paciente.pk %}" target="_blank" class="btn-secondary btn">Imprimir</a>
+      {% if "atendimentos" in secoes_permitidas %}<a href="{% url 'atendimentos:novo' %}" class="btn-primary btn">+ Novo atendimento</a>{% endif %}
+    </div>
   </div>
   {% if categorias|length > 1 %}
   <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">

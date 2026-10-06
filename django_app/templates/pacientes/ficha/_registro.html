@@ -5,9 +5,12 @@
     <span style="color:var(--muted);">{{ registro.data|date:"d/m/Y" }} {{ registro.hora|time:"H:i" }}</span>
     {% if registro.plantao %}<span class="badge" style="background:var(--c-aviso); margin-left:6px;">Plantão</span>{% endif %}
   </div>
-  <a href="{% url 'pacientes:ficha' paciente.pk %}?aba=ficha" class="btn-secondary btn"
-     @click="aba = 'ficha'" hx-get="{% url 'pacientes:ficha_aba' paciente.pk 'ficha' %}" hx-target="#ficha-conteudo"
-     hx-push-url="{% url 'pacientes:ficha' paciente.pk %}?aba=ficha">← Voltar para a ficha</a>
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <a href="{% url 'pacientes:ficha' paciente.pk %}?aba=ficha" class="btn-secondary btn"
+       @click="aba = 'ficha'" hx-get="{% url 'pacientes:ficha_aba' paciente.pk 'ficha' %}" hx-target="#ficha-conteudo"
+       hx-push-url="{% url 'pacientes:ficha' paciente.pk %}?aba=ficha">← Voltar para a ficha</a>
+    <a href="{% url 'pacientes:registro_pdf' paciente.pk registro_tipo registro.pk %}" target="_blank" class="btn-primary btn">Imprimir</a>
+  </div>
 </div>
 
 {% for titulo, campos in registro_secoes %}

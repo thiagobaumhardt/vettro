@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 
-from apps.core.decorators import requer_secao
+from apps.core.decorators import admin_required, requer_secao
 from apps.pacientes.models import Paciente
 
 from . import services
@@ -18,6 +18,7 @@ class ModeloDocumentoForm(forms.ModelForm):
         widgets = {"texto": forms.Textarea(attrs={"rows": 18})}
 
 
+@admin_required  # menu Documentos (lista geral + modelos): só o admin da clínica
 @requer_secao("documentos")
 def lista(request):
     return render(request, "documentos/lista.html", {
@@ -27,6 +28,7 @@ def lista(request):
     })
 
 
+@admin_required
 @requer_secao("documentos")
 def modelo_salvar(request, pk=None):
     modelo = get_object_or_404(ModeloDocumento, pk=pk) if pk else None
@@ -40,6 +42,7 @@ def modelo_salvar(request, pk=None):
     })
 
 
+@admin_required
 @requer_secao("documentos")
 def modelo_excluir(request, pk):
     if request.method == "POST":
@@ -92,6 +95,7 @@ def pdf(request, pk):
     return resposta
 
 
+@admin_required
 @requer_secao("documentos")
 def excluir(request, pk):
     if request.method == "POST":
