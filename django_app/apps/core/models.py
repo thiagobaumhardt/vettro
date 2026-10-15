@@ -1,3 +1,5 @@
+from datetime import time
+
 from django.db import models
 
 from .storage import TenantFileSystemStorage
@@ -44,6 +46,19 @@ class ConfiguracaoClinica(models.Model):
 
     validade_orcamento_dias = models.PositiveSmallIntegerField(
         "Validade padrão do orçamento (dias)", default=15,
+    )
+
+    # Agenda: faixa de horário mostrada nas visões Dia/Semana e usada pra
+    # calcular os horários livres; intervalo = tamanho de cada linha da grade.
+    agenda_hora_inicio = models.TimeField("Agenda abre às", default=time(8, 0))
+    agenda_hora_fim = models.TimeField("Agenda fecha às", default=time(18, 0))
+    # Estoque (análise automática): de quanto em quanto tempo a clínica faz compras.
+    estoque_frequencia_compra_dias = models.PositiveSmallIntegerField(
+        "Frequência de compras (dias)", default=30,
+        help_text="De quanto em quanto tempo a clínica costuma comprar — usado na sugestão de compra.",
+    )
+    agenda_intervalo_min = models.PositiveSmallIntegerField(
+        "Intervalo da grade (min)", default=30, choices=[(10, "10 min"), (15, "15 min"), (20, "20 min"), (30, "30 min"), (60, "60 min")],
     )
 
     def __str__(self):

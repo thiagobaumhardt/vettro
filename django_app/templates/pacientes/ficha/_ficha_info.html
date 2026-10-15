@@ -9,7 +9,7 @@
   <div><label>Nome</label>{{ paciente.nome }}</div>
   <div><label>Espécie</label>{{ paciente.get_especie_display }}</div>
   <div><label>Raça</label>{{ paciente.raca|default:"—" }}</div>
-  <div><label>Peso</label>{% if paciente.peso %}{{ paciente.peso }} kg{% else %}—{% endif %}</div>
+  <div><label>Peso</label>{% with u=paciente.ultima_pesagem %}{% if paciente.peso %}{{ paciente.peso }} kg{% if u %} <small style="color:var(--muted);">em {{ u.data|date:"d/m/Y" }}</small>{% endif %}{% else %}—{% endif %}{% endwith %}</div>
   <div><label>Data de nascimento</label>{{ paciente.data_nascimento|date:"d/m/Y"|default:"—" }}</div>
   <div><label>Idade</label>{{ paciente.idade_texto }}</div>
 </div>

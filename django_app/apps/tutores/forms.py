@@ -20,6 +20,12 @@ class TutorForm(forms.ModelForm):
             "consentimento_dados", "consentimento_whatsapp",
         ]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Tutor novo: lembrete de WhatsApp já vem marcado (dá pra desmarcar se ele recusar).
+        if self.instance._state.adding and "consentimento_whatsapp" not in self.initial:
+            self.initial["consentimento_whatsapp"] = True
+
     def clean_cpf(self):
         cpf = self.cleaned_data.get("cpf", "")
         if cpf and not cpf_valido(cpf):

@@ -24,7 +24,13 @@
         </template>
       </select>
     </div>
-    <div><label>Cliente (opcional)</label><input type="text" name="cliente_nome" x-model="cliente" maxlength="150" placeholder="Nome de quem está comprando"></div>
+    <div><label>CPF na nota? <small style="color:var(--muted);">(opcional — pergunte ao cliente)</small></label>
+      <input type="text" name="cliente_cpf" x-model="cpf" @input="cpf = mascaraCpf(cpf); buscarCpf()" inputmode="numeric" maxlength="14" placeholder="000.000.000-00">
+      <small x-show="cpfStatus === 'tutor'" x-cloak style="color:var(--verde-escuro);">Tutor cadastrado: <strong x-text="tutorNome"></strong></small>
+      <small x-show="cpfStatus === 'novo'" x-cloak style="color:var(--muted);">CPF sem cadastro de tutor — a venda sai com esse CPF na nota.</small>
+      <small x-show="cpfStatus === 'invalido'" x-cloak style="color:var(--perigo);">CPF inválido — confira os números.</small>
+    </div>
+    <div x-show="cpfStatus !== 'tutor'"><label>Nome do cliente (opcional)</label><input type="text" name="cliente_nome" x-model="cliente" maxlength="150" placeholder="Nome de quem está comprando"></div>
   </div>
 
   <div class="table-wrap" style="margin-top:14px;">
@@ -93,6 +99,22 @@
     return {
       produtos, itens: estado.itens.filter(i => produtos.some(p => p.id === i.insumo)),
       forma: estado.forma, tipo: estado.tipo || "valor", desconto: estado.desconto, motivo: estado.motivo, cliente: estado.cliente,
+      cpf: estado.cpf || "", cpfStatus: "", tutorNome: "",
+      init() { if (this.cpf) this.buscarCpf(); },
+      mascaraCpf(v) {
+        const d = v.replace(/\D/g, "").slice(0, 11);
+        return d.replace(/^(\d{3})(\d)/, "$1.$2").replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3").replace(/\.(\d{3})(\d{1,2})$/, ".$1-$2");
+      },
+      async buscarCpf() {
+        const d = this.cpf.replace(/\D/g, "");
+        if (d.length < 11) { this.cpfStatus = ""; this.tutorNome = ""; return; }
+        const r = await fetch("{% url 'vendas:buscar_cpf' %}?cpf=" + d).then(r => r.json()).catch(() => null);
+        if (!r) return;
+        if (!r.valido) { this.cpfStatus = "invalido"; this.tutorNome = ""; return; }
+        this.cpfStatus = r.tutor ? "tutor" : "novo";
+        this.tutorNome = r.tutor ? r.tutor.nome : "";
+        if (r.tutor) this.cliente = "";
+      },
       codigo: "", erroCodigo: "",
       produto(id) { return this.produtos.find(p => p.id === id) || { nome: "?", valor: "0", estoque: 0 }; },
       adicionar(id) {

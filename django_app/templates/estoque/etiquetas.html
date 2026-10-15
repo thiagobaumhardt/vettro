@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Etiquetas — Vettro{% endblock %}
+{% block content %}
+{% include "estoque/_subnav.html" %}
+<div class="card" x-data="etiquetas({{ iniciais_json }})">
+  <h2 style="margin-top:0;">Etiquetas de produtos</h2>
+  <p style="color:var(--muted); margin-top:-6px;">Folhas Pimaco em impressora comum (jato de tinta ou laser). Configure a impressão em papel <strong>Carta</strong>, escala <strong>100%</strong>. Produto sem código de barras ganha um código interno automaticamente.</p>
+  <form method="post" target="_blank">
+    {% csrf_token %}
+    <div class="form-grid">
+      <div><label>Modelo da folha</label>
+        <select name="modelo">{% for codigo, m in modelos.items %}<option value="{{ codigo }}">{{ m.nome }}</option>{% endfor %}</select>
+      </div>
+      <div><label>Etiquetas já usadas no começo da folha</label><input type="number" name="pular" min="0" value="0">
+        <small style="color:var(--muted);">Para reaproveitar uma folha usada pela metade.</small></div>
+      <div class="full">
+        {% include "components/_insumos_busca.html" with rotulo="Produtos (a quantidade = número de etiquetas)" %}
+      </div>
+    </div>
+    <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn-primary btn" :disabled="!insumosSel.length">Gerar PDF das etiquetas</button>
+      <span style="align-self:center; color:var(--muted);" x-text="totalEtiquetas() + ' etiqueta(s)'"></span>
+    </div>
+  </form>
+</div>
+<script>
+  // Pré-seleção (produtos marcados na lista): adiciona com a quantidade sugerida.
+  function etiquetas(iniciais) {
+    return {
+      insumosSel: Object.keys(iniciais), qtyTick: 0, iniciais,
+      init() {
+        this.$nextTick(() => {
+          const busca = this.$root.querySelector(".ib");
+          const dados = busca && Alpine.$data(busca);
+          if (dados) Object.entries(iniciais).forEach(([id, q]) => { dados.qtds[id] = q; });
+        });
+      },
+      totalEtiquetas() {
+        void this.qtyTick;
+        return this.insumosSel.reduce((s, id) => {
+          const el = document.querySelector(`input[name="qtd_${id}"]`);
+          return s + (el ? (parseInt(el.value) || 0) : (this.iniciais[id] || 1));
+        }, 0);
+      },
+    };
+  }
+</script>
+{% endblock %}

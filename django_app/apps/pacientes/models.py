@@ -69,6 +69,11 @@ class Paciente(models.Model):
         return self.nome
 
     @property
+    def ultima_pesagem(self):
+        """Pesagem mais recente (por data), ou None."""
+        return self.pesagens.order_by("-data", "-criado_em").first()
+
+    @property
     def especie_emoji(self) -> str:
         return {"cao": "🐶", "gato": "🐱"}.get(self.especie, "🐾")
 
@@ -92,6 +97,25 @@ class Paciente(models.Model):
         if meses or not partes:
             partes.append(f"{meses} mes{'es' if meses != 1 else ''}")
         return " e ".join(partes)
+
+
+class Pesagem(models.Model):
+    """Aba Peso da Ficha: histórico de pesagens. `Paciente.peso` guarda sempre
+    a mais recente (por data) — é o que vale pra faixa P/M/G, receitas etc."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name="pesagens")
+    peso = models.DecimalField("Peso (kg)", max_digits=6, decimal_places=2)
+    data = models.DateField(default=date.today)
+    obs = models.CharField("Observação", max_length=200, blank=True)
+    usuario_nome = models.CharField(max_length=150, blank=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-data", "-criado_em"]
+
+    def __str__(self):
+        return f"{self.paciente} · {self.peso} kg · {self.data}"
 
 
 class Nota(models.Model):
@@ -189,6 +213,10 @@ class Exame(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name="exames")
+    tipo = models.ForeignKey(
+        "financeiro.TipoExame", on_delete=models.SET_NULL, null=True, blank=True, related_name="exames_anexados",
+        verbose_name="Tipo de exame",
+    )
     nome = models.CharField(max_length=200)
     # Atendimento (#numero) a que o exame se refere — opcional, escolhido ao anexar.
     atendimento = models.ForeignKey(

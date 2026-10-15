@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Entrada de estoque — Vettro{% endblock %}
 {% block content %}
+{% include "estoque/_subnav.html" with aba="produtos" %}
 <div class="card" x-data="{ produtos: {{ produtos_json }}, insumoId: '{{ insumo_inicial|escapejs }}', lancarEm: '{{ lancar_em_inicial|escapejs }}', quantidade: '{{ form.quantidade.value|default:''|escapejs }}',
      get p() { return this.produtos[this.insumoId]; },
      get total() { const q = parseFloat(String(this.quantidade).replace(',', '.')) || 0; return this.p ? (this.lancarEm === 'embalagem' ? q * parseFloat(this.p.conteudo) : q) : 0; } }">

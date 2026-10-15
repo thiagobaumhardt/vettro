@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Análise de estoque — Vettro{% endblock %}
+{% block content %}
+{% include "estoque/_subnav.html" %}
+<div class="ag-metricas">
+  <div class="card ag-metrica"><span>Capital em estoque</span><strong>R$ {{ totais.capital_total|floatformat:2 }}</strong><small>pelo último custo de compra</small></div>
+  <div class="card ag-metrica"><span>A repor</span><strong>R$ {{ totais.a_repor|floatformat:2 }}</strong><small>{{ repor|length }} produto{{ repor|length|pluralize }}</small></div>
+  <div class="card ag-metrica"><span>Excedente</span><strong>R$ {{ totais.excedente|floatformat:2 }}</strong><small>{{ excedentes|length }} acima do ideal</small></div>
+  <div class="card ag-metrica"><span>Capital parado</span><strong>R$ {{ totais.parado|floatformat:2 }}</strong><small>{{ parados|length }} sem saída há {{ janela }}+ dias</small></div>
+  <div class="card ag-metrica"><span>Novos produtos</span><strong>R$ {{ totais.novos|floatformat:2 }}</strong><small>{{ novos|length }} cadastrados em {{ janela }} dias</small></div>
+</div>
+
+<div class="card">
+  <div class="ag-visoes">
+    <a href="?visao=repor" class="{% if visao == 'repor' %}ativa{% endif %}">Sugestão de compra</a>
+    <a href="?visao=excedentes" class="{% if visao == 'excedentes' %}ativa{% endif %}">Excedentes</a>
+    <a href="?visao=parados" class="{% if visao == 'parados' %}ativa{% endif %}">Parados</a>
+    <a href="?visao=novos" class="{% if visao == 'novos' %}ativa{% endif %}">Novos</a>
+  </div>
+  <p style="color:var(--muted); font-size:.85rem; margin:12px 0 0;">
+    Consumo = vendas, atendimentos e consumo interno dos últimos {{ janela }} dias. Estoque ideal = consumo diário × frequência de compras de {{ frequencia }} dias (em Clínica).
+  </p>
+</div>
+
+{% if visao == "repor" %}
+  <div class="card"><p style="color:var(--muted); margin-top:0;">Comprar até o estoque ideal — R$ {{ totais.a_repor|floatformat:2 }} pelo último custo de compra.</p>
+    {% include "estoque/_analise_tabela.html" with linhas=repor modo="repor" %}</div>
+{% elif visao == "excedentes" %}
+  <div class="card"><p style="color:var(--muted); margin-top:0;">Estoque acima de 2× o ideal. Considere promoções, kits ou suspender a compra.</p>
+    {% include "estoque/_analise_tabela.html" with linhas=excedentes modo="excedentes" %}</div>
+{% elif visao == "parados" %}
+  <div class="card"><p style="color:var(--muted); margin-top:0;">Sem nenhuma saída há mais de {{ janela }} dias. Avalie promoção, kit, devolução ou parar de comprar.</p>
+    {% include "estoque/_analise_tabela.html" with linhas=parados modo="parados" %}</div>
+{% else %}
+  <div class="card"><p style="color:var(--muted); margin-top:0;">Produtos cadastrados nos últimos {{ janela }} dias e como estão saindo.</p>
+    {% include "estoque/_analise_tabela.html" with linhas=novos modo="novos" %}</div>
+{% endif %}
+{% endblock %}

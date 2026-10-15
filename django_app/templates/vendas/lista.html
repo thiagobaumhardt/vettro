@@ -11,7 +11,7 @@
   </p>
 
   <form method="get" class="form-grid" style="grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); margin-bottom:14px;">
-    <div style="grid-column:span 2;"><label>Buscar</label><input type="search" name="q" value="{{ filtros.q }}" placeholder="Nº ou cliente..."></div>
+    <div style="grid-column:span 2;"><label>Buscar</label><input type="search" name="q" value="{{ filtros.q }}" placeholder="Nº, cliente ou CPF..."></div>
     <div><label>De</label><input type="date" name="de" value="{{ filtros.de }}"></div>
     <div><label>Até</label><input type="date" name="ate" value="{{ filtros.ate }}"></div>
     <div style="display:flex; align-items:flex-end; gap:8px;">
@@ -20,24 +20,25 @@
     </div>
   </form>
   <p style="color:var(--muted); margin:0 0 8px;">
-    No filtro: {{ resumo.qtd }} venda{{ resumo.qtd|pluralize }} · total R$ {{ resumo.total|default:0|floatformat:2 }} · descontos R$ {{ resumo.descontos|default:0|floatformat:2 }} (canceladas não entram)
+    No filtro: {{ resumo.qtd }} venda{{ resumo.qtd|pluralize }} · total R$ {{ resumo.total|default:0|floatformat:2 }} · descontos R$ {{ resumo.descontos|default:0|floatformat:2 }}
+    · <strong style="color:var(--verde-escuro);">lucro R$ {{ lucro.valor|floatformat:2 }}</strong>{% if lucro.sem_custo %} <small>({{ lucro.sem_custo }} venda{{ lucro.sem_custo|pluralize }} sem valor de compra ficaram de fora)</small>{% endif %} (canceladas não entram)
   </p>
 
   {% if pagina.object_list %}
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Produtos</th><th style="text-align:right;">Total</th><th>Pagamento</th><th>Vendido por</th><th></th></tr></thead>
+      <thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th style="text-align:right;">Total</th><th style="text-align:right;">Lucro</th><th>Pagamento</th><th>Vendido por</th><th></th></tr></thead>
       <tbody>
         {% for v in pagina.object_list %}
         <tr {% if v.cancelada_em %}style="opacity:.55;"{% endif %}>
           <td><a href="{% url 'vendas:detalhe' v.pk %}"><strong>#{{ v.numero }}</strong></a></td>
           <td style="white-space:nowrap;">{{ v.criado_em|date:"d/m/Y H:i" }}</td>
-          <td>{{ v.cliente_nome|default:"—" }}</td>
-          <td>{% for i in v.itens %}<span class="badge" style="background:var(--c-neutro);">{{ i.nome }} ×{{ i.qtd|floatformat:"-3" }}{% if i.unidade and i.unidade != "un." %} {{ i.unidade }}{% endif %}</span>{% endfor %}</td>
+          <td>{{ v.cliente_nome|default:"—" }}{% if v.cliente_cpf %}<br><small style="color:var(--muted);">CPF {{ v.cliente_cpf }}</small>{% endif %}</td>
           <td style="text-align:right; white-space:nowrap;">
             {% if v.desconto_valor %}<s style="color:var(--muted);">R$ {{ v.subtotal }}</s><br>{% endif %}<strong>R$ {{ v.total }}</strong>
             {% if v.desconto_valor %}<br><small style="color:var(--muted);" title="{{ v.desconto_motivo }}">−R$ {{ v.desconto_valor }}{% if v.desconto_tipo == "percentual" %} ({{ v.desconto_informado|floatformat:"-2" }}%){% endif %}: {{ v.desconto_motivo|truncatechars:30 }}</small>{% endif %}
           </td>
+          <td style="text-align:right; white-space:nowrap;">{% if v.lucro is not None %}<strong style="color:{% if v.lucro < 0 %}var(--perigo){% else %}var(--verde-escuro){% endif %};">R$ {{ v.lucro }}</strong>{% else %}<small style="color:var(--muted);">—</small>{% endif %}</td>
           <td>{{ v.get_forma_pagamento_display }}</td>
           <td>{{ v.usuario_nome|default:"—" }}</td>
           <td style="white-space:nowrap;">

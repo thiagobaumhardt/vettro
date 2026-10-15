@@ -73,6 +73,9 @@ class NotaFiscalEmitida(models.Model):
     cobranca = models.ForeignKey(
         "financeiro.Cobranca", on_delete=models.PROTECT, related_name="notas_fiscais", null=True, blank=True,
     )
+    recebimento = models.ForeignKey(
+        "financeiro.Recebimento", on_delete=models.PROTECT, related_name="notas_fiscais", null=True, blank=True,
+    )
     venda = models.ForeignKey(
         "vendas.Venda", on_delete=models.PROTECT, related_name="notas_fiscais", null=True, blank=True,
     )

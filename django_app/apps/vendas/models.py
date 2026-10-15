@@ -5,7 +5,8 @@ from django.db import models
 
 class Venda(models.Model):
     """Venda de balcão de produtos do estoque, SEM vínculo com paciente
-    (ração, antipulgas, acessórios...). Nasce paga — não gera Cobrança — e
+    (ração, antipulgas, acessórios...). Cliente é opcional: se ele der o CPF,
+    a venda guarda o CPF e, se já for tutor cadastrado, liga ao Tutor. Nasce paga — não gera Cobrança — e
     dá baixa no estoque na hora (SD2 `venda_produto`, origem "venda").
     Cancelar estorna o estoque (SD3 `estorno_consumo`)."""
 
@@ -17,6 +18,11 @@ class Venda(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     numero = models.PositiveIntegerField(unique=True, editable=False)  # sequencial por clínica
     cliente_nome = models.CharField("Cliente (opcional)", max_length=150, blank=True)
+    # CPF na nota (opcional, perguntado no balcão). Se for de um tutor cadastrado, liga a venda a ele.
+    cliente_cpf = models.CharField("CPF do cliente", max_length=14, blank=True)
+    tutor = models.ForeignKey(
+        "tutores.Tutor", on_delete=models.SET_NULL, null=True, blank=True, related_name="vendas",
+    )
 
     # [{"insumo_id", "nome", "qtd", "valor"}] — snapshot do preço no momento da venda.
     itens = models.JSONField(default=list)
@@ -38,3 +44,22 @@ class Venda(models.Model):
 
     def __str__(self):
         return f"Venda #{self.numero}"
+
+    @property
+    def custo_total(self):
+        """Soma do valor de compra dos itens (guardado na hora da venda).
+        None se algum item não tinha valor de compra cadastrado."""
+        from decimal import Decimal
+
+        total = Decimal("0")
+        for item in self.itens:
+            if item.get("custo") is None:
+                return None
+            total += Decimal(item["custo"]) * Decimal(str(item["qtd"]))
+        return total.quantize(Decimal("0.01"))
+
+    @property
+    def lucro(self):
+        """Total recebido (já com desconto) − valor de compra dos itens."""
+        custo = self.custo_total
+        return None if custo is None else self.total - custo

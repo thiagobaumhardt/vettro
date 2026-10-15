@@ -1,0 +1,3 @@
+{# Visão Dia: uma coluna por veterinário (escala), grade de horários. #}
+<div class="ag-periodo"><a href="{{ url_anterior }}" class="btn-secondary btn ag-seta" aria-label="Anterior" title="Anterior">‹</a><strong>{{ titulo }}</strong><a href="{{ url_proximo }}" class="btn-secondary btn ag-seta" aria-label="Próximo" title="Próximo">›</a><span>{{ total_dia }} agendamento{{ total_dia|pluralize }} no dia</span>{% include "agenda/_acoes_topo.html" %}</div>
+{% include "agenda/_grade.html" with mostrar_local=False %}

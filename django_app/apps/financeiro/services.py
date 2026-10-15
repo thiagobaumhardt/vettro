@@ -85,6 +85,7 @@ def montar_insumos(usos: list[dict]) -> tuple[list[dict], Decimal, list[tuple[In
         itens.append({
             "id": str(insumo.id), "nome": insumo.nome, "valor": str(insumo.valor),
             "qtd": f"{qtd.normalize():f}", "unidade": insumo.unidade_rotulo, "subtotal": str(subtotal),
+            "custo": str(insumo.custo) if insumo.custo is not None else None,
         })
         total += subtotal
         debitos.append((insumo, qtd))

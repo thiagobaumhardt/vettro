@@ -7,6 +7,16 @@
       hx-post="{{ url }}" hx-target="#ficha-conteudo" hx-encoding="multipart/form-data">
   {% csrf_token %}
   <div class="form-grid">
+    {% if tipos_exames is not None %}
+    <div class="full">
+      <label for="anexo-tipo-exame">Tipo de exame</label>
+      <select id="anexo-tipo-exame" name="tipo_exame" required>
+        <option value="">Selecione o exame...</option>
+        {% for t in tipos_exames %}<option value="{{ t.pk }}">{{ t.nome }}</option>{% endfor %}
+      </select>
+      {% if not tipos_exames %}<small style="color:var(--muted);">Nenhum tipo de exame cadastrado (Serviços → Tipos de exame).</small>{% endif %}
+    </div>
+    {% endif %}
     <div class="full">
       <label for="anexo-arquivos">{{ rotulo_arquivo }}</label>
       <input id="anexo-arquivos" type="file" name="arquivos" accept="{{ accept }}" multiple required>
@@ -21,7 +31,7 @@
       <select id="anexo-atendimento" name="atendimento">
         <option value="">Sem vínculo</option>
         {% for a in atendimentos_paciente %}
-        <option value="{{ a.pk }}">#{{ a.numero }} · {{ a.get_tipo_display }} · {{ a.data|date:"d/m/Y" }}</option>
+        <option value="{{ a.pk }}">{{ a.numero }} · {{ a.get_tipo_display }} · {{ a.data|date:"d/m/Y" }}</option>
         {% endfor %}
       </select>
       {% if not atendimentos_paciente %}<small style="color:var(--muted);">Este paciente ainda não tem atendimentos.</small>{% endif %}

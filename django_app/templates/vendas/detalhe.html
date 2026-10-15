@@ -12,6 +12,15 @@
       <a href="{% url 'vendas:comprovante' venda.pk %}" target="_blank" class="btn-primary btn">Imprimir comprovante</a>
     </div>
   </div>
+  <p style="margin:0 0 8px;"><strong>Cliente:</strong>
+    {% if venda.tutor_id %}<a href="{% url 'tutores:detalhe' venda.tutor_id %}">{{ venda.cliente_nome|default:venda.tutor.nome }}</a> (tutor cadastrado)
+    {% else %}{{ venda.cliente_nome|default:"Consumidor não identificado" }}{% endif %}
+    {% if venda.cliente_cpf %} · CPF {{ venda.cliente_cpf }}{% endif %}
+  </p>
+  <p style="margin:0 0 12px;">
+    {% if venda.lucro is not None %}Valor de compra dos itens: R$ {{ venda.custo_total }} · <strong style="color:{% if venda.lucro < 0 %}var(--perigo){% else %}var(--verde-escuro){% endif %};">Lucro: R$ {{ venda.lucro }}</strong>
+    {% else %}<span style="color:var(--muted);">Lucro indisponível: algum produto não tinha valor de compra cadastrado na hora da venda.</span>{% endif %}
+  </p>
   {% include "pagamentos/_nota_status.html" %}
   {% if not nota or nota.status == "erro" %}{% if not venda.cancelada_em %}
   <form method="post" action="{% url 'notas:emitir_venda' venda.pk %}" style="margin:-4px 0 14px;">{% csrf_token %}

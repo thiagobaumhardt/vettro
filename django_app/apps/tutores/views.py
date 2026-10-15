@@ -68,6 +68,19 @@ def detalhe(request, pk):
         from apps.financeiro.services import valor_a_pagar_do_tutor
 
         contexto["valor_a_pagar"] = valor_a_pagar_do_tutor(tutor)
+    # Aba Financeiro: quem recebe pagamentos (Recepção/admin) e o vet (só
+    # consulta — vê se o atendimento que acabou de fazer já foi pago).
+    from apps.core.decorators import secoes_permitidas
+
+    pode_receber = "recepcao" in secoes_permitidas(request)
+    if pode_receber or request.session.get("papel") == "vet":
+        from apps.financeiro.models import Cobranca
+
+        contexto["cobrancas"] = (Cobranca.objects.filter(paciente__tutor=tutor)
+                                 .select_related("paciente", "recebimento").prefetch_related("recebimento__pagamentos"))
+        aba = request.GET.get("aba", "animais")
+        contexto["aba"] = "financeiro" if aba in ("financeiro", "cobrancas") else "animais"
+        contexto["pode_receber"] = pode_receber
     return render(request, "tutores/detalhe.html", contexto)
 
 

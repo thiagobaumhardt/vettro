@@ -43,12 +43,16 @@
 
 <div class="card">
   <div class="section-title">Fechar agenda</div>
-  <p style="color:var(--muted);">Bloqueia novos agendamentos — de um consultório específico ou de todos de uma vez (bloqueio geral), por dia inteiro ou só um turno, uma vez só ou repetindo toda semana — ação restrita ao admin da clínica.</p>
+  <p style="color:var(--muted);">Bloqueia novos agendamentos — da clínica inteira ou de um consultório (almoço, folga, imprevisto) — por dia inteiro, turno ou horário específico, uma vez só ou repetindo toda semana. Ação restrita ao admin da clínica.</p>
   <form method="post" action="{% url 'agenda:bloqueio_novo' %}">
     {% csrf_token %}
     <div class="form-grid">
       <div><label>Consultório</label>{{ bloqueio_form.consultorio }}</div>
-      <div><label>Turno</label>{{ bloqueio_form.turno }}</div>
+      <div><label>Período do dia</label>{{ bloqueio_form.turno }}</div>
+      <div style="display:flex; gap:10px;">
+        <div style="flex:1;"><label>Das <small style="color:var(--muted);">(horário específico)</small></label>{{ bloqueio_form.hora_inicio }}</div>
+        <div style="flex:1;"><label>Até</label>{{ bloqueio_form.hora_fim }}</div>
+      </div>
       <div><label>{% if bloqueio_form.recorrente.value %}A partir de{% else %}De{% endif %}</label>{{ bloqueio_form.data_inicio }}</div>
       <div><label>Até <small style="color:var(--muted);">(opcional se recorrente)</small></label>{{ bloqueio_form.data_fim }}</div>
       <div><label style="display:flex; align-items:center; gap:8px;">{{ bloqueio_form.recorrente }} Repetir toda semana</label></div>
@@ -64,7 +68,7 @@
   {% for b in bloqueios %}
   <div class="card" style="box-shadow:none; border:1px solid var(--border); border-left:3px solid var(--perigo); margin-bottom:8px;">
     <div style="display:flex; justify-content:space-between;">
-      <strong>{% if b.consultorio %}{{ b.consultorio.nome }}{% else %}Todos os consultórios{% endif %} · {{ b.get_turno_display }}</strong>
+      <strong>{{ b.alvo }} · {{ b.descricao_faixa }}</strong>
       {% if b.recorrente %}
         <span>Toda(o) {{ b.get_dia_semana_display }} · a partir de {{ b.data_inicio|date:"d/m/Y" }}{% if b.data_fim %} até {{ b.data_fim|date:"d/m/Y" }}{% endif %}</span>
       {% else %}

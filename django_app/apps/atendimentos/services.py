@@ -28,7 +28,7 @@ def _incluir_insumo_da_vacina(usos_insumos: list[dict], vacina) -> list[dict]:
 @transaction.atomic
 def criar_atendimento(
     *, paciente, tipo: str, retorno_de, vacina, dose: str, data_proxima_dose, data_retorno=None, lembrete_dias_antes=None,
-    data, hora, servico_ids, usos_insumos, plantao: bool, obs: str, usuario,
+    data, hora, servico_ids, usos_insumos, plantao: bool, obs: str, usuario, orcamento=None,
 ) -> Atendimento:
     vacinacao = tipo == Atendimento.Tipo.VACINACAO
     if vacinacao:
@@ -48,6 +48,7 @@ def criar_atendimento(
     atendimento = Atendimento.objects.create(
         numero=_proximo_numero(), tipo=tipo,
         retorno_de=retorno_de if tipo == Atendimento.Tipo.RETORNO else None,
+        orcamento=orcamento,
         vacina=vacina if vacinacao else None,
         vacina_nome=vacina.nome if vacinacao and vacina else "",
         dose=dose if vacinacao else "",
@@ -70,7 +71,7 @@ def criar_atendimento(
 
     financeiro_services.criar_cobranca_automatica(
         paciente=paciente, servicos_itens=servicos_para_cobranca, insumos_itens=insumos_itens,
-        total=total, obs=f"Atendimento #{atendimento.numero} ({atendimento.get_tipo_display()})",
+        total=total, obs=f"Atendimento {atendimento.numero} ({atendimento.get_tipo_display()})",
         atendimento=atendimento,
     )
     return atendimento

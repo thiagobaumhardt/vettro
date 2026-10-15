@@ -53,7 +53,7 @@ class Command(BaseCommand):
         enviados = 0
         agendamentos = (
             Agendamento.objects.filter(data=amanha, lembrete_enviado_em__isnull=True)
-            .exclude(status="cancelado")
+            .exclude(status__in=["cancelado", "realizado"])
             .exclude(tutor_tel="")
             .select_related("paciente__tutor")
         )

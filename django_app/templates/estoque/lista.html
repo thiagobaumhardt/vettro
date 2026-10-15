@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Estoque — Vettro{% endblock %}
 {% block content %}
+{% include "estoque/_subnav.html" with aba="produtos" %}
 
 {% if alertas.zerados or alertas.baixos %}
 <div class="card" style="background:var(--c-aviso); border:1px dashed var(--c-aviso-borda);">
@@ -12,7 +13,7 @@
 {% if alertas.sem_ncm %}
 <div class="card" style="background:var(--c-info); border:1px dashed var(--c-info-borda);">
   <div class="section-title">Produtos sem NCM ({{ alertas.sem_ncm|length }})</div>
-  <p style="margin:0 0 8px; font-size:.88rem; color:var(--muted);">Sem NCM não dá para emitir a nota fiscal da venda no balcão. Produtos que entram pelo XML do fornecedor já vêm com NCM — estes foram cadastrados à mão.</p>
+  <p style="margin:0 0 8px; font-size:.88rem; color:var(--muted);">Sem NCM não dá para emitir a nota fiscal da venda no balcão. Produtos que entram pelo XML da nota de compra já vêm com NCM — estes foram cadastrados à mão.</p>
   {% for i in alertas.sem_ncm %}{% if papel_ativo == "admin" %}<a href="{% url 'estoque:editar' i.pk %}" class="badge" style="background:var(--c-info); color:var(--verde-escuro); text-decoration:none;">{{ i.nome }} →</a>{% else %}<span class="badge" style="background:var(--c-info); color:var(--verde-escuro); text-decoration:none;">{{ i.nome }} →</span>{% endif %}{% endfor %}
 </div>
 {% endif %}

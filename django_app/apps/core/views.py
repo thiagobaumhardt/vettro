@@ -23,7 +23,8 @@ class ConfiguracaoClinicaForm(forms.ModelForm):
             "razao_social", "cnpj", "telefone", "email",
             "cep", "endereco", "numero", "complemento", "bairro", "cidade", "uf",
             "regime_tributario", "cfop_venda", "cst_csosn_venda", "cfop_venda_st", "cst_csosn_venda_st",
-            "marca_dagua", "validade_orcamento_dias",
+            "marca_dagua", "validade_orcamento_dias", "agenda_hora_inicio", "agenda_hora_fim", "agenda_intervalo_min",
+            "estoque_frequencia_compra_dias",
         ]
 
     def _codigo(self, campo, digitos):

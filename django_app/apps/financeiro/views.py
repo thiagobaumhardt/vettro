@@ -7,8 +7,14 @@ from .forms import CirurgiaCategoriaForm, ServicoForm
 from .models import Cobranca, CirurgiaCategoria, Servico
 
 
-def _renderizar_catalogo(request, servico_form=None, categoria_form=None, editando_servico=None, editando_categoria=None):
+def _renderizar_catalogo(request, servico_form=None, categoria_form=None, editando_servico=None, editando_categoria=None,
+                         exame_form=None, editando_exame=None):
+    from .forms import TipoExameForm
+    from .models import TipoExame
+
     return render(request, "financeiro/catalogo.html", {
+        "tipos_exames": TipoExame.objects.all(),
+        "exame_form": exame_form or TipoExameForm(instance=editando_exame), "editando_exame": editando_exame,
         "servicos": Servico.objects.all(),
         "categorias": CirurgiaCategoria.objects.all(),
         "servico_form": servico_form or ServicoForm(),
@@ -34,6 +40,32 @@ def servico_salvar(request, pk=None):
             return redirect("financeiro:catalogo")
         return _renderizar_catalogo(request, servico_form=form, editando_servico=servico)
     return _renderizar_catalogo(request, servico_form=ServicoForm(instance=servico), editando_servico=servico)
+
+
+@requer_secao("financeiro")
+def tipo_exame_salvar(request, pk=None):
+    from .forms import TipoExameForm
+    from .models import TipoExame
+
+    exame = get_object_or_404(TipoExame, pk=pk) if pk else None
+    if request.method == "POST":
+        form = TipoExameForm(request.POST, instance=exame)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Tipo de exame salvo.")
+            return redirect("financeiro:catalogo")
+        return _renderizar_catalogo(request, exame_form=form, editando_exame=exame)
+    return _renderizar_catalogo(request, editando_exame=exame)
+
+
+@requer_secao("financeiro")
+def tipo_exame_excluir(request, pk):
+    from .models import TipoExame
+
+    if request.method == "POST":
+        get_object_or_404(TipoExame, pk=pk).delete()
+        messages.success(request, "Tipo de exame excluído.")
+    return redirect("financeiro:catalogo")
 
 
 @requer_secao("financeiro")

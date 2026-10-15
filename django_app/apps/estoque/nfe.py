@@ -117,3 +117,27 @@ def parsear_nfe(conteudo_xml: bytes) -> list[dict]:
         raise NFeInvalidaError("Nenhum item encontrado na NF-e.")
 
     return itens
+
+
+
+def parsear_cabecalho_nfe(conteudo_xml: bytes) -> dict:
+    """Emitente (fornecedor), número, chave e data de emissão da NF-e."""
+    try:
+        raiz = ET.fromstring(conteudo_xml)
+    except ET.ParseError as exc:
+        raise NFeInvalidaError("XML inválido.") from exc
+    inf_nfe = _achar(raiz, "infNFe")
+    if inf_nfe is None:
+        raise NFeInvalidaError("Tag <infNFe> não encontrada — XML não parece ser uma NF-e.")
+    emit = _achar(inf_nfe, "emit")
+    ide = _achar(inf_nfe, "ide")
+    chave = (inf_nfe.get("Id") or "").replace("NFe", "")
+    emissao = _texto(ide, "dhEmi") if ide is not None else None
+    return {
+        "cnpj": _texto(emit, "CNPJ", "") if emit is not None else "",
+        "nome": (_texto(emit, "xFant") or _texto(emit, "xNome", "")) if emit is not None else "",
+        "telefone": _texto(_achar(emit, "enderEmit"), "fone", "") if emit is not None and _achar(emit, "enderEmit") is not None else "",
+        "numero": _texto(ide, "nNF", "") if ide is not None else "",
+        "chave": chave if len(chave) == 44 else "",
+        "emissao": emissao[:10] if emissao else "",
+    }

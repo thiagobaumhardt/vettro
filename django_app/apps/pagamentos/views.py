@@ -32,6 +32,19 @@ def emitir_cobranca(request, pk):
     return redirect(reverse("pacientes:ficha", args=[cobranca.paciente_id]) + "?aba=cobranca")
 
 
+@requer_secao("recepcao")
+def emitir_recebimento(request, pk):
+    from apps.financeiro.models import Recebimento
+
+    rec = get_object_or_404(Recebimento, pk=pk)
+    if request.method == "POST":
+        try:
+            _avisar(request, notas.emitir(recebimento=rec, clinica_nome=request.session.get("clinica_nome", ""), usuario=request.user))
+        except notas.NotaFiscalError as exc:
+            messages.error(request, str(exc))
+    return redirect("recepcao:recibo", pk=rec.pk)
+
+
 @requer_secao("vendas")
 def emitir_venda(request, pk):
     venda = get_object_or_404(Venda, pk=pk)
@@ -49,7 +62,12 @@ def pdf(request, pk):
     nota = get_object_or_404(NotaFiscalEmitida, pk=pk)
     if not request.user.is_authenticated:
         return redirect("contas:login")
-    permitido = request.session.get("papel") == "admin" if nota.cobranca_id else "vendas" in secoes_permitidas(request)
+    if nota.recebimento_id:
+        permitido = "recepcao" in secoes_permitidas(request)
+    elif nota.cobranca_id:
+        permitido = request.session.get("papel") == "admin"
+    else:
+        permitido = "vendas" in secoes_permitidas(request)
     if not permitido:
         raise PermissionDenied("Sem acesso a esta nota.")
     resposta = HttpResponse(notas.pdf_nota(nota, clinica_nome=request.session.get("clinica_nome", "")), content_type="application/pdf")

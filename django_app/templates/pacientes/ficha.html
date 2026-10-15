@@ -10,8 +10,11 @@
       <h2 style="margin:0;">{{ paciente.nome }}</h2>
       <p style="margin:0; color:var(--muted);">
         {{ paciente.get_especie_display }}{% if paciente.raca %} · {{ paciente.raca }}{% endif %}
-        {% if paciente.data_nascimento %}· {{ paciente.idade_texto }}{% endif %}{% if paciente.peso %} · {{ paciente.peso }} kg{% endif %}
+        {% if paciente.data_nascimento %}· {{ paciente.idade_texto }}{% endif %}
       </p>
+      <div hx-get="{% url 'pacientes:pesagem_cabecalho' paciente.pk %}" hx-trigger="peso-atualizado from:body" hx-swap="innerHTML">
+        {% include "pacientes/ficha/_peso_cabecalho.html" %}
+      </div>
       {% if paciente.tutor %}<p style="margin:0; color:var(--muted);">{{ paciente.tutor.nome }} · {{ paciente.tutor.tel }}</p>{% endif %}
       {% for c in paciente.condicoes.all %}<span class="badge" style="background:var(--c-alerta); margin-top:4px;">{{ c.nome }}</span>{% endfor %}
     </div>
@@ -31,6 +34,9 @@
     <a href="{% url 'pacientes:ficha' paciente.pk %}?aba=historico"
        hx-get="{% url 'pacientes:ficha_aba' paciente.pk 'historico' %}" hx-target="#ficha-conteudo" hx-push-url="{% url 'pacientes:ficha' paciente.pk %}?aba=historico"
        class="btn aba-ficha" :class="aba === 'historico' && 'ativa'" @click="aba = 'historico'">Histórico</a>
+    <a href="{% url 'pacientes:ficha' paciente.pk %}?aba=peso"
+       hx-get="{% url 'pacientes:ficha_aba' paciente.pk 'peso' %}" hx-target="#ficha-conteudo" hx-push-url="{% url 'pacientes:ficha' paciente.pk %}?aba=peso"
+       class="btn aba-ficha" :class="aba === 'peso' && 'ativa'" @click="aba = 'peso'">Peso</a>
     {% if "pacientes_clinico" in secoes_permitidas %}
     <a href="{% url 'pacientes:ficha' paciente.pk %}?aba=anamnese"
        hx-get="{% url 'pacientes:ficha_aba' paciente.pk 'anamnese' %}" hx-target="#ficha-conteudo" hx-push-url="{% url 'pacientes:ficha' paciente.pk %}?aba=anamnese"
@@ -65,6 +71,8 @@
       {% include "pacientes/ficha/_ficha_info.html" %}
     {% elif aba_ativa == "historico" %}
       {% include "pacientes/ficha/_ficha_historico.html" %}
+    {% elif aba_ativa == "peso" %}
+      {% include "pacientes/ficha/_ficha_peso.html" %}
     {% elif aba_ativa == "notas" %}
       {% include "pacientes/ficha/_ficha_notas.html" %}
     {% elif aba_ativa == "anamnese" %}

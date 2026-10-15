@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load formatos %}
 {% block title %}Serviços — Vettro{% endblock %}
 {% block content %}
 
@@ -9,6 +10,9 @@
     <div class="form-grid">
       <div><label>Nome</label>{{ servico_form.nome }}</div>
       <div><label>Valor</label>{{ servico_form.valor }}</div>
+      <div><label>Duração na agenda</label>{{ servico_form.duracao_min }}</div>
+      <div><label>Tipo de atendimento <small style="color:var(--muted);">(define a cor na agenda)</small></label>{{ servico_form.tipo }}</div>
+      <div style="display:flex; align-items:flex-end;"><label style="display:flex; align-items:center; gap:8px; margin:0 0 10px;">{{ servico_form.na_agenda }} Aparece no agendamento</label></div>
       <div><label>Cobrado por (opcional)</label>{{ servico_form.unidade_cobranca }}
         <small style="color:var(--muted);">Ex.: "hora" para oxigenoterapia — no atendimento você informa quantas horas. Em branco = por vez.</small>
       </div>
@@ -26,11 +30,12 @@
   <div class="section-title">Serviços cadastrados</div>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Nome</th><th>Valor</th><th>Ações</th></tr></thead>
+      <thead><tr><th>Nome</th><th>Valor</th><th>Duração</th><th>Ações</th></tr></thead>
       <tbody>
         {% for s in servicos %}
         <tr>
-          <td>{{ s.nome }}</td><td>R$ {{ s.valor }}{% if s.unidade_cobranca %} <small style="color:var(--muted);">/ {{ s.unidade_cobranca }}</small>{% endif %}</td>
+          <td>{% if s.tipo %}<i class="ag-cor tipo-{{ s.tipo }}"></i> {% endif %}{{ s.nome }}{% if not s.na_agenda %} <small style="color:var(--muted);">(fora do agendamento)</small>{% endif %}</td><td>R$ {{ s.valor }}{% if s.unidade_cobranca %} <small style="color:var(--muted);">/ {{ s.unidade_cobranca }}</small>{% endif %}</td>
+          <td>{{ s.duracao_min|duracao }}</td>
           <td>
             <a href="{% url 'financeiro:servico_editar' s.pk %}" class="btn-secondary btn">Editar</a>
             <form method="post" action="{% url 'financeiro:servico_excluir' s.pk %}" style="display:inline;">
@@ -85,6 +90,43 @@
         </tr>
         {% empty %}<tr><td colspan="5" class="empty">Nenhum procedimento cadastrado.</td></tr>
         {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" id="tipos-exames">
+  <div class="section-title">{% if editando_exame %}Editar tipo de exame{% else %}Tipos de exame{% endif %} <small style="color:var(--muted); text-transform:none; letter-spacing:0;">(aparecem na seção Exames do agendamento)</small></div>
+  <form method="post" action="{% if editando_exame %}{% url 'financeiro:tipo_exame_editar' editando_exame.pk %}{% else %}{% url 'financeiro:tipo_exame_novo' %}{% endif %}">
+    {% csrf_token %}
+    <div class="form-grid">
+      <div><label>Exame</label>{{ exame_form.nome }}</div>
+      <div><label>Duração na agenda</label>{{ exame_form.duracao_min }}</div>
+      <div><label>Valor (opcional)</label>{{ exame_form.valor }}</div>
+      <div style="display:flex; align-items:flex-end;"><label style="display:flex; align-items:center; gap:8px; margin:0 0 10px;">{{ exame_form.ativo }} Ativo</label></div>
+    </div>
+    {% if exame_form.errors %}<p class="login-error">{{ exame_form.errors.as_text }}</p>{% endif %}
+    <div style="margin-top:12px; display:flex; gap:10px;">
+      <button type="submit" class="btn-primary btn">{% if editando_exame %}Salvar{% else %}Adicionar exame{% endif %}</button>
+      {% if editando_exame %}<a href="{% url 'financeiro:catalogo' %}" class="btn-secondary btn">Cancelar</a>{% endif %}
+    </div>
+  </form>
+  <div class="table-wrap" style="margin-top:14px;">
+    <table>
+      <thead><tr><th>Exame</th><th>Duração</th><th>Valor</th><th>Situação</th><th>Ações</th></tr></thead>
+      <tbody>
+        {% for e in tipos_exames %}
+        <tr>
+          <td>{{ e.nome }}</td><td>{{ e.duracao_min|duracao }}</td><td>{% if e.valor is not None %}R$ {{ e.valor }}{% else %}—{% endif %}</td>
+          <td>{% if e.ativo %}Ativo{% else %}<span style="color:var(--muted);">Inativo</span>{% endif %}</td>
+          <td>
+            <a href="{% url 'financeiro:tipo_exame_editar' e.pk %}#tipos-exames" class="btn-secondary btn">Editar</a>
+            <form method="post" action="{% url 'financeiro:tipo_exame_excluir' e.pk %}" style="display:inline;">
+              {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir o exame {{ e.nome }}?">Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="5" class="empty">Nenhum tipo de exame cadastrado.</td></tr>{% endfor %}
       </tbody>
     </table>
   </div>

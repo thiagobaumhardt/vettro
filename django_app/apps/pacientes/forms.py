@@ -6,7 +6,7 @@ from .models import AnamneseHist, CirurgiaHist, CondicaoClinica, Nota, Paciente
 class PacienteForm(forms.ModelForm):
     class Meta:
         model = Paciente
-        fields = ["tutor", "nome", "especie", "raca", "sexo", "peso", "data_nascimento", "obs", "foto_perfil"]
+        fields = ["tutor", "nome", "especie", "raca", "sexo", "data_nascimento", "obs", "foto_perfil"]
         widgets = {
             "data_nascimento": forms.DateInput(attrs={"type": "date"}),
         }

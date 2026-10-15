@@ -5,7 +5,6 @@
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:10px; flex-wrap:wrap;">
     <h2 style="margin:0;">Atendimentos</h2>
     <div style="display:flex; gap:10px;">
-      <a href="{% url 'atendimentos:vacinas' %}" class="btn-secondary btn">Vacinas</a>
       <a href="{% url 'atendimentos:novo' %}" class="btn-primary btn">+ Novo Atendimento</a>
     </div>
   </div>
@@ -30,11 +29,6 @@
     </div>
     <div><label>De</label><input type="date" name="de" value="{{ filtros.de }}"></div>
     <div><label>Até</label><input type="date" name="ate" value="{{ filtros.ate }}"></div>
-    <div style="display:flex; align-items:flex-end; gap:8px;">
-      <label style="display:flex; align-items:center; gap:6px; margin:0;">
-        <input type="checkbox" name="plantao" value="1" {% if filtros.plantao == "1" %}checked{% endif %}> Só plantão
-      </label>
-    </div>
     <div style="display:flex; align-items:flex-end;">
       <a href="{% url 'atendimentos:lista' %}" class="btn-secondary btn">Limpar filtros</a>
     </div>

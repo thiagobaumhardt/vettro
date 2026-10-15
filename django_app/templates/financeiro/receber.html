@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Receber pagamento — Vettro{% endblock %}
+{% block content %}
+<form method="post" x-data="receberPagamento()" @submit="if (!podeConfirmar()) $event.preventDefault()">
+  {% csrf_token %}
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+      <h2 style="margin:0;">Receber pagamento — {% if tutor %}{{ tutor.nome }}{% else %}{{ pendentes.0.tutor_nome|default:pendentes.0.paciente.nome }}{% endif %}</h2>
+      <div style="display:flex; gap:10px;">
+        {% if tutor %}<a href="{% url 'tutores:detalhe' tutor.pk %}?aba=financeiro" class="btn-secondary btn">Ver tutor</a>{% endif %}
+        <a href="{% url 'dashboard:inicio' %}" class="btn-secondary btn">← Recepção</a>
+      </div>
+    </div>
+
+    <div class="section-title">Atendimentos a pagar</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th style="width:36px;"></th><th>Data</th><th>Paciente</th><th>Atendimento</th><th>Itens</th><th style="text-align:right;">Valor</th></tr></thead>
+        <tbody>
+          {% for c in pendentes %}
+          <tr>
+            <td><input type="checkbox" name="cobranca_ids" value="{{ c.pk }}" x-model="selecionadas"></td>
+            <td style="white-space:nowrap;">{{ c.criado_em|date:"d/m/Y H:i" }}</td>
+            <td>{{ c.paciente.nome }}</td>
+            <td>{{ c.obs|default:"Cobrança manual" }}</td>
+            <td>
+              {% for item in c.servicos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }}</span>{% endfor %}
+              {% for item in c.insumos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }} ×{{ item.qtd|floatformat:"-3" }}</span>{% endfor %}
+            </td>
+            <td style="text-align:right; white-space:nowrap;">R$ {{ c.total }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Pagamento</div>
+    <div class="form-grid">
+      <div><label>Desconto (opcional)</label>
+        <div style="display:flex; gap:6px;">
+          <select name="desconto_tipo" x-model="descontoTipo" style="width:80px;"><option value="valor">R$</option><option value="percentual">%</option></select>
+          <input type="text" name="desconto" x-model="desconto" inputmode="decimal" placeholder="0,00">
+        </div>
+      </div>
+      <div x-show="valorDesconto() > 0" x-cloak><label>Motivo do desconto</label>
+        <input type="text" name="desconto_motivo" maxlength="200" :required="valorDesconto() > 0" placeholder="Ex.: cliente fiel">
+      </div>
+    </div>
+
+    <div class="rec-totais">
+      <div><span>Subtotal</span><strong x-text="dinheiro(subtotal())"></strong></div>
+      <div x-show="valorDesconto() > 0" x-cloak><span>Desconto</span><strong x-text="'− ' + dinheiro(valorDesconto())"></strong></div>
+      <div class="rec-total"><span>Total a receber</span><strong x-text="dinheiro(total())"></strong></div>
+    </div>
+
+    <label style="margin-top:16px;">Formas de pagamento <small style="color:var(--muted);">(até 4 — ex.: 2 cartões, ou Pix + dinheiro)</small></label>
+    <template x-for="(f, i) in formas" :key="i">
+      <div class="rec-forma">
+        <select name="forma" x-model="f.forma">
+          {% for valor, rotulo in formas %}<option value="{{ valor }}">{{ rotulo }}</option>{% endfor %}
+        </select>
+        <input type="text" name="valor" x-model="f.valor" inputmode="decimal" placeholder="0,00" aria-label="Valor">
+        <select name="parcelas" x-model="f.parcelas" x-show="f.forma === 'credito'" :disabled="f.forma !== 'credito'" aria-label="Parcelas">
+          <template x-for="n in 12" :key="n"><option :value="n" x-text="n === 1 ? 'À vista' : n + 'x'"></option></template>
+        </select>
+        <input type="hidden" name="parcelas" value="1" x-bind:disabled="f.forma === 'credito'">
+        <button type="button" class="btn-secondary btn" x-show="formas.length > 1" @click="formas.splice(i, 1)">Remover</button>
+      </div>
+    </template>
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:8px;">
+      <button type="button" class="btn-secondary btn" x-show="formas.length < 4" @click="adicionarForma()">+ Outra forma de pagamento</button>
+      <span x-show="falta() > 0.004" class="rec-aviso" x-text="'Falta ' + dinheiro(falta())"></span>
+      <span x-show="troco() > 0.004 && trocoValido()" class="rec-ok" x-text="'Troco: ' + dinheiro(troco())"></span>
+      <span x-show="troco() > 0.004 && !trocoValido()" class="rec-aviso">O valor passa do total — só dinheiro pode ter troco.</span>
+    </div>
+
+    <div class="form-grid" style="margin-top:16px;">
+      <div><label>CPF na nota <small style="color:var(--muted);">(pergunte ao tutor; em branco = sem CPF)</small></label>
+        <input type="text" name="cpf_nota" x-model="cpf" @input="cpf = mascaraCpf(cpf)" inputmode="numeric" maxlength="14" placeholder="000.000.000-00">
+      </div>
+      <div style="display:flex; align-items:flex-end;">
+        <label style="display:flex; align-items:center; gap:8px; margin:0;"><input type="checkbox" name="emitir_nota" value="1" checked> Emitir nota fiscal de serviço (NFS-e)</label>
+      </div>
+    </div>
+
+    <div style="margin-top:18px;">
+      <button type="submit" class="btn-primary btn" :disabled="!podeConfirmar()">Confirmar pagamento recebido</button>
+      <p style="color:var(--muted); font-size:.85rem; margin:8px 0 0;">Passe o cartão na maquininha ou receba o dinheiro/Pix antes de confirmar.</p>
+    </div>
+  </div>
+</form>
+
+{{ totais|json_script:"rec-totais" }}
+<script>
+  function receberPagamento() {
+    const totais = JSON.parse(document.getElementById("rec-totais").textContent);
+    const num = v => parseFloat(String(v || "").replace(/\./g, "").replace(",", ".")) || 0;
+    return {
+      selecionadas: Object.keys(totais), descontoTipo: "valor", desconto: "",
+      formas: [{ forma: "pix", valor: "", parcelas: 1 }], cpf: "{{ cpf_inicial|escapejs }}",
+      dinheiro(v) { return "R$ " + v.toFixed(2).replace(".", ","); },
+      subtotal() { return this.selecionadas.reduce((s, id) => s + (totais[id] || 0), 0); },
+      valorDesconto() {
+        const d = num(this.desconto), sub = this.subtotal();
+        return Math.min(sub, this.descontoTipo === "percentual" ? sub * Math.min(d, 100) / 100 : d);
+      },
+      total() { return Math.round((this.subtotal() - this.valorDesconto()) * 100) / 100; },
+      pago() { return this.formas.reduce((s, f) => s + num(f.valor), 0); },
+      falta() { return Math.max(0, this.total() - this.pago()); },
+      troco() { return Math.max(0, this.pago() - this.total()); },
+      trocoValido() { return this.troco() <= this.formas.filter(f => f.forma === "dinheiro").reduce((s, f) => s + num(f.valor), 0) + 0.004; },
+      podeConfirmar() { return this.selecionadas.length > 0 && this.falta() <= 0.004 && this.trocoValido(); },
+      adicionarForma() {
+        const resto = this.falta();
+        this.formas.push({ forma: "credito", valor: resto > 0 ? resto.toFixed(2).replace(".", ",") : "", parcelas: 1 });
+      },
+      mascaraCpf(v) {
+        const d = v.replace(/\D/g, "").slice(0, 11);
+        return d.replace(/^(\d{3})(\d)/, "$1.$2").replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3").replace(/\.(\d{3})(\d{1,2})$/, ".$1-$2");
+      },
+      init() {
+        this.formas[0].valor = this.total().toFixed(2).replace(".", ",");
+        this.$watch("selecionadas", () => { if (this.formas.length === 1) this.formas[0].valor = this.total().toFixed(2).replace(".", ","); });
+        this.$watch("desconto", () => { if (this.formas.length === 1) this.formas[0].valor = this.total().toFixed(2).replace(".", ","); });
+        this.$watch("descontoTipo", () => { if (this.formas.length === 1) this.formas[0].valor = this.total().toFixed(2).replace(".", ","); });
+      },
+    };
+  }
+</script>
+{% endblock %}

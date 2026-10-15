@@ -6,13 +6,13 @@
       <thead>
         <tr>
           <th>Nº</th><th>Data</th><th>Tipo</th><th>Paciente</th><th>Tutor</th>
-          <th>Detalhes</th><th style="text-align:right;">Total</th><th>Ações</th>
+          <th style="text-align:right;">Total</th><th>Pagamento</th><th>Ações</th>
         </tr>
       </thead>
       <tbody>
         {% for a in pagina.object_list %}
         <tr>
-          <td><strong>#{{ a.numero }}</strong></td>
+          <td><strong>{{ a.numero }}</strong></td>
           <td style="white-space:nowrap;">{{ a.data|date:"d/m/Y" }} {{ a.hora|time:"H:i" }}</td>
           <td>
             {{ a.get_tipo_display }}
@@ -23,25 +23,15 @@
             {% if a.paciente_id %}<a href="{% url 'pacientes:ficha' a.paciente_id %}">{{ a.pac_nome }}</a>{% else %}{{ a.pac_nome }}{% endif %}
           </td>
           <td>{{ a.tutor_nome|default:"—" }}{% if a.tutor_tel %}<br><small style="color:var(--muted);">{{ a.tutor_tel }}</small>{% endif %}</td>
-          <td>
-            {% if a.tipo == "retorno" %}↩ Retorno de {% if a.retorno_de %}#{{ a.retorno_de.numero }}{% else %}<em>excluído</em>{% endif %}{% endif %}
-            {% if a.tipo == "vacinacao" %}
-              {{ a.vacina_nome }} · {{ a.get_dose_display }}
-              {% if a.data_proxima_dose %}<br><small style="color:var(--muted);">Próxima: {{ a.data_proxima_dose|date:"d/m/Y" }}
-                {% if a.lembrete_enviado_em %}· lembrete enviado {{ a.lembrete_enviado_em|date:"d/m" }}
-                {% elif a.data_lembrete %}· lembrete em {{ a.data_lembrete|date:"d/m/Y" }}{% endif %}</small>{% endif %}
-            {% endif %}
-            {% if a.data_retorno %}<small style="color:var(--muted); display:block;">Retorno em {{ a.data_retorno|date:"d/m/Y" }}
-              {% if a.lembrete_enviado_em %}· lembrete enviado {{ a.lembrete_enviado_em|date:"d/m" }}
-              {% elif a.data_lembrete %}· lembrete em {{ a.data_lembrete|date:"d/m/Y" }}{% endif %}</small>{% endif %}
-            {% for item in a.servicos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }}</span>{% endfor %}
-            {% for item in a.insumos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }} ×{{ item.qtd|floatformat:"-3" }}{% if item.unidade and item.unidade != "un." %} {{ item.unidade }}{% endif %}</span>{% endfor %}
-            {% if a.obs %}<br><small style="color:var(--muted);">{{ a.obs|truncatechars:80 }}</small>{% endif %}
-          </td>
           <td style="text-align:right; white-space:nowrap;">R$ {{ a.total }}</td>
+          <td>{% with st=a.status_pagamento %}
+            {% if st == "pago" %}<span class="badge badge-vet">Pago</span>
+            {% elif st == "pendente" %}<span class="badge" style="background:var(--c-aviso); color:var(--c-atencao-texto);">Pendente</span>
+            {% else %}<small style="color:var(--muted);">Sem cobrança</small>{% endif %}
+          {% endwith %}</td>
           <td>
             <form method="post" action="{% url 'atendimentos:excluir' a.pk %}">
-              {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir o atendimento #{{ a.numero }}? Os insumos voltam ao estoque.">Excluir</button>
+              {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir o atendimento {{ a.numero }}? Os insumos voltam ao estoque.">Excluir</button>
             </form>
           </td>
         </tr>

@@ -1,4 +1,5 @@
 import json
+from datetime import date
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
@@ -26,7 +27,7 @@ from .racas import RACAS_POR_ESPECIE
 # atendente precisa dela pra agendar o retorno da próxima dose.
 # "historico" também não é clínica: o conteúdo já vem filtrado por perfil
 # (pacientes_services.linha_do_tempo).
-ABAS_DISPONIVEIS = {"ficha", "historico", "notas", "anamnese", "cirurgias", "exames", "fotos", "cobranca", "vacinas", "receitas", "documentos"}
+ABAS_DISPONIVEIS = {"ficha", "historico", "peso", "notas", "anamnese", "cirurgias", "exames", "fotos", "cobranca", "vacinas", "receitas", "documentos"}
 ABAS_ADMIN_ONLY = {"cobranca"}
 ABAS_CLINICAS = {"anamnese", "cirurgias", "exames", "fotos", "receitas", "documentos"}  # exige seção "pacientes_clinico"
 
@@ -51,7 +52,7 @@ def form_view(request, pk=None):
         form = PacienteForm(request.POST, request.FILES, instance=paciente)
         if form.is_valid():
             era_novo = paciente is None
-            novo = form.save()
+            novo = form.save()  # peso não está no formulário: só pela aba Peso (Pesagem)
             registrar_auditoria(
                 usuario=request.user, acao="criar" if era_novo else "atualizar",
                 entidade="paciente", entidade_id=novo.id, detalhe=novo.nome, ip=ip_da_requisicao(request),
@@ -124,6 +125,8 @@ def ficha(request, pk):
         contexto.update(_contexto_ficha(request, paciente))
     elif aba == "historico":
         contexto.update(_contexto_historico(request, paciente))
+    elif aba == "peso":
+        contexto.update(_contexto_peso(paciente))
     elif aba == "notas":
         contexto.update(notas=paciente.notas.all(), form=NotaForm())
     elif aba == "anamnese":
@@ -167,6 +170,9 @@ def ficha_aba(request, pk, aba):
 
     if aba == "historico":
         return render(request, "pacientes/ficha/_ficha_historico.html", _contexto_historico(request, paciente))
+
+    if aba == "peso":
+        return render(request, "pacientes/ficha/_ficha_peso.html", _contexto_peso(paciente))
 
     if aba == "notas":
         notas = paciente.notas.all()
@@ -291,13 +297,14 @@ def _contexto_registro(request, paciente, tipo, registro_id):
         from apps.atendimentos.models import Atendimento
         from apps.pacientes.models import ESPECIE_CHOICES
 
-        r = get_object_or_404(Atendimento.objects.select_related("retorno_de"), pk=registro_id, paciente=paciente)
-        titulo, servicos = f"Atendimento #{r.numero} · {r.get_tipo_display()}", r.servicos
+        r = get_object_or_404(Atendimento.objects.select_related("retorno_de", "orcamento"), pk=registro_id, paciente=paciente)
+        titulo, servicos = f"Atendimento {r.numero} · {r.get_tipo_display()}", r.servicos
         secoes = [
             ("Dados do atendimento", [
-                ("Número", f"#{r.numero}", False), ("Tipo", r.get_tipo_display(), False),
+                ("Número", str(r.numero), False), ("Tipo", r.get_tipo_display(), False),
                 ("Data", _data(r.data), False), ("Hora", _data(r.hora, "%H:%M"), False),
                 ("Plantão", _sim_nao(r.plantao), False), ("Registrado em", _data(r.criado_em, "%d/%m/%Y %H:%M"), False),
+                ("Orçamento de origem", f"#{r.orcamento.numero} ({r.orcamento.criado_em:%d/%m/%Y})" if r.orcamento else "—", False),
             ]),
             ("Paciente e tutor (no dia do atendimento)", [
                 ("Paciente", r.pac_nome or "—", False),
@@ -311,7 +318,7 @@ def _contexto_registro(request, paciente, tipo, registro_id):
                 ("Próxima dose", _data(r.data_proxima_dose), False),
             ]))
         retorno_de = (
-            f"#{r.retorno_de.numero} ({r.retorno_de.get_tipo_display()}, {r.retorno_de.data:%d/%m/%Y})"
+            f"{r.retorno_de.numero} ({r.retorno_de.get_tipo_display()}, {r.retorno_de.data:%d/%m/%Y})"
             if r.retorno_de else "—"
         )
         lembrete = f"{r.lembrete_dias_antes} dia(s) antes" if r.lembrete_dias_antes is not None else "Sem lembrete"
@@ -610,9 +617,12 @@ def cirurgia_excluir(request, pk, cirurgia_id):
 def _contexto_anexos(paciente, tipo, erro=None):
     """Abas Exames/Fotos: histórico + atendimentos do paciente pro seletor
     "Vincular ao atendimento" do formulário de anexar."""
-    itens = (paciente.exames if tipo == "exames" else paciente.fotos).select_related("atendimento")
+    from apps.financeiro.models import TipoExame
+
+    itens = (paciente.exames.select_related("tipo") if tipo == "exames" else paciente.fotos).select_related("atendimento")
     return {
         "paciente": paciente, tipo: itens, "erro": erro,
+        "tipos_exames": TipoExame.objects.filter(ativo=True) if tipo == "exames" else None,
         "atendimentos_paciente": paciente.atendimentos.order_by("-data", "-hora", "-numero"),
     }
 
@@ -639,8 +649,13 @@ def exame_upload(request, pk):
     paciente = get_object_or_404(Paciente, pk=pk)
     erro = None
     if request.method == "POST":
+        from apps.financeiro.models import TipoExame
+
         atendimento, erro = _atendimento_do_post(request, paciente)
+        tipo_exame = TipoExame.objects.filter(pk=request.POST.get("tipo_exame") or None).first()
         arquivos = request.FILES.getlist("arquivos")
+        if not erro and not tipo_exame:
+            erro = "Escolha o tipo de exame."
         if not erro and not arquivos:
             erro = "Escolha ao menos um arquivo PDF."
         if not erro:
@@ -649,7 +664,7 @@ def exame_upload(request, pk):
                     messages.error(request, f"{arquivo.name} não é um PDF e foi ignorado.")
                     continue
                 Exame.objects.create(
-                    paciente=paciente, atendimento=atendimento, arquivo=arquivo,
+                    paciente=paciente, atendimento=atendimento, arquivo=arquivo, tipo=tipo_exame,
                     nome=_nome_do_anexo(request, arquivo, indice, len(arquivos)),
                 )
     return render(request, "pacientes/ficha/_ficha_exames.html", _contexto_anexos(paciente, "exames", erro))
@@ -690,6 +705,77 @@ def foto_excluir(request, pk, foto_id):
     if request.method == "POST":
         Foto.objects.filter(pk=foto_id, paciente=paciente).delete()
     return render(request, "pacientes/ficha/_ficha_fotos.html", _contexto_anexos(paciente, "fotos"))
+
+
+def _contexto_peso(paciente, erro=None):
+    """Histórico (mais recente primeiro) com a variação em relação à anterior
+    e os pontos do gráfico (SVG simples, valores já como string pro CSS/SVG)."""
+    pesagens = list(paciente.pesagens.all())
+    for atual, anterior in zip(pesagens, pesagens[1:] + [None]):
+        atual.variacao = (atual.peso - anterior.peso) if anterior else None
+    grafico = pacientes_services.grafico_pesos(list(reversed(pesagens)))
+    return {"paciente": paciente, "pesagens": pesagens, "grafico": grafico, "erro": erro, "hoje": timezone.localdate()}
+
+
+@requer_secao("pacientes")
+def pesagem_criar(request, pk):
+    from decimal import Decimal, InvalidOperation
+
+    from .services import registrar_pesagem
+
+    paciente = get_object_or_404(Paciente, pk=pk)
+    erro = None
+    if request.method == "POST":
+        texto = request.POST.get("peso", "").strip().replace(",", ".")
+        try:
+            peso = Decimal(texto)
+        except InvalidOperation:
+            peso = None
+        data = request.POST.get("data") or None
+        if peso is None or peso <= 0 or peso >= 1000:
+            erro = "Informe um peso válido em kg (ex.: 12,5)."
+        elif data and data > timezone.localdate().isoformat():
+            erro = "A data da pesagem não pode ser no futuro."
+        else:
+            registrar_pesagem(paciente, peso=peso.quantize(Decimal("0.01")), data=date.fromisoformat(data) if data else None,
+                              obs=request.POST.get("obs", ""), usuario=request.user)
+    paciente.refresh_from_db()
+    resposta = render(request, "pacientes/ficha/_ficha_peso.html", _contexto_peso(paciente, erro))
+    resposta["HX-Trigger"] = "peso-atualizado"
+    return resposta
+
+
+@requer_secao("pacientes")
+def pesagem_excluir(request, pk, pesagem_id):
+    from .models import Pesagem
+    from .services import sincronizar_peso
+
+    paciente = get_object_or_404(Paciente, pk=pk)
+    if request.method == "POST":
+        Pesagem.objects.filter(pk=pesagem_id, paciente=paciente).delete()
+        sincronizar_peso(paciente)
+    paciente.refresh_from_db()
+    resposta = render(request, "pacientes/ficha/_ficha_peso.html", _contexto_peso(paciente))
+    resposta["HX-Trigger"] = "peso-atualizado"
+    return resposta
+
+
+@requer_secao("pacientes")
+def pesagens_pdf(request, pk):
+    """Botão "Gerar PDF" da aba Peso: gráfico + tabela do histórico de pesos."""
+    from .pdf import pdf_pesos
+
+    paciente = get_object_or_404(Paciente.objects.select_related("tutor"), pk=pk)
+    conteudo = pdf_pesos(paciente, list(paciente.pesagens.all()), clinica_nome=request.session.get("clinica_nome", ""),
+                         impresso_por=_impresso_por(request))
+    return _resposta_pdf(conteudo, f"pesos-{paciente.nome}")
+
+
+@requer_secao("pacientes")
+def pesagem_cabecalho(request, pk):
+    """Trecho do cabeçalho da ficha com a última pesagem (recarrega após pesar)."""
+    paciente = get_object_or_404(Paciente, pk=pk)
+    return render(request, "pacientes/ficha/_peso_cabecalho.html", {"paciente": paciente})
 
 
 @requer_secao("pacientes")

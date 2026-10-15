@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import views, views_gestao as g
 
 app_name = "estoque"
 
@@ -14,4 +14,13 @@ urlpatterns = [
     path("codigo/<str:codigo>/", views.codigo_lookup, name="codigo_lookup"),
     path("entrada-manual/", views.entrada_manual, name="entrada_manual"),
     path("importar-xml/", views.importar_xml, name="importar_xml"),
+    # Gestão (estilo SimplesVet)
+    path("saidas/", g.saidas, name="saidas"),
+    path("saidas/nova/", g.saida_nova, name="saida_nova"),
+    path("inventarios/", g.inventarios, name="inventarios"),
+    path("inventarios/<uuid:pk>/", g.inventario, name="inventario"),
+    path("inventarios/<uuid:pk>/contar/", g.inventario_contar, name="inventario_contar"),
+    path("inventarios/<uuid:pk>/finalizar/", g.inventario_finalizar, name="inventario_finalizar"),
+    path("analise/", g.analise, name="analise"),
+    path("etiquetas/", g.etiquetas_view, name="etiquetas"),
 ]

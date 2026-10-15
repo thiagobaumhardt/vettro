@@ -85,6 +85,10 @@ class Atendimento(models.Model):
     retorno_de = models.ForeignKey(
         "self", on_delete=models.SET_NULL, null=True, blank=True, related_name="retornos"
     )
+    # Opcional: o orçamento que originou este atendimento (do paciente ou do tutor dele).
+    orcamento = models.ForeignKey(
+        "orcamentos.Orcamento", on_delete=models.SET_NULL, null=True, blank=True, related_name="atendimentos"
+    )
     # Só preenchidos quando tipo=vacinacao: a vacina (FK + nome em snapshot,
     # pro histórico sobreviver à exclusão do catálogo), a dose aplicada e a
     # data agendada pro retorno da próxima dose.
@@ -123,10 +127,20 @@ class Atendimento(models.Model):
     criado_em = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        db_table = "atendimentos"  # nome de negócio (padrão MKSaúde), em vez de atendimentos_atendimento
         ordering = ["-data", "-hora"]
 
     def __str__(self):
-        return f"#{self.numero} · {self.pac_nome} · {self.data}"
+        return f"{self.numero} · {self.pac_nome} · {self.data}"
+
+    @property
+    def status_pagamento(self) -> str | None:
+        """"pago", "pendente" ou None (atendimento sem item cobrado). Use com
+        prefetch_related("cobrancas") nas listas."""
+        status = {c.status for c in self.cobrancas.all()}
+        if not status:
+            return None
+        return "pendente" if "pendente" in status else "pago"
 
     @property
     def data_alvo_lembrete(self) -> date | None:

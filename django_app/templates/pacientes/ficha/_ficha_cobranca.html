@@ -53,6 +53,10 @@
     Pago{% if c.pago_em %} em {{ c.pago_em|date:"d/m/Y H:i" }}{% endif %}{% if c.pago_por_nome %} · baixa por {{ c.pago_por_nome }}{% endif %}
     {% if c.desconto_valor %}<br>Desconto de R$ {{ c.desconto_valor }}{% if c.desconto_tipo == "percentual" %} ({{ c.desconto_informado|floatformat:"-2" }}%){% endif %} — {{ c.desconto_motivo }}{% endif %}
   </p>
+  {% if c.recebimento_id %}
+  <p style="margin:4px 0 8px; font-size:.85rem;">Recebido na recepção: {{ c.recebimento.formas_texto }}
+    <a href="{% url 'recepcao:recibo' c.recebimento_id %}" class="btn-secondary btn">Recibo e nota</a></p>
+  {% else %}
   {% with nota=c.notas_fiscais.all.0 %}
     {% include "pagamentos/_nota_status.html" %}
     {% if not nota or nota.status == "erro" %}
@@ -62,40 +66,14 @@
     {% endif %}
   {% endwith %}
   {% endif %}
+  {% endif %}
   {% if c.tutor_nome %}<p style="color:var(--muted); margin:4px 0;">{{ c.tutor_nome }}</p>{% endif %}
   {% for item in c.servicos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }}{% if item.qtd and item.qtd != "1" %} ×{{ item.qtd|floatformat:"-3" }}{% if item.unidade and item.unidade != "un." %} {{ item.unidade }}{% endif %}{% endif %} · R$ {{ item.subtotal|default:item.valor }}</span>{% endfor %}
   {% for item in c.insumos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }} ×{{ item.qtd|floatformat:"-3" }}{% if item.unidade and item.unidade != "un." %} {{ item.unidade }}{% endif %}</span>{% endfor %}
   {% if c.obs %}<p style="margin-top:6px;">{{ c.obs }}</p>{% endif %}
   <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; align-items:flex-start;">
     {% if c.status != "pago" %}
-    <div x-data="{ aberto: false, tipo: 'valor', desconto: '', total: {{ c.total|stringformat:'s' }},
-                   get valorDesconto() { const d = parseFloat(String(this.desconto).replace(',', '.')) || 0;
-                                         return Math.min(this.total, this.tipo === 'percentual' ? this.total * Math.min(d, 100) / 100 : d); } }">
-      <button type="button" class="btn-secondary btn" x-show="!aberto" @click="aberto = true">Receber pagamento</button>
-      <form x-show="aberto" x-cloak hx-post="{% url 'financeiro:cobranca_pagar' c.pk %}" hx-target="#ficha-conteudo"
-            style="border:1px solid var(--border); padding:12px; min-width:280px;">
-        <label>Desconto (opcional)</label>
-        <div style="display:flex; gap:6px;">
-          <select name="desconto_tipo" x-model="tipo" style="width:80px;">
-            <option value="valor">R$</option>
-            <option value="percentual">%</option>
-          </select>
-          <input type="number" name="desconto" x-model="desconto" min="0" step="0.01" :max="tipo === 'percentual' ? 100 : total" placeholder="0,00">
-        </div>
-        <div x-show="valorDesconto > 0" style="margin-top:8px;">
-          <label>Motivo do desconto</label>
-          <input type="text" name="desconto_motivo" maxlength="200" :required="valorDesconto > 0" placeholder="Ex: cliente antigo, pagamento à vista...">
-        </div>
-        <p style="margin:10px 0 6px;">
-          Total R$ {{ c.total }}<span x-show="valorDesconto > 0" x-text="' − R$ ' + valorDesconto.toFixed(2)"></span>
-          → <strong x-text="'R$ ' + (total - valorDesconto).toFixed(2)"></strong>
-        </p>
-        <div style="display:flex; gap:6px;">
-          <button type="submit" class="btn-primary btn">Confirmar pagamento</button>
-          <button type="button" class="btn-secondary btn" @click="aberto = false; desconto = ''">Cancelar</button>
-        </div>
-      </form>
-    </div>
+    <a href="{% url 'recepcao:receber_cobranca' c.pk %}" class="btn-primary btn">Receber pagamento</a>
     {% else %}
     <span style="color:var(--muted); font-size:.85rem;">Pagamento confirmado</span>
     {% endif %}

@@ -174,3 +174,105 @@ def pdf_historico(paciente, eventos: list[dict], *, filtro_rotulo: str = "", cli
         titulo_documento=f"{titulo} · {paciente.nome}", clinica_nome=clinica_nome,
         config=ConfiguracaoClinica.atual(), flowables=corpo, estilo="receita", impresso_por=impresso_por,
     )
+
+
+def _grafico_pesos_pdf(cronologico, largura, altura=6.5 * cm):
+    """Gráfico de linhas (ReportLab) do peso: X proporcional às datas, Y em kg com grade."""
+    from reportlab.graphics.shapes import Circle, Drawing, Line, PolyLine, String
+
+    from apps.core.pdf import COR_SUAVE, COR_TEXTO
+
+    fonte = ESTILOS["normal"].fontName
+    d = Drawing(largura, altura)
+    esq, dir_, topo, base = 40, 10, 8, 24
+    pesos = [float(p.peso) for p in cronologico]
+    minimo, maximo = min(pesos), max(pesos)
+    folga = max((maximo - minimo) * 0.15, 0.5)
+    y_min, y_max = max(minimo - folga, 0), maximo + folga
+    dias = [(p.data - cronologico[0].data).days for p in cronologico]
+    total = max(dias[-1], 1)
+
+    def x(v):
+        return esq + v / total * (largura - esq - dir_)
+
+    def y(v):
+        return base + (v - y_min) / (y_max - y_min) * (altura - base - topo)
+
+    for k in range(5):
+        v = y_min + (y_max - y_min) * k / 4
+        d.add(Line(esq, y(v), largura - dir_, y(v), strokeColor=COR_LINHA_SUAVE, strokeWidth=0.5))
+        d.add(String(esq - 4, y(v) - 3, f"{v:.1f}".replace(".", ","), fontName=fonte, fontSize=7,
+                     fillColor=COR_SUAVE, textAnchor="end"))
+    from .services import indices_rotulos
+
+    for i in indices_rotulos([x(v) for v in dias], 42):
+        d.add(String(x(dias[i]), base - 12, cronologico[i].data.strftime("%d/%m/%y"), fontName=fonte, fontSize=7,
+                     fillColor=COR_SUAVE, textAnchor="middle"))
+    pontos = []
+    for v, p in zip(dias, pesos):
+        pontos += [x(v), y(p)]
+    d.add(PolyLine(pontos, strokeColor=COR_LINHA, strokeWidth=1.8))
+    for v, p in zip(dias, pesos):
+        d.add(Circle(x(v), y(p), 2.4, fillColor=COR_TEXTO, strokeColor=COR_TEXTO))
+    return d
+
+
+def _kg(valor) -> str:
+    return f"{valor} kg".replace(".", ",")
+
+
+def pdf_pesos(paciente, pesagens: list, *, clinica_nome: str, impresso_por: str = "") -> bytes:
+    """Histórico de pesos do paciente (aba Peso): gráfico de linhas + tabela."""
+    estilos = _estilos()
+    tutor = paciente.tutor
+    caixa = Table([[Paragraph("<b>Histórico de peso</b>", estilos["titulo"])]], colWidths=[LARGURA_UTIL])
+    caixa.setStyle(TableStyle([
+        ("BOX", (0, 0), (-1, -1), 0.8, COR_LINHA),
+        ("TOPPADDING", (0, 0), (-1, -1), 6), ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    atual = pesagens[0] if pesagens else None
+    corpo = [caixa, Spacer(1, 0.15 * cm), _secao("Paciente", estilos)]
+    corpo += _campos([
+        ("Nome do animal", paciente.nome, False), ("Espécie", paciente.get_especie_display(), False),
+        ("Raça", paciente.raca or "—", False), ("Idade", paciente.idade_texto if paciente.data_nascimento else "—", False),
+        ("Tutor", tutor.nome if tutor else "—", False),
+        ("Peso atual", f"{_kg(atual.peso)} em {atual.data:%d/%m/%Y}" if atual else "—", False),
+    ], estilos)
+
+    cronologico = list(reversed(pesagens))
+    if len(cronologico) >= 2:
+        corpo += [_secao("Evolução", estilos), _grafico_pesos_pdf(cronologico, LARGURA_UTIL)]
+        variacao = cronologico[-1].peso - cronologico[0].peso
+        sinal = "+" if variacao > 0 else ""
+        corpo.append(Paragraph(
+            f"De {_kg(cronologico[0].peso)} ({cronologico[0].data:%d/%m/%Y}) a {_kg(cronologico[-1].peso)} "
+            f"({cronologico[-1].data:%d/%m/%Y}): {sinal}{_kg(variacao)}.", estilos["texto"]))
+
+    corpo.append(_secao(f"Pesagens ({len(pesagens)})", estilos))
+    if not pesagens:
+        corpo.append(Paragraph("Nenhuma pesagem registrada.", estilos["texto"]))
+    else:
+        c, dir_ = estilos["celula"], estilos["direita"]
+        linhas = [[Paragraph("<b>Data</b>", c), Paragraph("<b>Peso</b>", dir_), Paragraph("<b>Variação</b>", dir_),
+                   Paragraph("<b>Observação</b>", c), Paragraph("<b>Registrado por</b>", c)]]
+        for atual_p, anterior in zip(pesagens, pesagens[1:] + [None]):
+            var = atual_p.peso - anterior.peso if anterior else None
+            var_txt = "—" if var is None else (f"+{_kg(var)}" if var > 0 else _kg(var) if var < 0 else "0")
+            linhas.append([
+                Paragraph(f"{atual_p.data:%d/%m/%Y}", c), Paragraph(_kg(atual_p.peso), dir_), Paragraph(var_txt, dir_),
+                Paragraph(_esc(atual_p.obs or "—"), c), Paragraph(_esc(atual_p.usuario_nome or "—"), c),
+            ])
+        t = Table(linhas, colWidths=[2.4 * cm, 2.2 * cm, 2.3 * cm, 6.0 * cm, 3.25 * cm], repeatRows=1)
+        t.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), COR_FUNDO),
+            ("LINEBELOW", (0, 0), (-1, 0), 0.8, COR_LINHA),
+            ("LINEBELOW", (0, 1), (-1, -1), 0.4, COR_LINHA_SUAVE),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ]))
+        corpo.append(t)
+
+    return gerar_pdf(
+        titulo_documento=f"Histórico de peso · {paciente.nome}", clinica_nome=clinica_nome,
+        config=ConfiguracaoClinica.atual(), flowables=corpo, estilo="receita", impresso_por=impresso_por,
+    )

@@ -59,6 +59,8 @@ class Clinica(TenantMixin):
             "documentos": self.modulo_pacientes,
             # Venda de balcão sai do estoque.
             "vendas": self.modulo_estoque,
+            # Recepção recebe as cobranças dos atendimentos (parte do financeiro).
+            "recepcao": self.modulo_financeiro,
         }
         return {secao for secao, ativo in mapa.items() if ativo}
 
@@ -116,12 +118,10 @@ class UsuarioClinica(models.Model):
     PAPEL_ADMIN = "admin"
     PAPEL_VET = "vet"
     PAPEL_ATENDENTE = "atendente"
-    PAPEL_MOTORISTA = "motorista"
     PAPEL_CHOICES = [
         (PAPEL_ADMIN, "Admin"),
         (PAPEL_VET, "Veterinária/o"),
-        (PAPEL_ATENDENTE, "Atendente administrativo"),
-        (PAPEL_MOTORISTA, "Motorista"),
+        (PAPEL_ATENDENTE, "Recepção"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

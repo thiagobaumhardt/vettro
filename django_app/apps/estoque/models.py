@@ -19,6 +19,7 @@ ORIGEM_CHOICES = [
 ]
 
 
+
 class Insumo(models.Model):
     """Porte de backend/app/models.py:Insumo (§3 do plano) + campos fiscais
     (ncm/cfop/cst_csosn, tipo_fiscal) pra emissão de NFC-e na Fase 6.
@@ -81,6 +82,10 @@ class Insumo(models.Model):
     )
     tipo_fiscal = models.CharField(max_length=10, choices=TIPO_FISCAL_CHOICES, default="produto")
     obs = models.TextField("Observações", blank=True)
+    # Último custo de entrada (por unidade de uso): lucro, análise de estoque e capital parado.
+    custo = models.DecimalField(
+        "Último custo (por unidade de uso)", max_digits=12, decimal_places=4, null=True, blank=True,
+    )
     criado_em = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -88,6 +93,23 @@ class Insumo(models.Model):
 
     def __str__(self):
         return self.nome
+
+    @property
+    def lucro_unitario(self) -> Decimal | None:
+        """Venda − compra, por unidade de uso (None sem valor de compra)."""
+        return (self.valor - self.custo).quantize(Decimal("0.01")) if self.custo is not None else None
+
+    @property
+    def margem(self) -> Decimal | None:
+        """Lucro sobre o valor de venda, em %."""
+        if self.custo is None or not self.valor:
+            return None
+        return ((self.valor - self.custo) / self.valor * 100).quantize(Decimal("0.1"))
+
+    @property
+    def custo_referencia(self) -> Decimal:
+        """Último custo de compra; sem ele, o preço (estimativa)."""
+        return self.custo if self.custo is not None else self.valor
 
     @property
     def limite_baixo(self) -> Decimal:
@@ -140,9 +162,18 @@ class MovimentoEstoque(models.Model):
         ("ajuste_negativo", "Ajuste negativo"),
         ("perda", "Perda"),
         ("estorno_consumo", "Estorno de consumo"),
+        # Outras saídas (estilo SimplesVet) — ver SaidaEstoque.
+        ("consumo_interno", "Consumo interno"),
+        ("perda_validade", "Perda de validade"),
+        ("avaria", "Avaria"),
+        ("doacao", "Doação"),
+        ("devolucao_compra", "Devolução de compra"),
+        ("inventario_positivo", "Inventário (sobra)"),
+        ("inventario_negativo", "Inventário (falta)"),
+        ("devolucao_venda", "Devolução de venda"),
     ]
     # Subtipos SD3 que DEVOLVEM ao estoque — os demais SD3 retiram.
-    SUBTIPOS_SD3_POSITIVOS = {"ajuste_positivo", "estorno_consumo"}
+    SUBTIPOS_SD3_POSITIVOS = {"ajuste_positivo", "estorno_consumo", "inventario_positivo", "devolucao_venda"}
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     insumo = models.ForeignKey(Insumo, on_delete=models.PROTECT, related_name="movimentos")
@@ -176,3 +207,95 @@ class MovimentoEstoque(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} · {self.insumo.nome} · {self.quantidade}"
+
+
+
+class MotivoSaida(models.Model):
+    """Motivos livres e ilimitados das outras saídas ("Uso no banho", "Uso na internação")."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    nome = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        ordering = ["nome"]
+
+    def __str__(self):
+        return self.nome
+
+
+class SaidaEstoque(models.Model):
+    """Outras saídas de estoque (consumo interno, perda de validade, avaria,
+    doação, devolução de compra) — cada item vira um MovimentoEstoque SD3
+    do subtipo correspondente, na hora."""
+
+    TIPO_CHOICES = [
+        ("consumo_interno", "Consumo interno"), ("perda_validade", "Perda de validade"),
+        ("avaria", "Avaria"), ("doacao", "Doação"), ("devolucao_compra", "Devolução de compra"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    motivo = models.ForeignKey(MotivoSaida, on_delete=models.SET_NULL, null=True, blank=True, related_name="saidas")
+    beneficiario = models.CharField("Beneficiário (doação)", max_length=150, blank=True)
+    detalhe = models.CharField("Detalhes", max_length=300, blank=True, help_text="Ex.: o que aconteceu na avaria.")
+    solicitante = models.CharField(max_length=150, blank=True)
+    data = models.DateField()
+    total_custo = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    usuario_nome = models.CharField(max_length=150, blank=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-data", "-criado_em"]
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} · {self.data}"
+
+
+class ItemSaidaEstoque(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    saida = models.ForeignKey(SaidaEstoque, on_delete=models.CASCADE, related_name="itens")
+    insumo = models.ForeignKey(Insumo, on_delete=models.PROTECT, related_name="saidas")
+    quantidade = models.DecimalField(max_digits=12, decimal_places=3)
+    custo_unitario = models.DecimalField(max_digits=12, decimal_places=4, default=0)
+
+    @property
+    def custo_total(self) -> Decimal:
+        return (self.quantidade * self.custo_unitario).quantize(Decimal("0.01"))
+
+
+class Inventario(models.Model):
+    """Contagem física (pelo celular, lendo código de barras). Ao finalizar, as
+    diferenças viram ajustes SD3 inventario_positivo/negativo e a validade
+    contada atualiza o produto."""
+
+    STATUS_CHOICES = [("aberto", "Em contagem"), ("finalizado", "Finalizado"), ("cancelado", "Cancelado")]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    descricao = models.CharField(max_length=150, help_text='Ex.: "Prateleira de vacinas", "Geral outubro".')
+    categoria = models.CharField(max_length=100, blank=True, help_text="Em branco = todos os produtos.")
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="aberto")
+    criado_por_nome = models.CharField(max_length=150, blank=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+    finalizado_em = models.DateTimeField(null=True, blank=True)
+    finalizado_por_nome = models.CharField(max_length=150, blank=True)
+
+    class Meta:
+        ordering = ["-criado_em"]
+
+    def __str__(self):
+        return self.descricao
+
+
+class ItemInventario(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    inventario = models.ForeignKey(Inventario, on_delete=models.CASCADE, related_name="itens")
+    insumo = models.ForeignKey(Insumo, on_delete=models.PROTECT, related_name="contagens")
+    qtd_contada = models.DecimalField(max_digits=12, decimal_places=3, default=0)
+    validade_contada = models.DateField(null=True, blank=True)
+    qtd_sistema = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True,
+                                      help_text="Estoque do sistema no momento em que o inventário foi finalizado.")
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["insumo__nome"]
+        unique_together = [("inventario", "insumo")]

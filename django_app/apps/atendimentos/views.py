@@ -1,4 +1,5 @@
 import json
+from apps.orcamentos.models import Orcamento
 from datetime import date, time
 
 from django.contrib import messages
@@ -43,15 +44,13 @@ def _filtrar(atendimentos, params):
         atendimentos = atendimentos.filter(data__gte=params["de"])
     if params.get("ate"):
         atendimentos = atendimentos.filter(data__lte=params["ate"])
-    if params.get("plantao") == "1":
-        atendimentos = atendimentos.filter(plantao=True)
     return atendimentos
 
 
 @requer_secao("atendimentos")
 def lista(request):
     atendimentos = _filtrar(
-        Atendimento.objects.select_related("retorno_de").order_by("-data", "-hora", "-numero"), request.GET
+        Atendimento.objects.select_related("retorno_de", "orcamento").prefetch_related("cobrancas").order_by("-data", "-hora", "-numero"), request.GET
     )
     pagina = Paginator(atendimentos, POR_PAGINA).get_page(request.GET.get("pagina"))
     filtros = request.GET.copy()
@@ -85,6 +84,13 @@ def _renderizar_form(request, form):
             for a in anteriores
         ]),
         "especie_por_paciente_json": json.dumps({str(p.pk): p.especie for p in form.fields["paciente"].queryset}),
+        # Opções do campo "Orçamento de origem": do paciente, ou do tutor sem paciente definido.
+        "orcamentos_atend": [
+            {"id": str(o.id), "numero": o.numero, "paciente": str(o.paciente_id or ""), "tutor": str(o.tutor_id or ""),
+             "data": o.criado_em.strftime("%d/%m/%Y"), "total": f"{o.total:.2f}".replace(".", ","), "pac_nome": o.pac_nome}
+            for o in Orcamento.objects.order_by("-criado_em")
+        ],
+        "tutor_por_paciente": {str(p.pk): str(p.tutor_id or "") for p in form.fields["paciente"].queryset},
         "condicoes_por_paciente_json": json.dumps({
             str(p.pk): [c.nome for c in p.condicoes.all()]
             for p in form.fields["paciente"].queryset.prefetch_related("condicoes")
@@ -102,7 +108,7 @@ def _renderizar_form(request, form):
         # foi digitado quando o POST volta com erro.
         "estado_json": json.dumps({
             campo: "" if form[campo].value() is None else form[campo].value()
-            for campo in ("tipo", "paciente", "retorno_de", "vacina", "dose", "data", "data_proxima_dose", "data_retorno", "lembrete_dias_antes")
+            for campo in ("tipo", "paciente", "retorno_de", "orcamento", "vacina", "dose", "data", "data_proxima_dose", "data_retorno", "lembrete_dias_antes")
         }, default=str),
         # Aviso na tela quando o lembrete não vai sair (LGPD / módulo desligado).
         "consentimento_whatsapp_json": json.dumps({
@@ -134,11 +140,13 @@ def novo(request):
             inicial["tipo"] = request.GET["tipo"]
         if request.GET.get("paciente"):
             inicial["paciente"] = request.GET["paciente"]
+        if request.GET.get("vacina"):  # "Aplicar próxima dose" da aba Vacinas
+            inicial["vacina"] = request.GET["vacina"]
         return _renderizar_form(request, AtendimentoForm(initial=inicial))
 
     form = AtendimentoForm(request.POST)
     if not form.is_valid():
-        campos = ("retorno_de", "vacina", "dose", "data_proxima_dose", "data_retorno", "lembrete_dias_antes")
+        campos = ("orcamento", "retorno_de", "vacina", "dose", "data_proxima_dose", "data_retorno", "lembrete_dias_antes")
         erros = next((form.errors[c][0] for c in campos if c in form.errors), None)
         messages.error(request, erros or "Verifique os campos do formulário.")
         return _renderizar_form(request, form)
@@ -151,14 +159,15 @@ def novo(request):
             data_retorno=dados["data_retorno"], lembrete_dias_antes=dados["lembrete_dias_antes"],
             data=dados["data"], hora=dados["hora"], servico_ids=[] if vacinacao else servicos_do_post(request.POST),
             usos_insumos=usos_insumos_do_post(request.POST), plantao=False if vacinacao else dados["plantao"],
-            obs=dados["obs"], usuario=request.user,
+            obs=dados["obs"], usuario=request.user, orcamento=dados["orcamento"],
         )
     except (EstoqueInsuficienteError, ItemNaoEncontradoError) as exc:
         messages.error(request, str(exc))
         return _renderizar_form(request, form)
-    messages.success(request, f"Atendimento #{atendimento.numero} registrado.")
+    messages.success(request, f"Atendimento {atendimento.numero} registrado.")
     if request.POST.get("voltar") == "paciente":
-        return redirect(reverse("pacientes:ficha", args=[atendimento.paciente_id]) + "?aba=historico")
+        aba = "vacinas" if atendimento.tipo == Atendimento.Tipo.VACINACAO else "historico"
+        return redirect(reverse("pacientes:ficha", args=[atendimento.paciente_id]) + f"?aba={aba}")
     return redirect("atendimentos:lista")
 
 

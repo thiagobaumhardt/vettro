@@ -78,7 +78,7 @@
   </table>
 </div>
 {% else %}
-<p style="color:var(--muted);">Nenhum exame vinculado. Anexe pela aba Exames escolhendo o atendimento #{{ registro.numero }}.</p>
+<p style="color:var(--muted);">Nenhum exame vinculado. Anexe pela aba Exames escolhendo o atendimento {{ registro.numero }}.</p>
 {% endif %}
 
 <div class="section-title" style="margin-top:22px;">Fotos deste atendimento</div>
@@ -92,7 +92,7 @@
   </div>
 </div>
 {% else %}
-<p style="color:var(--muted);">Nenhuma foto vinculada. Anexe pela aba Fotos escolhendo o atendimento #{{ registro.numero }}.</p>
+<p style="color:var(--muted);">Nenhuma foto vinculada. Anexe pela aba Fotos escolhendo o atendimento {{ registro.numero }}.</p>
 {% endif %}
 {% endif %}
 

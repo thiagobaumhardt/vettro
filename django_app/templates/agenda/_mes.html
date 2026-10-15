@@ -1,0 +1,17 @@
+{# Visão Mês: cada dia com os agendamentos (até 3) e o total; clique abre o Dia. #}
+<div class="ag-periodo"><a href="{{ url_anterior }}" class="btn-secondary btn ag-seta" aria-label="Anterior" title="Anterior">‹</a><strong>{{ titulo }}</strong><a href="{{ url_proximo }}" class="btn-secondary btn ag-seta" aria-label="Próximo" title="Próximo">›</a>{% include "agenda/_acoes_topo.html" %}</div>
+<div class="card ag-mes-card">
+  <div class="ag-mes">
+    {% for nome in "DSTQQSS" %}<div class="ag-mes-cab">{% cycle "Dom" "Seg" "Ter" "Qua" "Qui" "Sex" "Sáb" %}</div>{% endfor %}
+    {% for semana in semanas %}{% for d in semana %}
+    <a href="{{ d.url }}" class="ag-mes-dia{% if not d.do_mes %} fora{% endif %}{% if d.hoje %} hoje{% endif %}{% if d.fechado %} fechado{% endif %}">
+      <span class="ag-mes-num">{{ d.data.day }}</span>
+      {% if d.fechado %}<span class="ag-mes-fechado">{{ d.fechado.motivo|truncatechars:22 }}</span>{% endif %}
+      {% for a in d.ags|slice:":3" %}
+      <span class="ag-mes-item st-{{ a.status_exibido.0 }}">{{ a.hora|time:"H:i"|default:"--:--" }} {{ a.pac_nome|truncatechars:16 }}</span>
+      {% endfor %}
+      {% if d.ags|length > 3 %}<span class="ag-mes-mais">+{{ d.ags|length|add:"-3" }} mais</span>{% endif %}
+    </a>
+    {% endfor %}{% endfor %}
+  </div>
+</div>

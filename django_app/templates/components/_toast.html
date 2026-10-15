@@ -1,6 +1,6 @@
-{# Toast global — views que mutam dados podem devolver um OOB swap desta
+{% comment %} Toast global — views que mutam dados podem devolver um OOB swap desta
    div (id="toast-region") pra disparar uma mensagem, ver §7 do plano.
-   Também exibe as mensagens do django.contrib.messages da requisição. #}
+   Também exibe as mensagens do django.contrib.messages da requisição. {% endcomment %}
 <div id="toast-region"
      x-data="{ show:false, msg:'', ok:true, timer:null }"
      x-init="window.addEventListener('toast', e => { msg = e.detail.msg; ok = e.detail.ok ?? true; show = true; clearTimeout(timer); timer = setTimeout(() => show = false, ok ? 2800 : 6000) })">

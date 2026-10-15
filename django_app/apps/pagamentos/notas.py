@@ -125,6 +125,28 @@ def _dados_nfse(cobranca, config, clinica_nome) -> dict:
     }
 
 
+def _dados_nfse_recebimento(rec, config, clinica_nome) -> dict:
+    """Uma NFS-e pro recebimento inteiro (todas as cobranças pagas juntas)."""
+    cobrancas = list(rec.cobrancas.select_related("paciente"))
+    itens = []
+    for c in cobrancas:
+        parcial = _dados_nfse(c, config, clinica_nome)
+        itens += parcial["itens"]
+    tutor = rec.tutor
+    pacientes = sorted({c.paciente.nome for c in cobrancas if c.paciente_id})
+    return {
+        "prestador": _prestador(config, clinica_nome),
+        "tomador": {
+            "nome": tutor.nome if tutor else rec.tutor_nome, "cpf": rec.cpf_nota,
+            "endereco": tutor.endereco_completo if tutor else "", "email": tutor.email if tutor else "",
+        },
+        "paciente": ", ".join(pacientes),
+        "discriminacao": "Serviços médico-veterinários",
+        "itens": itens, "valor_servicos": str(rec.subtotal), "desconto": str(rec.desconto_valor),
+        "valor_total": str(rec.total), "forma_pagamento": rec.formas_texto,
+    }
+
+
 def _dados_nfce(venda, config, clinica_nome) -> dict:
     itens = []
     for i in venda.itens:
@@ -137,18 +159,18 @@ def _dados_nfce(venda, config, clinica_nome) -> dict:
         })
     return {
         "prestador": _prestador(config, clinica_nome),
-        "tomador": {"nome": venda.cliente_nome or "Consumidor não identificado"},
+        "tomador": {"nome": venda.cliente_nome or "Consumidor não identificado", "cpf": venda.cliente_cpf},
         "itens": itens, "valor_produtos": str(venda.subtotal), "desconto": str(venda.desconto_valor),
         "valor_total": str(venda.total), "forma_pagamento": venda.get_forma_pagamento_display(),
     }
 
 
 @transaction.atomic
-def emitir(*, cobranca=None, venda=None, clinica_nome: str, usuario) -> NotaFiscalEmitida:
-    """Emite (ou tenta de novo) a nota de uma cobrança paga ou de uma venda.
-    Uma nota já emitida não é emitida de novo."""
-    origem = {"cobranca": cobranca} if cobranca else {"venda": venda}
-    tipo = "nfse" if cobranca else "nfce"
+def emitir(*, cobranca=None, venda=None, recebimento=None, clinica_nome: str, usuario) -> NotaFiscalEmitida:
+    """Emite (ou tenta de novo) a nota de uma cobrança paga, de um recebimento
+    da recepção ou de uma venda. Uma nota já emitida não é emitida de novo."""
+    origem = {"cobranca": cobranca} if cobranca else {"recebimento": recebimento} if recebimento else {"venda": venda}
+    tipo = "nfce" if venda else "nfse"
     existente = NotaFiscalEmitida.objects.filter(**origem, status="emitida").first()
     if existente:
         return existente
@@ -158,7 +180,12 @@ def emitir(*, cobranca=None, venda=None, clinica_nome: str, usuario) -> NotaFisc
         raise NotaFiscalError("Venda cancelada não emite nota.")
 
     config = ConfiguracaoClinica.atual()
-    dados = _dados_nfse(cobranca, config, clinica_nome) if cobranca else _dados_nfce(venda, config, clinica_nome)
+    if cobranca:
+        dados = _dados_nfse(cobranca, config, clinica_nome)
+    elif recebimento:
+        dados = _dados_nfse_recebimento(recebimento, config, clinica_nome)
+    else:
+        dados = _dados_nfce(venda, config, clinica_nome)
     backend = get_backend()
     nota = NotaFiscalEmitida.objects.filter(**origem, status="erro").first() or NotaFiscalEmitida(**origem, tipo=tipo)
     nota.dados, nota.valor_total, nota.simulacao = dados, Decimal(dados["valor_total"]), backend.simulacao

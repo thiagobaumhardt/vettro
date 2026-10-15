@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Inventário — Vettro{% endblock %}
+{% block content %}
+{% include "estoque/_subnav.html" %}
+<div class="card">
+  <h2 style="margin-top:0;">Novo inventário</h2>
+  <p style="color:var(--muted); margin-top:-6px;">Conte pelo celular lendo o código de barras dos produtos. Dica do SimplesVet: faça inventários menores (uma prateleira, uma categoria) com mais frequência.</p>
+  <form method="post" class="form-grid">
+    {% csrf_token %}
+    <div><label>Descrição</label><input type="text" name="descricao" maxlength="150" placeholder="Ex.: Prateleira de vacinas"></div>
+    <div><label>Categoria (opcional)</label>
+      <select name="categoria"><option value="">Todos os produtos</option>{% for c in categorias %}<option value="{{ c }}">{{ c }}</option>{% endfor %}</select>
+    </div>
+    <div><button class="btn-primary btn">Começar contagem</button></div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="section-title">Inventários</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Descrição</th><th>Escopo</th><th>Itens contados</th><th>Criado</th><th>Situação</th></tr></thead>
+      <tbody>
+        {% for inv in inventarios %}
+        <tr>
+          <td><a href="{% url 'estoque:inventario' inv.pk %}"><strong>{{ inv.descricao }}</strong></a></td>
+          <td>{{ inv.categoria|default:"Todos" }}</td>
+          <td>{{ inv.itens.all|length }}</td>
+          <td>{{ inv.criado_em|date:"d/m/Y H:i" }} · {{ inv.criado_por_nome }}</td>
+          <td><span class="ag-status {% if inv.status == 'aberto' %}st-aguardando{% elif inv.status == 'finalizado' %}st-confirmado{% else %}st-cancelado{% endif %}">{{ inv.get_status_display }}</span></td>
+        </tr>
+        {% empty %}<tr><td colspan="5" class="empty">Nenhum inventário ainda.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

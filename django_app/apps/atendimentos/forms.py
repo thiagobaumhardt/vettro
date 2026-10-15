@@ -2,6 +2,7 @@ from datetime import date, timedelta
 
 from django import forms
 
+from apps.orcamentos.models import Orcamento
 from apps.pacientes.models import Paciente
 
 from .models import Atendimento, Vacina
@@ -15,6 +16,13 @@ class VacinaForm(forms.ModelForm):
         fields = ["nome", "especie", "doses_iniciais", "intervalo_dias", "reforco_anual", "insumo"]
 
 
+def orcamento_do_paciente(orcamento, paciente) -> bool:
+    """Orçamento feito pro paciente — ou pro tutor dele, sem paciente definido."""
+    if orcamento.paciente_id:
+        return orcamento.paciente_id == paciente.pk
+    return bool(orcamento.tutor_id and orcamento.tutor_id == paciente.tutor_id)
+
+
 class AtendimentoForm(forms.Form):
     tipo = forms.ChoiceField(
         choices=Atendimento.Tipo.choices, initial=Atendimento.Tipo.CONSULTA,
@@ -25,6 +33,7 @@ class AtendimentoForm(forms.Form):
     )
     # Campos condicionais abaixo são renderizados à mão no template (Alpine).
     retorno_de = forms.ModelChoiceField(queryset=Atendimento.objects.all(), required=False)
+    orcamento = forms.ModelChoiceField(queryset=Orcamento.objects.all(), required=False)
     vacina = forms.ModelChoiceField(queryset=Vacina.objects.all(), required=False)
     dose = forms.ChoiceField(choices=[("", "Selecione a dose")] + Atendimento.Dose.choices, required=False)
     data_proxima_dose = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}))
@@ -37,6 +46,9 @@ class AtendimentoForm(forms.Form):
 
     def clean(self):
         dados = super().clean()
+        orc, paciente = dados.get("orcamento"), dados.get("paciente")
+        if orc is not None and paciente is not None and not orcamento_do_paciente(orc, paciente):
+            self.add_error("orcamento", f"O orçamento #{orc.numero} é de outro paciente/tutor.")
         if dados.get("tipo") == Atendimento.Tipo.VACINACAO:
             self._validar_vacinacao(dados)
             dados["data_retorno"] = None

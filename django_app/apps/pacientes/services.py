@@ -111,14 +111,14 @@ def linha_do_tempo(paciente, secoes: set) -> list[dict]:
                 if a.data_proxima_dose:
                     detalhe += f" · próxima em {a.data_proxima_dose:%d/%m/%Y}"
             elif a.tipo == "retorno":
-                detalhe = f"Retorno de #{a.retorno_de.numero}" if a.retorno_de else "Retorno"
+                detalhe = f"Retorno de {a.retorno_de.numero}" if a.retorno_de else "Retorno"
             else:
                 detalhe = ", ".join(s["nome"] for s in a.servicos)
             if a.data_retorno:
                 detalhe = " · ".join(filter(None, [detalhe, f"retorno previsto para {a.data_retorno:%d/%m/%Y}"]))
             eventos.append({
                 "data": a.data, "hora": a.hora, "icone": ICONES_ATENDIMENTO.get(a.tipo, "🩺"),
-                "titulo": f"#{a.numero} · {a.get_tipo_display()}", "detalhe": detalhe,
+                "titulo": f"{a.numero} · {a.get_tipo_display()}", "detalhe": detalhe,
                 "obs": a.obs, "total": a.total, "plantao": a.plantao,
                 "categoria": "vacinacao" if a.tipo == "vacinacao" else "atendimento",
                 "url": reverse("pacientes:registro", args=[paciente.pk, "atendimento", a.pk]),
@@ -181,3 +181,76 @@ def usos_insumos_do_post(post) -> list[dict]:
         {"insumo_id": insumo_id, "qtd": post.get(f"qtd_{insumo_id}") or "1"}
         for insumo_id in post.getlist("insumo_ids")
     ]
+
+
+# --- Peso ------------------------------------------------------------------------
+
+def sincronizar_peso(paciente) -> None:
+    """Paciente.peso = pesagem mais recente (se houver alguma)."""
+    ultima = paciente.ultima_pesagem
+    if ultima and paciente.peso != ultima.peso:
+        paciente.peso = ultima.peso
+        paciente.save(update_fields=["peso"])
+
+
+def registrar_pesagem(paciente, *, peso, data=None, obs: str = "", usuario=None):
+    from datetime import date as _date
+
+    from .models import Pesagem
+
+    pesagem = Pesagem.objects.create(
+        paciente=paciente, peso=peso, data=data or _date.today(), obs=(obs or "").strip()[:200],
+        usuario_nome=getattr(usuario, "nome", "") if usuario else "",
+    )
+    sincronizar_peso(paciente)
+    return pesagem
+
+
+def indices_rotulos(xs: list[float], distancia_min: float, maximo: int = 7) -> list[int]:
+    """Quais pontos ganham rótulo de data no eixo X: o último sempre; os
+    demais só se ficarem longe o bastante do vizinho já rotulado."""
+    escolhidos = [len(xs) - 1]
+    for i in range(len(xs) - 2, -1, -1):
+        if escolhidos[-1] is not None and xs[escolhidos[-1]] - xs[i] >= distancia_min:
+            escolhidos.append(i)
+    escolhidos = sorted(escolhidos)
+    if len(escolhidos) > maximo:
+        passo = len(escolhidos) / maximo
+        escolhidos = sorted({escolhidos[int(k * passo)] for k in range(maximo)} | {escolhidos[-1]})
+    return escolhidos
+
+
+def grafico_pesos(cronologico: list, *, largura=900, altura=260) -> dict | None:
+    """Pontos do gráfico de linhas do peso (mais antiga → mais recente), com o
+    eixo X proporcional às datas e linhas de grade em kg. Coordenadas já como
+    string (template/SVG). None se houver menos de 2 pesagens."""
+    if len(cronologico) < 2:
+        return None
+    esq, dir_, topo, base = 52, 16, 14, 34
+    pesos = [float(p.peso) for p in cronologico]
+    minimo, maximo = min(pesos), max(pesos)
+    folga = max((maximo - minimo) * 0.15, 0.5)
+    y_min, y_max = max(minimo - folga, 0), maximo + folga
+    dias = [(p.data - cronologico[0].data).days for p in cronologico]
+    total_dias = max(dias[-1], 1)
+
+    def x(d):
+        return esq + d / total_dias * (largura - esq - dir_)
+
+    def y(v):
+        return topo + (y_max - v) / (y_max - y_min) * (altura - topo - base)
+
+    pontos = [{"x": f"{x(d):.1f}", "y": f"{y(v):.1f}", "p": p} for d, v, p in zip(dias, pesos, cronologico)]
+    grade = []
+    for k in range(5):
+        v = y_min + (y_max - y_min) * k / 4
+        grade.append({"y": f"{y(v):.1f}", "rotulo": f"{v:.1f}".replace(".", ",")})
+    # Rótulos de data no eixo X: no máximo 6, espaçados.
+    datas = [{"x": pontos[i]["x"], "rotulo": cronologico[i].data.strftime("%d/%m/%y")}
+             for i in indices_rotulos([float(p["x"]) for p in pontos], 62)]
+    return {
+        "largura": str(largura), "altura": str(altura), "esq": str(esq), "dir": str(largura - dir_),
+        "base": f"{altura - base:.1f}", "rotulo_y": f"{altura - base + 22:.1f}",
+        "linha": " ".join(f"{p['x']},{p['y']}" for p in pontos), "pontos": pontos, "grade": grade, "datas": datas,
+        "minimo": minimo, "maximo": maximo,
+    }

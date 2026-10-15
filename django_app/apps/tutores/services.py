@@ -54,6 +54,12 @@ def escrubar_snapshots_tutor(tutor: Tutor) -> None:
 
     EnvioLembrete.objects.filter(tutor=tutor).update(tutor_nome=PLACEHOLDER_TUTOR_EXCLUIDO, telefone="")
     Orcamento.objects.filter(tutor=tutor).update(tutor_nome=PLACEHOLDER_TUTOR_EXCLUIDO, tutor_tel="")
+    from apps.vendas.models import Venda
+
+    Venda.objects.filter(tutor=tutor).update(cliente_nome=PLACEHOLDER_TUTOR_EXCLUIDO, cliente_cpf="")
+    from apps.financeiro.models import Recebimento
+
+    Recebimento.objects.filter(tutor=tutor).update(tutor_nome=PLACEHOLDER_TUTOR_EXCLUIDO, cpf_nota="")
 
     paciente_ids = list(Paciente.objects.filter(tutor=tutor).values_list("id", flat=True))
     if not paciente_ids:

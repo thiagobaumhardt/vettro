@@ -1,0 +1,3 @@
+{# Visão Semana: uma coluna por dia. Filtre por consultório para ver a agenda de um consultório. #}
+<div class="ag-periodo"><a href="{{ url_anterior }}" class="btn-secondary btn ag-seta" aria-label="Anterior" title="Anterior">‹</a><strong>{{ titulo }}</strong><a href="{{ url_proximo }}" class="btn-secondary btn ag-seta" aria-label="Próximo" title="Próximo">›</a><span>{{ total_semana }} agendamento{{ total_semana|pluralize }} na semana{% if not filtros.consultorio %} · todos os consultórios (filtre para ver a agenda de um consultório){% endif %}</span>{% include "agenda/_acoes_topo.html" %}</div>
+{% include "agenda/_grade.html" with mostrar_local=True %}

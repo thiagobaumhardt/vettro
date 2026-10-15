@@ -6,7 +6,7 @@ from django.db import transaction
 from django.db.models import F, Q
 
 from .models import Insumo, MovimentoEstoque
-from .nfe import parsear_nfe
+from .nfe import parsear_cabecalho_nfe, parsear_nfe
 
 
 def formatar_qtd(valor) -> str:
@@ -69,7 +69,11 @@ def registrar_movimento(
         delta = quantidade if subtipo in MovimentoEstoque.SUBTIPOS_SD3_POSITIVOS else -quantidade
 
     insumo_travado.qtd = insumo_travado.qtd + delta
-    insumo_travado.save(update_fields=["qtd"])
+    campos = ["qtd"]
+    if tipo == MovimentoEstoque.SD1_ENTRADA and valor_unitario:
+        insumo_travado.custo = valor_unitario  # último custo de compra (por unidade de uso)
+        campos.append("custo")
+    insumo_travado.save(update_fields=campos)
 
     return MovimentoEstoque.objects.create(
         insumo=insumo_travado, tipo=tipo, subtipo=subtipo, quantidade=quantidade,
@@ -144,10 +148,14 @@ def ajustar_estoque(*, insumo: Insumo, quantidade: int, positivo: bool, motivo: 
 
 @transaction.atomic
 def importar_nfe(conteudo_xml: bytes, usuario) -> dict:
-    """SD1 — entrada via XML de NF-e do fornecedor. Casa por código de
-    barras; cria insumo novo se não achar, incrementa se achar. Também
-    preenche o NCM automaticamente (vem no XML)."""
+    """SD1 — entrada via XML da NF-e de compra (compra avulsa, sem cadastro de
+    fornecedor). Casa por código de barras; cria insumo novo se não achar,
+    incrementa se achar. Também preenche o NCM automaticamente (vem no XML).
+    O emitente da nota fica só registrado na observação do movimento."""
     itens = parsear_nfe(conteudo_xml)
+    cabecalho = parsear_cabecalho_nfe(conteudo_xml)
+    nota = {"nota_fiscal_chave": cabecalho["chave"], "nota_fiscal_numero": cabecalho["numero"]}
+    emitente = f" (emitente {cabecalho['nome']})" if cabecalho.get("nome") else ""
 
     criados = atualizados = ignorados = 0
     revisar = []  # produtos novos vindos em embalagem: conferir o conteúdo
@@ -186,10 +194,10 @@ def importar_nfe(conteudo_xml: bytes, usuario) -> dict:
 
             registrar_movimento(
                 insumo=insumo, tipo=MovimentoEstoque.SD1_ENTRADA, subtipo="nfe_fornecedor",
-                quantidade=qtd_uso, valor_unitario=custo_uso,
+                quantidade=qtd_uso, valor_unitario=custo_uso, **nota,
                 observacao=(
                     f"+{formatar_qtd(item['quantidade'])} {item['unidade_comercial'] or 'emb.'} "
-                    f"= {formatar_qtd(qtd_uso)} {insumo.unidade_rotulo} via XML de NF-e"
+                    f"= {formatar_qtd(qtd_uso)} {insumo.unidade_rotulo} via XML de NF-e{emitente}"
                 ),
                 usuario=usuario,
             )
@@ -208,14 +216,15 @@ def importar_nfe(conteudo_xml: bytes, usuario) -> dict:
             )
             registrar_movimento(
                 insumo=insumo, tipo=MovimentoEstoque.SD1_ENTRADA, subtipo="nfe_fornecedor",
-                quantidade=item["quantidade"], valor_unitario=valor_embalagem,
-                observacao="Criado via XML de NF-e", usuario=usuario,
+                quantidade=item["quantidade"], valor_unitario=valor_embalagem, **nota,
+                observacao=f"Criado via XML de NF-e{emitente}", usuario=usuario,
             )
             if unidade_comercial.upper() not in UNIDADES_COMERCIAIS_AVULSAS:
                 revisar.append(insumo)
             criados += 1
 
-    return {"criados": criados, "atualizados": atualizados, "ignorados": ignorados, "revisar": revisar}
+    return {"criados": criados, "atualizados": atualizados, "ignorados": ignorados, "revisar": revisar,
+            "nota": cabecalho}
 
 
 # Unidades comerciais da NF-e que já são a unidade de uso (não precisam de

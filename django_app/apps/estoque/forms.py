@@ -9,7 +9,7 @@ class InsumoForm(forms.ModelForm):
     class Meta:
         model = Insumo
         fields = [
-            "nome", "categoria", "unidade", "embalagem", "unidades_por_pacote", "valor", "estoque_minimo",
+            "nome", "categoria", "unidade", "embalagem", "unidades_por_pacote", "valor", "custo", "estoque_minimo",
             "codigo_barras", "data_validade", "lote", "ncm", "origem", "tem_st", "cfop", "cst_csosn", "tipo_fiscal", "obs",
         ]
         widgets = {
@@ -18,6 +18,7 @@ class InsumoForm(forms.ModelForm):
             "embalagem": forms.TextInput(attrs={"x-model": "embalagem"}),
             "unidades_por_pacote": forms.NumberInput(attrs={"step": "any", "x-model": "conteudo"}),
             "valor": forms.NumberInput(attrs={"step": "0.01", "x-model": "valor"}),
+            "custo": forms.NumberInput(attrs={"step": "0.0001", "min": "0", "x-model": "custo"}),
             "estoque_minimo": forms.NumberInput(attrs={"step": "any"}),
         }
 

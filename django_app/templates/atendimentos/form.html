@@ -30,10 +30,24 @@
         <select name="retorno_de" x-model="retornoId" x-bind:required="tipo === 'retorno'" x-bind:disabled="tipo !== 'retorno'">
           <option value="" x-text="pacienteId ? (anteriores().length ? 'Selecione o atendimento de origem' : 'Nenhum atendimento anterior deste paciente') : 'Selecione o paciente primeiro'"></option>
           <template x-for="a in anteriores()" :key="a.id">
-            <option :value="a.id" x-text="'#' + a.numero + ' · ' + a.data + ' · ' + a.tipo"></option>
+            <option :value="a.id" x-text="a.numero + ' · ' + a.data + ' · ' + a.tipo"></option>
           </template>
         </select>
       </div>
+
+      <div class="full" x-data="{ orcamentos: JSON.parse(document.getElementById('orcamentos-atend').textContent),
+                                   tutores: JSON.parse(document.getElementById('tutor-por-paciente').textContent),
+                                   orcamentoId: '{{ form.orcamento.value|default_if_none:''|escapejs }}',
+                                   doPaciente() { return this.orcamentos.filter(o => o.paciente ? o.paciente === String(this.pacienteId) : (o.tutor !== '' && o.tutor === this.tutores[this.pacienteId])); } }">
+        <label>Orçamento de origem <small style="color:var(--muted);">(opcional — se o atendimento veio de um orçamento)</small></label>
+        <select name="orcamento" x-model="orcamentoId">
+          <option value="" x-text="!pacienteId ? 'Selecione o paciente primeiro' : (doPaciente().length ? 'Não veio de orçamento' : 'Nenhum orçamento deste paciente/tutor')"></option>
+          <template x-for="o in doPaciente()" :key="o.id">
+            <option :value="o.id" :selected="o.id === orcamentoId" x-text="'Orçamento #' + o.numero + ' · ' + o.data + ' · R$ ' + o.total + (o.pac_nome ? ' · ' + o.pac_nome : '')"></option>
+          </template>
+        </select>
+      </div>
+      {{ orcamentos_atend|json_script:"orcamentos-atend" }}{{ tutor_por_paciente|json_script:"tutor-por-paciente" }}
 
       <div><label x-text="tipo === 'vacinacao' ? 'Data da vacinação' : 'Data'">Data</label>{{ form.data }}</div>
       <div><label>Hora</label>{{ form.hora }}</div>
@@ -133,7 +147,7 @@
       <strong x-text="'R$ ' + total().toFixed(2)"></strong>
     </div>
 
-    <div style="margin-top:14px;"><button type="submit" class="btn-primary btn">Registrar Atendimento</button></div>
+    <div style="margin-top:14px;"><button type="submit" class="btn-primary btn">Finalizar atendimento</button></div>
   </form>
 </div>
 

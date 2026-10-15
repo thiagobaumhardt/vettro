@@ -1,0 +1,15 @@
+{# Cartão de um agendamento na grade (Dia/Semana). Parâmetros: c (posição), mostrar_local. #}
+{% with a=c.a %}
+<button type="button" class="ag-cartao st-{{ a.status_exibido.0 }}"
+        {% if a.status == "agendado" or a.status == "aguardando" %}draggable="true" data-arrastavel="1"
+        @dragstart="arrastar($event, '{{ a.pk }}', '{{ a.pac_nome|escapejs }}', {{ a.duracao_min|default:30 }}, '{{ a.data|date:'Y-m-d' }}', '{{ a.hora|time:'H:i' }}', '{{ a.consultorio.nome|default:''|escapejs }}')" @dragend="soltando = false"{% endif %}
+        style="top:{{ c.top }}px; height:{{ c.altura }}px; left:calc({{ c.esquerda }}% + 2px); width:calc({{ c.largura }}% - 4px);"
+        hx-get="{% url 'agenda:detalhe' a.pk %}?voltar={{ voltar|urlencode }}" hx-target="#ag-detalhe"
+        title="{{ a.hora|time:'H:i' }}–{{ a.hora_fim|time:'H:i' }} · {{ a.pac_nome }} · {{ a.get_status_display }}">
+  <span class="ag-cartao-nome"><span class="ag-cartao-hora">{{ a.hora|time:"H:i" }}</span> {{ a.pac_nome }}</span>
+  <span class="ag-cartao-status">{{ a.status_exibido.1 }}{% if a.motivo_cancelamento %} · {{ a.motivo_cancelamento }}{% endif %}{% if a.encaixe %} · encaixe{% endif %}{% if mostrar_local and a.consultorio %} · {{ a.consultorio.nome }}{% endif %}</span>
+  {% if c.alto %}
+  <span class="ag-cartao-info">{{ a.hora|time:"H:i" }}–{{ a.hora_fim|time:"H:i" }}{% if a.servicos or a.exames %} ·{% for sv in a.servicos %} <i class="ag-cor{% if sv.tipo %} tipo-{{ sv.tipo }}{% endif %}"></i> {{ sv.nome }}{% endfor %}{% for ex in a.exames %} <i class="ag-cor tipo-exame"></i> {{ ex.nome }}{% endfor %}{% elif a.queixa %} · {{ a.queixa|truncatechars:40 }}{% endif %}</span>
+  {% endif %}
+</button>
+{% endwith %}

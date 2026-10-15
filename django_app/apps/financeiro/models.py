@@ -3,6 +3,15 @@ import uuid
 from django.db import models
 
 
+# Tipos de atendimento com cor própria (mesmas do hub de novo atendimento e da agenda:
+# variáveis --et-<tipo> em styles.css).
+TIPO_COR_CHOICES = [
+    ("consulta", "Consulta"), ("vacinacao", "Vacina"), ("cirurgia", "Procedimento cirúrgico"),
+    ("retorno", "Retorno"), ("aplicacao_medicacao", "Aplicação de medicação"), ("curativo", "Curativo"),
+    ("emergencia", "Emergência"), ("ambulatorial", "Ambulatorial"), ("exame", "Exame"),
+]
+
+
 class Servico(models.Model):
     """Porte de backend/app/models.py:Servico. `codigo_servico_municipal`
     fica pronto pra Fase 6 (NFS-e — cada prefeitura numera diferente, ver
@@ -19,8 +28,33 @@ class Servico(models.Model):
     )
     descricao = models.TextField(blank=True)
     codigo_servico_municipal = models.CharField(max_length=20, blank=True)
+    # Agenda: tempo que o serviço ocupa na agenda do veterinário (horários livres).
+    duracao_min = models.PositiveSmallIntegerField("Duração na agenda (min)", default=30)
+    tipo = models.CharField("Tipo de atendimento (cor na agenda)", max_length=20, choices=TIPO_COR_CHOICES, blank=True)
+    # Desmarcado = não aparece pra escolher no agendamento (continua cobrável no atendimento).
+    # Serviços do tipo "exame" aparecem na seção própria "Exames" do agendamento.
+    na_agenda = models.BooleanField("Aparece no agendamento", default=True)
 
     class Meta:
+        ordering = ["nome"]
+
+    def __str__(self):
+        return self.nome
+
+
+class TipoExame(models.Model):
+    """Tipos de exame que podem ser agendados (ecocardiograma, raio X,
+    ultrassonografia...) — seção "Exames" do agendamento. A duração soma na
+    duração do agendamento; a clínica (vet/admin) edita em Serviços."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    nome = models.CharField(max_length=100, unique=True)
+    duracao_min = models.PositiveSmallIntegerField("Duração na agenda (min)", default=60)
+    valor = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    ativo = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "tipos_exames"
         ordering = ["nome"]
 
     def __str__(self):
@@ -75,6 +109,10 @@ class Cobranca(models.Model):
     pago_em = models.DateTimeField(null=True, blank=True)
     pago_por_nome = models.CharField(max_length=150, blank=True)
 
+    # Recebimento da recepção que quitou esta cobrança (junto com outras do mesmo tutor).
+    recebimento = models.ForeignKey(
+        "financeiro.Recebimento", on_delete=models.SET_NULL, null=True, blank=True, related_name="cobrancas",
+    )
     # Atendimento que gerou esta cobrança (se veio de um) — permite remover
     # a cobrança pendente quando o atendimento é excluído.
     atendimento = models.ForeignKey(
@@ -87,3 +125,56 @@ class Cobranca(models.Model):
 
     def __str__(self):
         return f"Cobrança {self.pk} · {self.paciente.nome} · R$ {self.total}"
+
+
+class Recebimento(models.Model):
+    """Pagamento recebido na recepção: quita uma ou mais Cobranças pendentes
+    do mesmo tutor de uma vez, dividido em até 4 formas (ex.: 2 cartões, ou
+    Pix + dinheiro). A maquininha ainda não é integrada (TEF) — a recepção
+    passa o cartão/recebe e confirma aqui. Gera UMA NFS-e com todos os itens."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    numero = models.PositiveIntegerField(unique=True, editable=False)  # sequencial por clínica
+    tutor = models.ForeignKey("tutores.Tutor", on_delete=models.SET_NULL, null=True, blank=True, related_name="recebimentos")
+    tutor_nome = models.CharField(max_length=150, blank=True)  # snapshot (LGPD: anonimizado ao excluir o tutor)
+    cpf_nota = models.CharField("CPF na nota", max_length=14, blank=True)
+    emitir_nota = models.BooleanField(default=True)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
+    desconto_tipo = models.CharField(max_length=10, choices=Cobranca.DESCONTO_TIPO_CHOICES, blank=True)
+    desconto_informado = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    desconto_valor = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    desconto_motivo = models.CharField(max_length=200, blank=True)
+    total = models.DecimalField(max_digits=10, decimal_places=2)
+    troco = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    usuario_nome = models.CharField(max_length=150, blank=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-criado_em"]
+
+    def __str__(self):
+        return f"Recebimento {self.numero} · {self.tutor_nome}"
+
+    @property
+    def formas_texto(self) -> str:
+        return " + ".join(p.descricao for p in self.pagamentos.all())
+
+
+class PagamentoRecebimento(models.Model):
+    FORMA_CHOICES = [
+        ("dinheiro", "Dinheiro"), ("pix", "Pix"), ("debito", "Cartão de débito"), ("credito", "Cartão de crédito"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    recebimento = models.ForeignKey(Recebimento, on_delete=models.CASCADE, related_name="pagamentos")
+    forma = models.CharField(max_length=10, choices=FORMA_CHOICES)
+    valor = models.DecimalField(max_digits=10, decimal_places=2)  # valor abatido do total (dinheiro: sem o troco)
+    parcelas = models.PositiveSmallIntegerField(default=1)
+
+    class Meta:
+        ordering = ["id"]
+
+    @property
+    def descricao(self) -> str:
+        parcelas = f" em {self.parcelas}x" if self.forma == "credito" and self.parcelas > 1 else ""
+        return f"{self.get_forma_display()}{parcelas} R$ {self.valor}"

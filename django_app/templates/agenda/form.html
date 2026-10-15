@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load formatos %}
+{% block title %}{% if agendamento %}Editar agendamento{% else %}Novo agendamento{% endif %} — Vettro{% endblock %}
+{% block content %}
+<div class="card" x-data="agendaForm({{ pacientes_json }}, {{ servicos_json }}, {{ inicial_json }})" x-init="$nextTick(() => recalcularDuracao())">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+    <h2 style="margin:0;">{% if agendamento %}Editar agendamento{% elif chegou %}Chegada sem agendamento{% else %}Novo agendamento{% endif %}</h2>
+    <a href="{{ voltar }}" class="btn-secondary btn">← Voltar para a agenda</a>
+  </div>
+  {% if chegou %}<p style="color:var(--muted); margin-top:-6px;">O paciente entra direto na <strong>ordem de chegada</strong> (aguardando atendimento).</p>{% endif %}
+
+  {% if form.errors %}
+  <div class="login-error" style="margin-bottom:14px;">
+    {% for erro in form.non_field_errors %}{{ erro }} {% endfor %}
+    {% for campo in form %}{% for erro in campo.errors %}{{ campo.label }}: {{ erro }} {% endfor %}{% endfor %}
+  </div>
+  {% endif %}
+
+  <form method="post" action="{% if agendamento %}{% url 'agenda:editar' agendamento.pk %}{% else %}{% url 'agenda:novo' %}{% endif %}">
+    {% csrf_token %}
+    <input type="hidden" name="voltar" value="{{ voltar }}">
+    {% if chegou %}<input type="hidden" name="chegou" value="1">{% endif %}
+
+    <div class="section-title">Paciente</div>
+    <div class="form-grid">
+      <div class="full">
+        <label for="id_paciente">Paciente cadastrado</label>
+        <select name="paciente" id="id_paciente" x-model="pacienteId" @change="preencherAutomatico()">
+          <option value="">— Avulso (não cadastrado) —</option>
+          {% for p in form.paciente.field.queryset %}<option value="{{ p.pk }}" {% if form.paciente.value|stringformat:'s' == p.pk|stringformat:'s' %}selected{% endif %}>{{ p.nome }}{% if p.tutor %} — {{ p.tutor.nome }}{% endif %}</option>{% endfor %}
+        </select>
+      </div>
+      <div><label for="id_pac_nome">Nome do paciente</label><input type="text" name="pac_nome" id="id_pac_nome" :readonly="!!pacienteId" x-model="pacNome" maxlength="150"></div>
+      <div><label for="id_tutor_nome">Nome do tutor</label><input type="text" name="tutor_nome" id="id_tutor_nome" :readonly="!!pacienteId" x-model="tutorNome" maxlength="150"></div>
+      <div><label for="id_tutor_tel">Telefone do tutor</label><input type="text" name="tutor_tel" id="id_tutor_tel" :readonly="!!pacienteId" x-model="tutorTel" data-mascara="telefone" inputmode="tel" placeholder="+55 (51) 9 9999-9999"></div>
+    </div>
+
+    <div class="section-title" style="margin-top:18px;">Quando e onde</div>
+    <div class="form-grid">
+      <div><label for="id_consultorio">Consultório</label>
+        <select name="consultorio" id="id_consultorio">
+          <option value="">—</option>
+          {% for c in form.consultorio.field.queryset %}<option value="{{ c.pk }}" {% if form.consultorio.value|stringformat:'s' == c.pk|stringformat:'s' %}selected{% endif %}>{{ c.nome }}</option>{% endfor %}
+        </select>
+      </div>
+      <div><label for="id_data">Data</label>{{ form.data }}</div>
+      <div><label for="id_hora">Hora</label>{{ form.hora }}</div>
+      <div style="display:flex; align-items:flex-end;"><label style="display:flex; align-items:center; gap:8px; margin:0 0 10px;">{{ form.encaixe }} Encaixe (permite marcar por cima de outro horário)</label></div>
+    </div>
+
+    <div class="section-title" style="margin-top:18px;">Atendimento</div>
+    <div class="form-grid">
+      <div class="full">
+        <label>Serviços <small style="color:var(--muted);">(a duração soma o tempo de cada serviço)</small></label>
+        <div class="ag-servicos">
+          {% for s in servicos %}
+          <label><input type="checkbox" name="servico_ids" value="{{ s.id }}" {% if s.id|stringformat:'s' in servicos_selecionados %}checked{% endif %} @change="recalcularDuracao()"> {% if s.tipo %}<i class="ag-cor tipo-{{ s.tipo }}"></i>{% endif %}{{ s.nome }} <small>{{ s.duracao_min|duracao }}</small></label>
+          {% empty %}<span style="color:var(--muted);">Nenhum serviço cadastrado.</span>{% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:18px;">Exames</div>
+    <div class="form-grid">
+      <div class="full">
+        <div class="ag-servicos">
+          {% for e in exames %}
+          <label><input type="checkbox" name="exame_ids" value="{{ e.id }}" data-duracao="{{ e.duracao_min }}" {% if e.id|stringformat:'s' in exames_selecionados %}checked{% endif %} @change="recalcularDuracao()"> <i class="ag-cor tipo-exame"></i>{{ e.nome }} <small>{{ e.duracao_min|duracao }}</small></label>
+          {% empty %}<span style="color:var(--muted);">Nenhum exame cadastrado (Serviços → Tipos de exame).</span>{% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:18px;">Observações</div>
+    <div class="form-grid">
+      <div class="full"><label for="id_servicos_livre">Outros serviços (texto livre)</label>{{ form.servicos_livre }}</div>
+      <div class="full"><label for="id_queixa">Queixa / motivo</label>{{ form.queixa }}</div>
+      <div class="full"><label for="id_obs">Observações</label>{{ form.obs }}</div>
+    </div>
+
+
+    <div style="margin-top:18px; display:flex; gap:10px;">
+      <button type="submit" class="btn-primary btn">{% if chegou %}Registrar chegada{% else %}Salvar{% endif %}</button>
+      <a href="{{ voltar }}" class="btn-secondary btn">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+<script>
+  function agendaForm(pacientes, duracoes, inicial) {
+    // `inicial`: o que já veio do servidor (edição ou erro de validação).
+    return {
+      pacienteId: inicial.paciente, pacNome: inicial.pac_nome, tutorNome: inicial.tutor_nome,
+      tutorTel: inicial.tutor_tel, duracao: inicial.duracao,
+
+      mapa: Object.fromEntries(pacientes.map(p => [p.id, p])),
+      preencherAutomatico() {
+        const p = this.mapa[this.pacienteId];
+        // Cadastrado: preenche do cadastro. Avulso: limpa tudo pra digitar.
+        if (p) { this.pacNome = p.nome; this.tutorNome = p.tutor_nome; this.tutorTel = p.tutor_tel; }
+        else { this.pacNome = ""; this.tutorNome = ""; this.tutorTel = ""; this.$nextTick(() => document.getElementById("id_pac_nome").focus()); }
+      },
+      recalcularDuracao() {
+        const marcados = [...document.querySelectorAll('input[name="servico_ids"]:checked')];
+        const exames = [...document.querySelectorAll('input[name="exame_ids"]:checked')];
+        const total = marcados.reduce((soma, el) => soma + (duracoes[el.value] || 0), 0)
+          + exames.reduce((soma, el) => soma + (parseInt(el.dataset.duracao) || 0), 0);
+        this.duracao = total || inicial.duracao_padrao;
+      },
+    };
+  }
+</script>
+{% endblock %}

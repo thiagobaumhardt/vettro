@@ -3,18 +3,21 @@
   <strong>{{ clinica_nome_ativa }}</strong>
   <div class="spacer"></div>
   <div class="user-menu">
-    <a href="{% url 'core:meu_perfil' %}" title="Meu perfil profissional (CRMV e assinatura)">{{ request.user.nome }}</a>
+    <div class="perfil-menu" x-data="{ aberto: false }" @click.outside="aberto = false" @keydown.escape.window="aberto = false">
+      <button type="button" class="perfil-menu-botao" @click="aberto = !aberto" :aria-expanded="aberto">{{ request.user.nome }}</button>
+      <div class="perfil-menu-itens" x-show="aberto" x-cloak>
+        <span class="perfil-menu-titulo">Configurações do perfil</span>
+        <a href="{% url 'core:meu_perfil' %}">Meu perfil profissional</a>
+        <a href="{% url 'contas:trocar_senha' %}">Alterar senha</a>
+        {% if request.user.vinculos.count > 1 %}<a href="{% url 'contas:escolher_clinica' %}">Trocar de clínica</a>{% endif %}
+      </div>
+    </div>
     <span class="badge {% if papel_ativo == 'admin' %}badge-admin{% else %}badge-vet{% endif %}">
       {% if papel_ativo == "admin" %}Admin
       {% elif papel_ativo == "vet" %}Veterinária/o
-      {% elif papel_ativo == "atendente" %}Atendente
-      {% elif papel_ativo == "motorista" %}Motorista
+      {% elif papel_ativo == "atendente" %}Recepção
       {% endif %}
     </span>
-    {% if request.user.vinculos.count > 1 %}
-      <a href="{% url 'contas:escolher_clinica' %}" class="btn-secondary btn">Trocar de clínica</a>
-    {% endif %}
-    <a href="{% url 'contas:trocar_senha' %}" class="btn-secondary btn" title="Trocar minha senha">Senha</a>
     <a href="{% url 'contas:logout' %}" class="btn-secondary btn">Sair</a>
   </div>
 </header>

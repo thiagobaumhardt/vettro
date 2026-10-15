@@ -1,6 +1,6 @@
 {% if "atendimentos" in secoes_permitidas %}
 <div style="margin-bottom:16px;">
-  <a href="{% url 'atendimentos:novo' %}" class="btn-primary btn">+ Registrar vacinação</a>
+  <a href="{% url 'atendimentos:novo' %}?tipo=vacinacao&paciente={{ paciente.pk }}&voltar=paciente" class="btn-primary btn">+ Cadastrar nova vacina</a>
 </div>
 {% endif %}
 
@@ -8,7 +8,7 @@
 {% if proximas %}
 <div class="table-wrap" style="margin-bottom:20px;">
   <table>
-    <thead><tr><th>Vacina</th><th>Última dose</th><th>Próxima dose</th><th>Situação</th></tr></thead>
+    <thead><tr><th>Vacina</th><th>Última dose</th><th>Próxima dose</th><th>Situação</th>{% if "atendimentos" in secoes_permitidas %}<th></th>{% endif %}</tr></thead>
     <tbody>
       {% for p in proximas %}
       <tr>
@@ -20,6 +20,9 @@
           {% elif p.dias <= 7 %}<span class="badge" style="background:var(--c-aviso);">Em {{ p.dias }} dia{{ p.dias|pluralize }}</span>
           {% else %}<span class="badge" style="background:var(--c-ok);">Em dia</span>{% endif %}
         </td>
+        {% if "atendimentos" in secoes_permitidas %}<td style="text-align:right;">
+          <a href="{% url 'atendimentos:novo' %}?tipo=vacinacao&paciente={{ paciente.pk }}&vacina={{ p.aplicacao.vacina_id|default:'' }}&voltar=paciente" class="btn-secondary btn">Aplicar próxima dose</a>
+        </td>{% endif %}
       </tr>
       {% endfor %}
     </tbody>
@@ -37,7 +40,7 @@
     <tbody>
       {% for a in aplicacoes %}
       <tr>
-        <td>#{{ a.numero }}</td>
+        <td>{% url 'pacientes:registro' paciente.pk 'atendimento' a.pk as url_reg %}<a href="{{ url_reg }}" hx-get="{{ url_reg }}" hx-target="#ficha-conteudo" hx-push-url="true">{{ a.numero }}</a></td>
         <td>{{ a.data|date:"d/m/Y" }}</td>
         <td>{{ a.vacina_nome }}</td>
         <td>{{ a.get_dose_display }}</td>

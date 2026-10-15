@@ -1,3 +1,4 @@
+import re
 from collections import OrderedDict
 from decimal import Decimal, InvalidOperation
 
@@ -6,6 +7,7 @@ from django.db.models import Max
 from django.utils import timezone
 
 from apps.core.models import ConfiguracaoClinica
+from apps.core.validators import cpf_valido
 from apps.estoque.fiscal import tributacao_de_venda
 from apps.estoque.services import debitar_para_consumo, estornar_consumo
 from apps.financeiro import services as financeiro_services
@@ -44,11 +46,37 @@ def _proximo_numero() -> int:
 
 
 @transaction.atomic
-def registrar_venda(*, usos, forma_pagamento, desconto_tipo, desconto_texto, motivo, cliente_nome, usuario) -> Venda:
+def formatar_cpf(cpf: str) -> str:
+    d = re.sub(r"\D", "", cpf or "")
+    return f"{d[:3]}.{d[3:6]}.{d[6:9]}-{d[9:]}" if len(d) == 11 else (cpf or "")
+
+
+def tutor_por_cpf(cpf: str):
+    """Tutor cadastrado com esse CPF (compara só os dígitos), ou None."""
+    from apps.tutores.models import Tutor
+
+    alvo = re.sub(r"\D", "", cpf or "")
+    if len(alvo) != 11:
+        return None
+    return next((t for t in Tutor.objects.exclude(cpf="") if re.sub(r"\D", "", t.cpf) == alvo), None)
+
+
+def registrar_venda(*, usos, forma_pagamento, desconto_tipo, desconto_texto, motivo, cliente_nome, usuario,
+                    cliente_cpf: str = "") -> Venda:
     """Preço vem sempre do cadastro do produto (não do formulário). Estoque
     insuficiente levanta EstoqueInsuficienteError e desfaz tudo."""
     if forma_pagamento not in dict(Venda.FORMA_PAGAMENTO_CHOICES):
         raise VendaInvalidaError("Escolha a forma de pagamento.")
+    tutor = None
+    if (cliente_cpf or "").strip():
+        if not cpf_valido(cliente_cpf):
+            raise VendaInvalidaError("CPF do cliente inválido — confira os números ou deixe em branco.")
+        cliente_cpf = formatar_cpf(cliente_cpf)
+        tutor = tutor_por_cpf(cliente_cpf)
+        if tutor and not (cliente_nome or "").strip():
+            cliente_nome = tutor.nome
+    else:
+        cliente_cpf = ""
     itens, subtotal, debitos = financeiro_services.montar_insumos(usos)
     # Tributação de cada item congelada na venda — é o que vai pra NFC-e,
     # mesmo que a regra da clínica ou o produto mudem depois.
@@ -71,6 +99,7 @@ def registrar_venda(*, usos, forma_pagamento, desconto_tipo, desconto_texto, mot
 
     venda = Venda.objects.create(
         numero=_proximo_numero(), cliente_nome=(cliente_nome or "").strip()[:150],
+        cliente_cpf=cliente_cpf, tutor=tutor,
         itens=itens, subtotal=subtotal,
         desconto_tipo=(desconto_tipo or "valor") if desconto > 0 else "",
         desconto_informado=informado if desconto > 0 else None,
@@ -104,7 +133,8 @@ def pdf_comprovante(venda: Venda, *, clinica_nome: str) -> bytes:
         ))
     corpo += [
         Paragraph(f"<b>Data:</b> {timezone.localtime(venda.criado_em):%d/%m/%Y %H:%M}", e["normal"]),
-        Paragraph(f"<b>Cliente:</b> {_esc(venda.cliente_nome) or 'Consumidor'}", e["normal"]),
+        Paragraph(f"<b>Cliente:</b> {_esc(venda.cliente_nome) or 'Consumidor'}"
+                  + (f" · CPF {_esc(venda.cliente_cpf)}" if venda.cliente_cpf else ""), e["normal"]),
     ]
     if venda.usuario_nome:
         corpo.append(Paragraph(f"<b>Atendido por:</b> {_esc(venda.usuario_nome)}", e["normal"]))
