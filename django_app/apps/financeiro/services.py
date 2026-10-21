@@ -44,7 +44,7 @@ def montar_servicos(usos) -> tuple[list[dict], Decimal]:
             raise ItemNaoEncontradoError(f"Serviço {servico_id} não encontrado.") from exc
         subtotal = _dinheiro(servico.valor * qtd)
         itens.append({
-            "id": str(servico.id), "nome": servico.nome, "valor": str(servico.valor),
+            "id": str(servico.id), "codigo": servico.codigo or "", "nome": servico.nome, "valor": str(servico.valor),
             "qtd": f"{qtd.normalize():f}", "unidade": servico.unidade_cobranca, "subtotal": str(subtotal),
         })
         total += subtotal
@@ -83,7 +83,7 @@ def montar_insumos(usos: list[dict]) -> tuple[list[dict], Decimal, list[tuple[In
 
         subtotal = _dinheiro(insumo.valor * qtd)
         itens.append({
-            "id": str(insumo.id), "nome": insumo.nome, "valor": str(insumo.valor),
+            "id": str(insumo.id), "codigo": insumo.codigo or "", "nome": insumo.nome, "valor": str(insumo.valor),
             "qtd": f"{qtd.normalize():f}", "unidade": insumo.unidade_rotulo, "subtotal": str(subtotal),
             "custo": str(insumo.custo) if insumo.custo is not None else None,
         })

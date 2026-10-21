@@ -20,6 +20,7 @@ urlpatterns = [
     path("orcamentos/", include("apps.orcamentos.urls")),
     path("vendas/", include("apps.vendas.urls")),
     path("notas/", include("apps.pagamentos.urls")),
+    path("clinica/whatsapp/", include("apps.whatsapp.urls")),
     path("clinica/", include("apps.core.urls")),
     path("auditoria/", include("apps.auditoria.urls")),
     path("usuarios/", include("apps.usuarios_clinica.urls")),

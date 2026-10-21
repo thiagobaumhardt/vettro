@@ -45,7 +45,6 @@ def _proximo_numero() -> int:
     return (Venda.objects.aggregate(m=Max("numero"))["m"] or 0) + 1
 
 
-@transaction.atomic
 def formatar_cpf(cpf: str) -> str:
     d = re.sub(r"\D", "", cpf or "")
     return f"{d[:3]}.{d[3:6]}.{d[6:9]}-{d[9:]}" if len(d) == 11 else (cpf or "")
@@ -61,12 +60,18 @@ def tutor_por_cpf(cpf: str):
     return next((t for t in Tutor.objects.exclude(cpf="") if re.sub(r"\D", "", t.cpf) == alvo), None)
 
 
+MAX_PARCELAS = 12
+
+
+@transaction.atomic
 def registrar_venda(*, usos, forma_pagamento, desconto_tipo, desconto_texto, motivo, cliente_nome, usuario,
-                    cliente_cpf: str = "") -> Venda:
+                    cliente_cpf: str = "", parcelas=1) -> Venda:
     """Preço vem sempre do cadastro do produto (não do formulário). Estoque
-    insuficiente levanta EstoqueInsuficienteError e desfaz tudo."""
+    insuficiente levanta EstoqueInsuficienteError e desfaz tudo. Cartão/Pix
+    nasce "aguardando" — fica paga em `atualizar_pagamento`."""
     if forma_pagamento not in dict(Venda.FORMA_PAGAMENTO_CHOICES):
         raise VendaInvalidaError("Escolha a forma de pagamento.")
+    parcelas = _validar_parcelas(forma_pagamento, parcelas)
     tutor = None
     if (cliente_cpf or "").strip():
         if not cpf_valido(cliente_cpf):
@@ -78,6 +83,9 @@ def registrar_venda(*, usos, forma_pagamento, desconto_tipo, desconto_texto, mot
     else:
         cliente_cpf = ""
     itens, subtotal, debitos = financeiro_services.montar_insumos(usos)
+    so_uso_interno = [insumo.nome for insumo, _qtd in debitos if insumo.finalidade == "uso_interno"]
+    if so_uso_interno:
+        raise VendaInvalidaError(f"{', '.join(so_uso_interno)}: cadastrado só para uso interno, não pode ser vendido.")
     # Tributação de cada item congelada na venda — é o que vai pra NFC-e,
     # mesmo que a regra da clínica ou o produto mudem depois.
     config = ConfiguracaoClinica.atual()
@@ -104,7 +112,8 @@ def registrar_venda(*, usos, forma_pagamento, desconto_tipo, desconto_texto, mot
         desconto_tipo=(desconto_tipo or "valor") if desconto > 0 else "",
         desconto_informado=informado if desconto > 0 else None,
         desconto_valor=desconto, desconto_motivo=motivo if desconto > 0 else "",
-        total=subtotal - desconto, forma_pagamento=forma_pagamento,
+        total=subtotal - desconto, forma_pagamento=forma_pagamento, parcelas=parcelas,
+        pagamento_status="aguardando" if forma_pagamento in Venda.FORMAS_MAQUININHA else "pago",
         usuario_nome=getattr(usuario, "nome", ""),
     )
     for insumo, qtd in debitos:
@@ -112,6 +121,49 @@ def registrar_venda(*, usos, forma_pagamento, desconto_tipo, desconto_texto, mot
             insumo=insumo, quantidade=qtd, subtipo="venda_produto",
             origem_tipo="venda", origem_id=venda.id, usuario=usuario,
         )
+    return venda
+
+
+def _validar_parcelas(forma: str, parcelas) -> int:
+    if forma != "credito":
+        return 1
+    try:
+        parcelas = int(parcelas or 1)
+    except (TypeError, ValueError) as exc:
+        raise VendaInvalidaError("Número de parcelas inválido.") from exc
+    if not 1 <= parcelas <= MAX_PARCELAS:
+        raise VendaInvalidaError(f"Parcelas: de 1 a {MAX_PARCELAS}.")
+    return parcelas
+
+
+def atualizar_pagamento(venda: Venda) -> Venda:
+    """Consulta a maquininha; aprovado → venda paga. Chamado pela tela de
+    "aguardando maquininha" até sair de pendente."""
+    from apps.pagamentos.services import consultar_tef
+
+    if not venda.aguardando_pagamento:
+        return venda
+    transacao = venda.transacoes_tef.filter(status="pendente").first()
+    if transacao and consultar_tef(transacao).status == "aprovado":
+        venda.pagamento_status = "pago"
+        venda.save(update_fields=["pagamento_status"])
+    return venda
+
+
+@transaction.atomic
+def trocar_forma_pagamento(venda: Venda, *, forma: str, parcelas=1) -> Venda:
+    """Maquininha recusou e o cliente vai pagar de outro jeito (outro cartão,
+    Pix ou dinheiro). Só sem cobrança pendente na maquininha."""
+    if not venda.aguardando_pagamento:
+        raise VendaInvalidaError("Esta venda não está aguardando pagamento.")
+    if venda.transacoes_tef.filter(status="pendente").exists():
+        raise VendaInvalidaError("Cancele a cobrança que está na maquininha antes de trocar a forma de pagamento.")
+    if forma not in dict(Venda.FORMA_PAGAMENTO_CHOICES):
+        raise VendaInvalidaError("Escolha a forma de pagamento.")
+    venda.forma_pagamento, venda.parcelas = forma, _validar_parcelas(forma, parcelas)
+    if forma not in Venda.FORMAS_MAQUININHA:
+        venda.pagamento_status = "pago"
+    venda.save(update_fields=["forma_pagamento", "parcelas", "pagamento_status"])
     return venda
 
 
@@ -168,7 +220,15 @@ def pdf_comprovante(venda: Venda, *, clinica_nome: str) -> bytes:
     ]))
     corpo.append(tabela)
     corpo.append(Spacer(1, 0.3 * cm))
-    corpo.append(Paragraph(f"<b>Forma de pagamento:</b> {venda.get_forma_pagamento_display()}", e["normal"]))
+    forma = venda.get_forma_pagamento_display() + (f" em {venda.parcelas}x" if venda.parcelas > 1 else "")
+    corpo.append(Paragraph(f"<b>Forma de pagamento:</b> {forma}", e["normal"]))
+    transacao = venda.transacao_aprovada
+    if transacao:
+        corpo.append(Paragraph(
+            f"<b>Maquininha:</b> {_esc(transacao.bandeira)} · Autorização {_esc(transacao.codigo_autorizacao)}"
+            f" · NSU {_esc(transacao.nsu)}", e["normal"]))
+    elif venda.aguardando_pagamento:
+        corpo.append(Paragraph("<font color='#A9442B'><b>PAGAMENTO NÃO CONFIRMADO</b> — aguardando a maquininha.</font>", e["normal"]))
     if venda.desconto_valor and venda.desconto_motivo:
         corpo.append(Paragraph(f"<b>Motivo do desconto:</b> {_esc(venda.desconto_motivo)}", e["normal"]))
     corpo.append(Paragraph(
@@ -184,11 +244,18 @@ def pdf_comprovante(venda: Venda, *, clinica_nome: str) -> bytes:
 
 @transaction.atomic
 def cancelar_venda(venda: Venda, *, usuario) -> None:
-    """Cancelamento mantém o registro (histórico de caixa) e devolve os
-    produtos ao estoque."""
+    """Cancelamento mantém o registro (histórico de caixa), devolve os
+    produtos ao estoque e cancela/estorna o pagamento na maquininha."""
     if venda.cancelada_em:
         raise VendaInvalidaError("Esta venda já foi cancelada.")
     from apps.pagamentos.notas import cancelar_da_venda
+    from apps.pagamentos.services import TEFError, cancelar_tef
+
+    for transacao in venda.transacoes_tef.filter(status__in=("pendente", "aprovado")):
+        try:
+            cancelar_tef(transacao)
+        except TEFError as exc:
+            raise VendaInvalidaError(f"Não foi possível estornar na maquininha: {exc}") from exc
 
     estornar_consumo(origem_tipo="venda", origem_id=venda.id, usuario=usuario)
     cancelar_da_venda(venda)

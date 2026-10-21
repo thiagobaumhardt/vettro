@@ -93,6 +93,15 @@ clínicas diferentes via `UsuarioClinica`. Cadastro de acesso novo é sempre por
    excedentes, parados 90+ dias, capital parado; só admin) e **Etiquetas** Pimaco (PDF, EAN-13
    interno com prefixo 2).
    Código em `apps/estoque/{operacoes,etiquetas,views_gestao}.py`.
+   **Dados fiscais do produto** (venda no balcão/NFC-e): NCM, **CEST** (7 dígitos, obrigatório com
+   ICMS-ST — a NFC-e recusa sem ele), origem, ICMS-ST e **PIS/COFINS monofásico** (sai com CST 04;
+   os demais, CST 49 no Simples / 01 no Presumido/Real) — tudo lido do XML da nota de compra
+   (CST de PIS 02/03/04 = monofásico). CFOP/CSOSN vêm da regra da clínica (`apps/estoque/fiscal.py`).
+   Guia do contador (Fox Contábil, 2026-10): **código interno** `codigo` (produto 001, 002...; serviço
+   SERV001...; gerado no `save`, vai no cProd/NFS-e), **unidade na nota** (`unidade_venda`, UN/CX/FR;
+   vazio = derivada da unidade de uso), **GTIN** só se GS1 válido — senão "SEM GTIN" (etiqueta interna
+   prefixo 2 também), **finalidade** (uso interno / revenda / ambos: Vendas só lista revenda+ambos,
+   atendimentos só uso interno+ambos; medicamento aplicado no atendimento é consumo, não venda).
 5. **Atendimentos** — grade com filtros (tipo, espécie, período). Tipo: Consulta, Retorno
    (vincula o nº do atendimento de origem), Ambulatorial, Emergência, Aplicação de medicação,
    Curativo, Vacinação (vacina do catálogo + dose 1/2/3/Anual + "revacinar em"; **sem plantão
@@ -155,17 +164,39 @@ clínicas diferentes via `UsuarioClinica`. Cadastro de acesso novo é sempre por
    guarda só o CPF (`Venda.cliente_cpf`, vai pra NFC-e). Venda de balcão sem paciente, nasce
    paga (não gera Cobrança), baixa SD2 `venda_produto` na hora, desconto R$/% com motivo,
    leitor de código de barras. Cancelar (admin only) estorna o estoque e mantém o registro.
+   **Cartão/Pix = maquininha integrada (TEF)** — exigência da NFC-e no RS (Decreto 56.670): a venda
+   nasce `pagamento_status="aguardando"`, o total vai pra maquininha (`TransacaoTEF`), a tela
+   `vendas:pagamento` consulta a cada 2s; aprovado → paga → NFC-e com bandeira/autorização/CNPJ da
+   credenciadora (`tpIntegra=1`; sem isso a NFC-e de cartão/Pix é recusada). Recusa: cobrar de novo,
+   trocar a forma (dinheiro fecha na hora) ou desistir (qualquer papel, só se não paga). Cancelar venda
+   paga estorna na maquininha. Backend trocável (`TEF_BACKEND`, `apps/pagamentos/tef.py`); padrão é
+   sandbox (aprova em ~4s, valor terminado em ,99 é negado). Dinheiro continua nascendo paga.
    (PDV completo com caixa/comissão/kits/pacotes foi feito e removido a pedido — não reintroduzir.)
 - **Notas fiscais** (`apps/pagamentos/notas.py`): NFS-e sai ao receber uma Cobrança, NFC-e ao
   finalizar uma Venda (automático; botão "tentar de novo" se recusada). Backend trocável
   (`NOTA_FISCAL_BACKEND`); o padrão é `NotaFiscalSimulacaoBackend` — valida como o emissor real
   (CNPJ/razão social/cidade da clínica, NCM dos produtos), gera número/chave fictícios (chave
   começa com 99) e PDF "SIMULAÇÃO — SEM VALOR FISCAL". Focus NFe entra trocando o backend.
+  NFS-e: código de tributação nacional **050202** (subitem 5.02) e código municipal = padrão em
+  ⚙️ Clínica, exceção por serviço no catálogo. XML autorizado e de cancelamento guardados na nota
+  (`xml`/`xml_cancelamento`); **Contabilidade** (`notas:contabilidade`, admin, link em ⚙️ Clínica):
+  ZIP do mês com XMLs por pasta + `relatorio_itens.csv` separando serviços × vendas
+  (`apps/pagamentos/contabilidade.py`).
 - **Novo atendimento**: `/atendimentos/novo/` sem `tipo` abre o hub (paciente + tipo); Consulta e
   Cirurgia levam à Ficha (cirurgia com seletor "Tipo de cirurgia" = CirurgiaCategoria).
 - **Lembretes automáticos de WhatsApp** (`enviar_lembretes_whatsapp`, cron diário): agendamento
   de amanhã, próxima dose de vacina e data de retorno de consulta — `lembrete_dias_antes` dias
   antes; não envia se o paciente já voltou. Exige módulo da clínica + consentimento do tutor.
+- **WhatsApp SaaS** (`apps/whatsapp`, 2026-10): Cloud API oficial da Meta, Vettro = Tech Provider
+  (1 app Meta); cada clínica conecta o próprio número em ⚙️ Clínica → WhatsApp (admin) via
+  Embedded Signup — número novo ou coexistência com o app WhatsApp Business. `ConexaoWhatsApp`
+  (schema public, token cifrado) + templates do Vettro criados na WABA da clínica
+  (`modelos.py`: lembretes = utility, aviso = marketing). Webhook único `/whatsapp/webhook/`
+  (URLconf público): status, respostas (menu Lembretes; "SAIR" revoga consentimento) e
+  aprovação de template. Log em `lembretes.MensagemWhatsApp`. Meta cobra direto da clínica.
+  Conexão manual pela plataforma em `/plataforma/` → Conexões de WhatsApp. **Hoje (só a Lume):
+  fase 1 = conexão manual, app Meta no portfólio da Lume, sem Tech Provider; Embedded Signup
+  fica para a fase 2** — passo a passo em `docs/whatsapp-meta.md`.
 11. **Orçamentos** (admin/vet/atendente; módulo financeiro) — itens do catálogo ou livres, PDF
    com aviso de "valores de orçamento" + validade (padrão em ⚙️ Clínica).
 12. **Receitas** (aba da Ficha, `pacientes_clinico`) — livre (texto), simples (medicamentos com
@@ -209,7 +240,7 @@ clínicas diferentes via `UsuarioClinica`. Cadastro de acesso novo é sempre por
 - Senha: mín. 8 caracteres, letras e números.
 
 ## Fora de escopo por ora
-- **Pagamentos/Fiscal** (TEF + Focus NFe) e **Configurações fiscais da clínica**: bloqueados
-  por decisões externas (provedor de TEF — SiTef/PayGo —, conta Focus NFe, CNPJ/inscrições/
-  certificado digital reais). Arquitetura já desenhada, aguardando essas contas.
+- **Provedor real de TEF e Focus NFe** e **Configurações fiscais da clínica**: bloqueados
+  por decisões externas (contrato com a maquininha integrada, conta Focus NFe, CNPJ/inscrições/
+  certificado digital reais). Fluxo da venda com maquininha já pronto em sandbox; falta o backend real.
 - **Migração de dados**: não há nenhuma clínica rodando em produção ainda — não é necessária.

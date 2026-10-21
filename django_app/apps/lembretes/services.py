@@ -1,35 +1,34 @@
-import re
+from apps.whatsapp import modelos, services as whatsapp
 
-from apps.agenda.notificacoes import get_backend
-
-from .models import EnvioLembrete, Lembrete
+from .models import EnvioLembrete, Lembrete, MensagemWhatsApp
 
 VARIAVEL_NOME = "{nome}"
 
 
 def montar_texto(texto: str, tutor) -> str:
-    """Personaliza com o primeiro nome do tutor e ajusta pro limite da Meta:
-    variável de template não aceita quebra de linha/tab nem mais de 4 espaços
-    seguidos (ver WhatsAppMetaCloudBackend)."""
+    """Personaliza com o primeiro nome do tutor; o resto das regras da Meta
+    (sem quebra de linha etc.) é aplicado no envio (modelos.limpar_parametro)."""
     primeiro_nome = (tutor.nome or "").split(" ")[0] or "tutor(a)"
-    texto = texto.replace(VARIAVEL_NOME, primeiro_nome)
-    texto = re.sub(r"[\r\n\t]+", " ", texto)
-    return re.sub(r" {4,}", "   ", texto).strip()
+    return texto.replace(VARIAVEL_NOME, primeiro_nome)
 
 
-def enviar_lembrete(*, texto: str, tutores, usuario) -> Lembrete:
+def enviar_lembrete(*, texto: str, tutores, usuario, clinica_id, clinica_nome: str) -> Lembrete:
     """Envia na hora, um por um (sem worker assíncrono no KingHost — mesma
-    limitação do comando de lembrete automático). Só manda pra quem deu
-    consentimento de WhatsApp (LGPD) — o chamador já filtra, isto é defesa extra."""
-    backend = get_backend()
+    limitação do comando de lembrete automático), pelo template de aviso da
+    clínica. Só manda pra quem deu consentimento de WhatsApp (LGPD) — o
+    chamador já filtra, isto é defesa extra."""
     lembrete = Lembrete.objects.create(
         texto=texto, usuario_id=getattr(usuario, "id", None), usuario_nome=getattr(usuario, "nome", ""),
     )
     for tutor in tutores:
         if not (tutor.consentimento_whatsapp and tutor.tel):
             continue
-        enviado = backend.enviar(tutor.tel, montar_texto(texto, tutor))
+        mensagem = whatsapp.enviar(
+            clinica_id, telefone=tutor.tel, modelo=modelos.AVISO.nome, tutor=tutor, tipo=MensagemWhatsApp.Tipo.AVISO,
+            parametros=modelos.parametros_aviso(tutor, clinica_nome, montar_texto(texto, tutor)),
+        )
         EnvioLembrete.objects.create(
-            lembrete=lembrete, tutor=tutor, tutor_nome=tutor.nome, telefone=tutor.tel, enviado=enviado,
+            lembrete=lembrete, tutor=tutor, tutor_nome=tutor.nome, telefone=tutor.tel,
+            enviado=mensagem.enviada, mensagem=mensagem,
         )
     return lembrete

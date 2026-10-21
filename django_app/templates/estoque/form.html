@@ -13,7 +13,8 @@
     calcularCusto() { const c = this.num(this.conteudo); if (c > 0 && this.num(this.compraEmbalagem) > 0) this.custo = (this.num(this.compraEmbalagem) / c).toFixed(4); },
     lucro() { return this.num(this.valor) - this.num(this.custo); },
     margem() { return this.num(this.valor) > 0 ? this.lucro() / this.num(this.valor) * 100 : 0; } }">
-  <h2>{% if insumo %}Editar Insumo{% else %}Novo Insumo{% endif %}</h2>
+  <h2>{% if insumo %}Editar Insumo <span style="color:var(--muted); font-weight:400;">· código {{ insumo.codigo }}</span>{% else %}Novo Insumo{% endif %}</h2>
+  {% if not insumo %}<p style="font-size:.85rem; color:var(--muted); margin-top:-6px;">O código do produto (001, 002...) é criado sozinho ao salvar.</p>{% endif %}
   <form method="post">
     {% csrf_token %}
     {% if form.errors %}<p style="color:var(--danger-hover);">{% for campo, erros in form.errors.items %}{{ erros|join:", " }} {% endfor %}</p>{% endif %}
@@ -23,6 +24,10 @@
       <div>
         <label>Código de barras</label>{{ form.codigo_barras }}
         {% if form.codigo_barras.errors %}<p style="color:var(--danger-hover); font-size:.82rem;">{{ form.codigo_barras.errors|join:", " }}</p>{% endif %}
+      </div>
+      <div>
+        <label for="id_finalidade">Finalidade</label>{{ form.finalidade }}
+        <small style="color:var(--muted);">Uso interno aparece nos atendimentos; revenda aparece em Vendas. Medicamento aplicado no atendimento não vira venda.</small>
       </div>
     </div>
 
@@ -84,15 +89,29 @@
         {% if form.ncm.errors %}<p style="color:var(--danger-hover); font-size:.82rem;">{{ form.ncm.errors|join:", " }}</p>{% endif %}
         <small style="color:var(--muted);">8 dígitos — está na nota de compra.</small>
       </div>
+      <div>
+        <label>CEST</label>{{ form.cest }}
+        {% if form.cest.errors %}<p style="color:var(--danger-hover); font-size:.82rem;">{{ form.cest.errors|join:", " }}</p>{% endif %}
+        <small style="color:var(--muted);">7 dígitos — obrigatório se tiver substituição tributária. Está na nota de compra, ao lado do NCM.</small>
+      </div>
       <div><label>Origem da mercadoria</label>{{ form.origem }}</div>
+      <div>
+        <label for="id_unidade_venda">Unidade na nota de venda</label>{{ form.unidade_venda }}
+        <small style="color:var(--muted);">UN, CX, FR... Em branco = {{ insumo.unidade_nota|default:"a da unidade de uso" }}.</small>
+      </div>
       <div class="full">
         <label style="display:flex; align-items:center; gap:8px;">{{ form.tem_st }} Tem substituição tributária (ICMS-ST)</label>
         <small style="color:var(--muted);">Comum em medicamentos. Vem marcado do XML da nota de compra quando o ICMS já foi recolhido.</small>
       </div>
+      <div class="full">
+        <label style="display:flex; align-items:center; gap:8px;">{{ form.pis_cofins_monofasico }} PIS/COFINS monofásico</label>
+        <small style="color:var(--muted);">O fabricante já pagou o PIS/COFINS (comum em medicamentos e alguns produtos de higiene). A venda sai com alíquota zero e a clínica não paga de novo. Vem marcado do XML da nota de compra.</small>
+      </div>
     </div>
     {% if tributacao %}
     <p style="margin:12px 0 0; padding:10px 14px; background:var(--c-info); border:1px solid var(--c-info-borda); font-size:.9rem;">
-      Na venda, este produto sai com <strong>CFOP {{ tributacao.cfop }}</strong> e <strong>CSOSN/CST {{ tributacao.cst_csosn }}</strong>
+      Na venda, este produto sai com <strong>CFOP {{ tributacao.cfop }}</strong>, <strong>CSOSN/CST {{ tributacao.cst_csosn }}</strong>
+      e <strong>CST de PIS/COFINS {{ tributacao.cst_pis_cofins }}</strong>{% if tributacao.pis_cofins_monofasico %} (monofásico){% endif %}
       <span style="color:var(--muted);">({{ tributacao.fonte }})</span>.
     </p>
     {% endif %}

@@ -182,10 +182,16 @@ def importar_nfe(conteudo_xml: bytes, usuario) -> dict:
             if item["ncm"] and not insumo.ncm:
                 insumo.ncm = item["ncm"]
                 campos_alterados.append("ncm")
-            # ST e origem seguem sempre a nota mais recente do fornecedor.
+            if item["cest"] and not insumo.cest:
+                insumo.cest = item["cest"]
+                campos_alterados.append("cest")
+            # ST, monofásico e origem seguem sempre a nota mais recente do fornecedor.
             if insumo.tem_st != item["tem_st"]:
                 insumo.tem_st = item["tem_st"]
                 campos_alterados.append("tem_st")
+            if insumo.pis_cofins_monofasico != item["pis_cofins_monofasico"]:
+                insumo.pis_cofins_monofasico = item["pis_cofins_monofasico"]
+                campos_alterados.append("pis_cofins_monofasico")
             if item["origem"] and insumo.origem != item["origem"]:
                 insumo.origem = item["origem"]
                 campos_alterados.append("origem")
@@ -210,8 +216,8 @@ def importar_nfe(conteudo_xml: bytes, usuario) -> dict:
                 nome=item["nome"], valor=valor_embalagem, qtd=0,
                 embalagem=unidade_comercial.lower()[:30],
                 codigo_barras=item["codigo_barras"], lote=item["lote"] or "",
-                data_validade=item["validade"], ncm=item["ncm"] or "",
-                tem_st=item["tem_st"], origem=item["origem"] or "0",
+                data_validade=item["validade"], ncm=item["ncm"] or "", cest=item["cest"] or "",
+                tem_st=item["tem_st"], pis_cofins_monofasico=item["pis_cofins_monofasico"], origem=item["origem"] or "0",
                 obs="Importado via XML de NF-e.",
             )
             registrar_movimento(
@@ -243,6 +249,8 @@ def alertas_estoque() -> dict:
     return {
         # Sem NCM não dá pra emitir NFC-e do produto na venda de balcão.
         "sem_ncm": Insumo.objects.filter(ncm=""),
+        # Produto com ICMS-ST precisa de CEST na nota.
+        "st_sem_cest": Insumo.objects.filter(tem_st=True, cest=""),
         "zerados": Insumo.objects.filter(qtd__lte=0),
         # Estoque mínimo do produto; sem ele, a regra geral (< 3 unidades de uso).
         "baixos": Insumo.objects.filter(qtd__gt=0).filter(

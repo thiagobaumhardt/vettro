@@ -444,7 +444,7 @@ def _contexto_vacinas(paciente):
 
 def _contexto_anamnese(paciente, erro=None):
     servicos = list(Servico.objects.all())
-    insumos = list(Insumo.objects.all())
+    insumos = list(Insumo.objects.para_atendimento())
     return {
         "paciente": paciente, "form": AnamneseForm(),
         "servicos": servicos, "insumos": insumos,
@@ -458,7 +458,7 @@ def _contexto_cirurgias(paciente, erro=None):
     from apps.financeiro.services import valor_por_peso
 
     categorias = list(CirurgiaCategoria.objects.all())
-    insumos = list(Insumo.objects.all())
+    insumos = list(Insumo.objects.para_atendimento())
     return {
         "paciente": paciente, "form": CirurgiaForm(),
         "categorias": categorias, "insumos": insumos,

@@ -9,8 +9,9 @@ class InsumoForm(forms.ModelForm):
     class Meta:
         model = Insumo
         fields = [
-            "nome", "categoria", "unidade", "embalagem", "unidades_por_pacote", "valor", "custo", "estoque_minimo",
-            "codigo_barras", "data_validade", "lote", "ncm", "origem", "tem_st", "cfop", "cst_csosn", "tipo_fiscal", "obs",
+            "nome", "categoria", "finalidade", "unidade", "unidade_venda", "embalagem", "unidades_por_pacote", "valor", "custo", "estoque_minimo",
+            "codigo_barras", "data_validade", "lote", "ncm", "cest", "origem", "tem_st", "pis_cofins_monofasico",
+            "cfop", "cst_csosn", "tipo_fiscal", "obs",
         ]
         widgets = {
             "data_validade": forms.DateInput(attrs={"type": "date"}),
@@ -27,6 +28,15 @@ class InsumoForm(forms.ModelForm):
         if ncm and len(ncm) != 8:
             raise forms.ValidationError("O NCM tem 8 dígitos (ex.: 3004.90.99 → 30049099).")
         return ncm
+
+    def clean_unidade_venda(self):
+        return (self.cleaned_data.get("unidade_venda") or "").strip().upper()
+
+    def clean_cest(self):
+        cest = "".join(filter(str.isdigit, self.cleaned_data.get("cest") or ""))
+        if cest and len(cest) != 7:
+            raise forms.ValidationError("O CEST tem 7 dígitos (ex.: 13.001.00 → 1300100).")
+        return cest
 
     def clean_codigo_barras(self):
         codigo = self.cleaned_data.get("codigo_barras") or None

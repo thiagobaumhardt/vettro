@@ -20,6 +20,36 @@ ORIGEM_CHOICES = [
 
 
 
+# Unidade comercial na nota de venda (uCom da NFC-e) a partir da unidade de uso,
+# quando o produto não informa uma própria (`unidade_venda`).
+UNIDADE_NOTA_PADRAO = {
+    "un": "UN", "ml": "ML", "g": "G", "comp": "COMP", "caps": "CAPS", "dose": "DOSE",
+    "amp": "AMP", "par": "PAR", "kg": "KG", "L": "L", "cm": "CM",
+}
+
+
+def proximo_codigo(modelo, prefixo: str = "", digitos: int = 3) -> str:
+    """Próximo código interno sequencial (001, 002... / SERV001...) — o número
+    legível que aparece na tela e vai no cProd da nota (pedido do contador).
+    Códigos editados à mão fora do padrão são ignorados na contagem."""
+    maior = 0
+    for codigo in modelo.objects.exclude(codigo__isnull=True).values_list("codigo", flat=True):
+        resto = codigo[len(prefixo):] if codigo.startswith(prefixo) else ""
+        if resto.isdigit():
+            maior = max(maior, int(resto))
+    return f"{prefixo}{maior + 1:0{digitos}d}"
+
+
+class InsumoQuerySet(models.QuerySet):
+    def para_atendimento(self):
+        """Usáveis nos atendimentos (uso interno) — exclui os só de revenda."""
+        return self.exclude(finalidade="revenda")
+
+    def para_venda(self):
+        """Vendáveis no balcão — exclui os só de uso interno."""
+        return self.exclude(finalidade="uso_interno")
+
+
 class Insumo(models.Model):
     """Porte de backend/app/models.py:Insumo (§3 do plano) + campos fiscais
     (ncm/cfop/cst_csosn, tipo_fiscal) pra emissão de NFC-e na Fase 6.
@@ -39,12 +69,27 @@ class Insumo(models.Model):
         ("dose", "dose"), ("amp", "ampola"), ("par", "par"), ("kg", "kg"), ("L", "litro"), ("cm", "cm"),
     ]
 
+    # Contador: separar o medicamento vendido ao cliente do consumido no
+    # atendimento. "ambos" = aparece nos dois lugares (padrão).
+    FINALIDADE_CHOICES = [
+        ("ambos", "Uso interno e revenda"),
+        ("uso_interno", "Só uso interno (atendimentos)"),
+        ("revenda", "Só revenda (balcão)"),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Código interno legível (001, 002...), gerado sozinho — vai no cProd da NFC-e.
+    codigo = models.CharField("Código", max_length=20, unique=True, null=True, blank=True)
     nome = models.CharField(max_length=150)
     categoria = models.CharField(max_length=100, blank=True)
+    finalidade = models.CharField("Finalidade", max_length=12, choices=FINALIDADE_CHOICES, default="ambos")
     valor = models.DecimalField("Preço por unidade de uso", max_digits=10, decimal_places=2)
     qtd = models.DecimalField("Quantidade em estoque", max_digits=12, decimal_places=3, default=0)
     unidade = models.CharField("Unidade de uso", max_length=5, choices=UNIDADE_CHOICES, default="un")
+    unidade_venda = models.CharField(
+        "Unidade na nota de venda", max_length=6, blank=True,
+        help_text="Sigla da nota (UN, CX, FR...). Em branco = a da unidade de uso.",
+    )
     embalagem = models.CharField(
         "Embalagem de compra", max_length=30, blank=True, help_text='Ex.: "caixa", "frasco", "pacote".',
     )
@@ -71,6 +116,18 @@ class Insumo(models.Model):
         "Substituição tributária (ICMS-ST)", default=False,
         help_text="Marcado sozinho ao importar o XML do fornecedor quando o ICMS já veio recolhido.",
     )
+    # CEST: obrigatório na nota de produto com ICMS-ST (Convênio ICMS 142/2018).
+    cest = models.CharField(
+        "CEST", max_length=7, blank=True,
+        help_text="Preenchido automaticamente ao importar XML de NF-e do fornecedor.",
+    )
+    # PIS/COFINS monofásico (ex.: medicamentos): o imposto já foi pago pelo
+    # fabricante, a revenda sai com alíquota zero (CST 04) e, no Simples, essa
+    # receita é separada no PGDAS — a clínica não paga PIS/COFINS de novo.
+    pis_cofins_monofasico = models.BooleanField(
+        "PIS/COFINS monofásico", default=False,
+        help_text="Marcado sozinho ao importar o XML do fornecedor (CST de PIS 02, 03 ou 04).",
+    )
     origem = models.CharField("Origem da mercadoria", max_length=1, choices=ORIGEM_CHOICES, default="0")
     cfop = models.CharField(
         "CFOP (exceção)", max_length=4, blank=True,
@@ -88,11 +145,22 @@ class Insumo(models.Model):
     )
     criado_em = models.DateTimeField(auto_now_add=True)
 
+    objects = InsumoQuerySet.as_manager()
+
     class Meta:
         ordering = ["nome"]
 
     def __str__(self):
         return self.nome
+
+    def save(self, *args, **kwargs):
+        if not self.codigo:
+            self.codigo = proximo_codigo(Insumo)
+        super().save(*args, **kwargs)
+
+    @property
+    def unidade_nota(self) -> str:
+        return (self.unidade_venda or UNIDADE_NOTA_PADRAO.get(self.unidade, "UN")).upper()
 
     @property
     def lucro_unitario(self) -> Decimal | None:

@@ -68,7 +68,7 @@ def lista(request):
 
 def _renderizar_form(request, form):
     servicos = list(Servico.objects.all())
-    insumos = list(Insumo.objects.all())
+    insumos = list(Insumo.objects.para_atendimento())
     vacinas = list(Vacina.objects.all())
     anteriores = Atendimento.objects.filter(paciente__isnull=False).order_by("-data", "-hora")
     return render(request, "atendimentos/form.html", {

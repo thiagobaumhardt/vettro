@@ -18,6 +18,7 @@ SHARED_APPS = [
     "django_tenants",
     "apps.plataforma",
     "apps.contas",
+    "apps.whatsapp",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -159,19 +160,28 @@ VALIDADE_ALERTA_DIAS = 60
 LOGIN_MAX_TENTATIVAS = 5
 LOGIN_JANELA_SEGUNDOS = 15 * 60
 
-# WhatsApp — Meta Cloud API oficial (decidido: alternativas tipo Z-API/
-# Evolution API conectam via QR Code e correm risco real de banimento em
-# 2026, mesmo pagas — só a API oficial é livre desse risco). Backend
-# "console" continua sendo o padrão até as credenciais reais serem
-# configuradas (nenhuma delas tem valor default de propósito — sem elas o
-# WhatsAppMetaCloudBackend loga erro e não envia, não quebra o resto do
-# fluxo). Pra ativar de verdade: WHATSAPP_BACKEND=
-# apps.agenda.notificacoes.WhatsAppMetaCloudBackend + as 3-4 vars abaixo.
-WHATSAPP_BACKEND = os.environ.get("WHATSAPP_BACKEND", "apps.agenda.notificacoes.WhatsAppConsoleBackend")
-WHATSAPP_META_TOKEN = os.environ.get("WHATSAPP_META_TOKEN", "")
-WHATSAPP_META_PHONE_NUMBER_ID = os.environ.get("WHATSAPP_META_PHONE_NUMBER_ID", "")
-WHATSAPP_META_TEMPLATE_NAME = os.environ.get("WHATSAPP_META_TEMPLATE_NAME", "")
-WHATSAPP_META_TEMPLATE_LANG = os.environ.get("WHATSAPP_META_TEMPLATE_LANG", "pt_BR")
+# WhatsApp — Cloud API oficial da Meta (apps/whatsapp). Passo a passo completo
+# em docs/whatsapp-meta.md. Token/número de cada clínica ficam em
+# whatsapp.ConexaoWhatsApp, não em env; aqui só os dados do app Meta.
+# FASE 1 (hoje, só a Lume): app Meta criado no portfólio da Lume, conexão
+#   manual em /plataforma/ → Conexões de WhatsApp; META_EMBEDDED_SIGNUP_CONFIG_ID
+#   fica VAZIO (a tela da clínica esconde o botão de conexão automática).
+# FASE 2 (2ª clínica em diante): app do Vettro aprovado como Tech Provider;
+#   trocar META_APP_ID/SECRET pelos dele, preencher o CONFIG_ID e reconectar a
+#   Lume pelo Embedded Signup (o segredo do webhook muda junto com o app).
+# Backend "console" (dev) só loga; produção:
+# WHATSAPP_BACKEND=apps.whatsapp.backends.WhatsAppMetaCloudBackend.
+WHATSAPP_BACKEND = os.environ.get("WHATSAPP_BACKEND", "apps.whatsapp.backends.WhatsAppConsoleBackend")
+META_APP_ID = os.environ.get("META_APP_ID", "")
+META_APP_SECRET = os.environ.get("META_APP_SECRET", "")  # também valida a assinatura do webhook
+META_EMBEDDED_SIGNUP_CONFIG_ID = os.environ.get("META_EMBEDDED_SIGNUP_CONFIG_ID", "")  # Facebook Login for Business (Embedded Signup v4)
+META_WEBHOOK_VERIFY_TOKEN = os.environ.get("META_WEBHOOK_VERIFY_TOKEN", "")
+META_GRAPH_VERSION = os.environ.get("META_GRAPH_VERSION", "v26.0")
+# Chave Fernet que cifra o token de cada clínica (vazia = derivada do SECRET_KEY).
+WHATSAPP_CHAVE_CRIPTO = os.environ.get("WHATSAPP_CHAVE_CRIPTO", "")
+# Popup do Embedded Signup (FB.login) precisa conversar com a página que o
+# abriu — o padrão do Django ("same-origin") corta esse canal.
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
 
 # E-mail — usado pro convite de "definir senha" ao adicionar alguém em
 # 🔑 Usuários (§5 do plano). Backend "console" (dev): imprime o e-mail no
@@ -188,9 +198,9 @@ EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Vettro <nao-responda@vettro.com.br>")
 SITE_URL = os.environ.get("SITE_URL", "http://localhost:8000")
 
-# TEF (maquininha) — casa TEF agnóstica de adquirente ainda não contratada
-# (SiTef vs PayGo em aberto, §8 do plano). "Console" é sandbox: sempre
-# aprova, não fala com maquininha nenhuma — permite testar o fluxo
-# Cobrança→TEF→paga sem depender do contrato. Trocar via TEF_BACKEND quando
-# o provedor for definido e homologado.
+# TEF (maquininha integrada) — exigida na NFC-e do RS pra cartão/Pix (Decreto
+# 56.670). Provedor ainda não contratado. "Console" é sandbox: aprova ~4s
+# depois de enviar (valor terminado em ,99 é negado), não fala com maquininha
+# nenhuma. Trocar via TEF_BACKEND quando o provedor for definido e homologado
+# (ver apps/pagamentos/tef.py: iniciar/consultar/cancelar).
 TEF_BACKEND = os.environ.get("TEF_BACKEND", "apps.pagamentos.tef.TEFConsoleBackend")

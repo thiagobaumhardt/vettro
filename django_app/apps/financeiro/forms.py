@@ -22,7 +22,16 @@ class ServicoForm(forms.ModelForm):
 
     class Meta:
         model = Servico
-        fields = ["nome", "valor", "unidade_cobranca", "duracao_min", "tipo", "na_agenda", "descricao", "codigo_servico_municipal"]
+        fields = [
+            "nome", "valor", "unidade_cobranca", "duracao_min", "tipo", "na_agenda", "descricao",
+            "codigo_tributacao_nacional", "codigo_servico_municipal",
+        ]
+
+    def clean_codigo_tributacao_nacional(self):
+        codigo = "".join(filter(str.isdigit, self.cleaned_data.get("codigo_tributacao_nacional") or ""))
+        if codigo and len(codigo) != 6:
+            raise forms.ValidationError("O código de tributação nacional tem 6 dígitos (ex.: 050202).")
+        return codigo
 
 
 class CirurgiaCategoriaForm(forms.ModelForm):

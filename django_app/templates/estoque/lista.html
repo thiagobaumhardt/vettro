@@ -17,6 +17,13 @@
   {% for i in alertas.sem_ncm %}{% if papel_ativo == "admin" %}<a href="{% url 'estoque:editar' i.pk %}" class="badge" style="background:var(--c-info); color:var(--verde-escuro); text-decoration:none;">{{ i.nome }} →</a>{% else %}<span class="badge" style="background:var(--c-info); color:var(--verde-escuro); text-decoration:none;">{{ i.nome }} →</span>{% endif %}{% endfor %}
 </div>
 {% endif %}
+{% if alertas.st_sem_cest %}
+<div class="card" style="background:var(--c-info); border:1px dashed var(--c-info-borda);">
+  <div class="section-title">Produtos com ICMS-ST sem CEST ({{ alertas.st_sem_cest|length }})</div>
+  <p style="margin:0 0 8px; font-size:.88rem; color:var(--muted);">Produto com substituição tributária precisa do CEST na nota fiscal da venda. Ele está na nota de compra do fornecedor, ao lado do NCM.</p>
+  {% for i in alertas.st_sem_cest %}{% if papel_ativo == "admin" %}<a href="{% url 'estoque:editar' i.pk %}" class="badge" style="background:var(--c-info); color:var(--verde-escuro); text-decoration:none;">{{ i.nome }}</a>{% else %}<span class="badge" style="background:var(--c-info); color:var(--verde-escuro);">{{ i.nome }}</span>{% endif %}{% endfor %}
+</div>
+{% endif %}
 {% if alertas.vencidos or alertas.vencendo %}
 <div class="card" style="background:var(--c-aviso); border:1px dashed var(--c-aviso-borda);">
   <div class="section-title">Validade de insumos</div>

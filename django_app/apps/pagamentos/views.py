@@ -1,7 +1,9 @@
+from datetime import date, timedelta
+
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 
@@ -9,6 +11,7 @@ from apps.core.decorators import admin_required, requer_secao, secoes_permitidas
 from apps.financeiro.models import Cobranca
 from apps.vendas.models import Venda
 
+from . import contabilidade as contabilidade_svc
 from . import notas
 from .models import NotaFiscalEmitida
 
@@ -54,6 +57,37 @@ def emitir_venda(request, pk):
         except notas.NotaFiscalError as exc:
             messages.error(request, str(exc))
     return redirect("vendas:detalhe", pk=venda.pk)
+
+
+def _mes_escolhido(request) -> tuple[int, int]:
+    """?mes=2026-10; sem ele (ou inválido), o mês anterior — o que o contador pede."""
+    try:
+        ano, mes = (int(p) for p in request.GET.get("mes", "").split("-"))
+        date(ano, mes, 1)
+        return ano, mes
+    except ValueError:
+        anterior = date.today().replace(day=1) - timedelta(days=1)
+        return anterior.year, anterior.month
+
+
+@admin_required
+def contabilidade(request):
+    ano, mes = _mes_escolhido(request)
+    notas_mes = contabilidade_svc.notas_do_mes(ano, mes)
+    return render(request, "pagamentos/contabilidade.html", {
+        "mes_valor": f"{ano}-{mes:02d}", "mes_rotulo": f"{mes:02d}/{ano}",
+        "resumo": contabilidade_svc.resumo(notas_mes), "notas": notas_mes,
+    })
+
+
+@admin_required
+def contabilidade_zip(request):
+    ano, mes = _mes_escolhido(request)
+    resposta = HttpResponse(
+        contabilidade_svc.gerar_zip(ano, mes, request.session.get("clinica_nome", "")), content_type="application/zip",
+    )
+    resposta["Content-Disposition"] = f'attachment; filename="notas-fiscais-{ano}-{mes:02d}.zip"'
+    return resposta
 
 
 @xframe_options_sameorigin

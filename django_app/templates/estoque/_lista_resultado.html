@@ -1,15 +1,16 @@
 {% if insumos %}
 <div class="table-wrap">
   <table>
-    <thead><tr><th>Nome</th><th>Categoria</th><th style="text-align:right;">Compra</th><th style="text-align:right;">Venda</th><th style="text-align:right;">Lucro</th><th>Estoque</th><th>Ações</th></tr></thead>
+    <thead><tr><th>Cód.</th><th>Nome</th><th>Categoria</th><th style="text-align:right;">Compra</th><th style="text-align:right;">Venda</th><th style="text-align:right;">Lucro</th><th>Estoque</th><th>Ações</th></tr></thead>
     <tbody>
       {% for i in insumos %}
       <tr>
+        <td style="font-variant-numeric:tabular-nums; color:var(--muted);">{{ i.codigo }}</td>
         <td>
-          {{ i.nome }}
+          {{ i.nome }}{% if i.finalidade == "uso_interno" %} <small style="color:var(--muted);">(só uso interno)</small>{% elif i.finalidade == "revenda" %} <small style="color:var(--muted);">(só revenda)</small>{% endif %}
           {% if i.fracionado %}<br><small style="color:var(--muted);">1 {{ i.embalagem|default:"embalagem" }} = {{ i.unidades_por_pacote|floatformat:"-3" }} {{ i.unidade_rotulo }}</small>{% endif %}
           {% if i.lote %}<br><small style="color:var(--muted);">Lote {{ i.lote }}</small>{% endif %}
-          <br><small style="color:var(--muted);">{% if i.ncm %}NCM {{ i.ncm }}{% else %}<span style="color:var(--danger-hover);">sem NCM</span>{% endif %}{% if i.tem_st %} · ICMS-ST{% endif %}</small>
+          <br><small style="color:var(--muted);">{% if i.ncm %}NCM {{ i.ncm }}{% else %}<span style="color:var(--danger-hover);">sem NCM</span>{% endif %}{% if i.tem_st %} · ICMS-ST{% endif %}{% if i.pis_cofins_monofasico %} · monofásico{% endif %}</small>
         </td>
         <td>{{ i.categoria|default:"—" }}</td>
         <td style="text-align:right; white-space:nowrap;">{% if i.custo is not None %}R$ {{ i.custo|floatformat:2 }}{% else %}<span style="color:var(--muted);">—</span>{% endif %}</td>

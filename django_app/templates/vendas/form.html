@@ -80,6 +80,13 @@
         <option value="">Selecione</option>
         {% for valor, rotulo in formas %}<option value="{{ valor }}">{{ rotulo }}</option>{% endfor %}
       </select>
+      <small x-show="['debito', 'credito', 'pix'].includes(forma)" x-cloak style="color:var(--muted);">O valor vai direto pra maquininha.</small>
+    </div>
+    <div x-show="forma === 'credito'" x-cloak>
+      <label>Parcelas</label>
+      <select name="parcelas" x-model="parcelas">
+        {% for n in max_parcelas %}<option value="{{ n }}">{{ n }}x</option>{% endfor %}
+      </select>
     </div>
   </div>
 
@@ -91,14 +98,15 @@
     <div style="display:flex; justify-content:space-between; font-size:1.15rem; margin-top:4px;"><strong>Total</strong><strong x-text="'R$ ' + (subtotal() - valorDesconto()).toFixed(2)"></strong></div>
   </div>
 
-  <div style="margin-top:14px;"><button type="submit" class="btn-primary btn" :disabled="!itens.length || !forma">Finalizar venda</button></div>
+  <div style="margin-top:14px;"><button type="submit" class="btn-primary btn" :disabled="!itens.length || !forma"
+            x-text="['debito', 'credito', 'pix'].includes(forma) ? 'Cobrar na maquininha' : 'Finalizar venda'">Finalizar venda</button></div>
 </form>
 
 <script>
   function formVenda(produtos, estado) {
     return {
       produtos, itens: estado.itens.filter(i => produtos.some(p => p.id === i.insumo)),
-      forma: estado.forma, tipo: estado.tipo || "valor", desconto: estado.desconto, motivo: estado.motivo, cliente: estado.cliente,
+      forma: estado.forma, parcelas: String(estado.parcelas || 1), tipo: estado.tipo || "valor", desconto: estado.desconto, motivo: estado.motivo, cliente: estado.cliente,
       cpf: estado.cpf || "", cpfStatus: "", tutorNome: "",
       init() { if (this.cpf) this.buscarCpf(); },
       mascaraCpf(v) {

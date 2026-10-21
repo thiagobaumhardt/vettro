@@ -1,5 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Clínica — Vettro{% endblock %}
+{% block title %}Clínica — Vettro
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+    <div>
+      <h2 style="margin:0;">WhatsApp</h2>
+      <p style="color:var(--muted); margin:4px 0 0;">Número da clínica para lembretes de agendamento, vacina e retorno.</p>
+    </div>
+    <a href="{% url 'whatsapp:conexao' %}" class="btn-secondary btn">Configurar WhatsApp</a>
+  </div>
+</div>
+{% endblock %}
 {% block content %}
 <div class="card">
   <h2>Dados da clínica</h2>
@@ -48,6 +58,21 @@
     </div>
     <p style="font-size:.82rem; color:var(--muted); margin:6px 0 0;">Qual produto tem substituição tributária o sistema descobre sozinho pelo XML da nota do fornecedor.</p>
 
+    <div class="section-title" style="margin-top:18px;">Regra fiscal — nota de serviço (NFS-e)</div>
+    <div class="form-grid">
+      <div>
+        <label for="id_nfse_codigo_tributacao_nacional">Código de tributação nacional</label>{{ form.nfse_codigo_tributacao_nacional }}
+        <small style="color:var(--muted);">050202 = subitem 5.02, clínicas e ambulatórios veterinários. Vale para todos os serviços; exceções ficam no catálogo de Serviços.</small>
+      </div>
+      <div>
+        <label for="id_nfse_codigo_municipal">Código municipal</label>{{ form.nfse_codigo_municipal }}
+        <small style="color:var(--muted);">Só se a prefeitura exigir um código próprio.</small>
+      </div>
+    </div>
+    <p style="font-size:.82rem; color:var(--muted); margin:6px 0 0;">
+      Notas do mês para o contador (XMLs e relatório de serviços e vendas): <a href="{% url 'notas:contabilidade' %}">Contabilidade</a>.
+    </p>
+
     <div class="section-title" style="margin-top:18px;">Agenda</div>
     <div class="form-grid">
       <div><label for="id_agenda_hora_inicio">Agenda abre às</label>{{ form.agenda_hora_inicio }}</div>
@@ -77,5 +102,15 @@
     </div>
     <div style="margin-top:14px;"><button type="submit" class="btn-primary btn">Salvar</button></div>
   </form>
+</div>
+
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+    <div>
+      <h2 style="margin:0;">WhatsApp</h2>
+      <p style="color:var(--muted); margin:4px 0 0;">Número da clínica para lembretes de agendamento, vacina e retorno.</p>
+    </div>
+    <a href="{% url 'whatsapp:conexao' %}" class="btn-secondary btn">Configurar WhatsApp</a>
+  </div>
 </div>
 {% endblock %}

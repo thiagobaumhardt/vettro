@@ -18,6 +18,8 @@ class Servico(models.Model):
     atualização do plano sobre dados fiscais)."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Código interno legível (SERV001...), gerado sozinho — vai na NFS-e.
+    codigo = models.CharField("Código", max_length=20, unique=True, null=True, blank=True)
     nome = models.CharField(max_length=150)
     valor = models.DecimalField(max_digits=10, decimal_places=2)
     # Serviço cobrado por tempo/quantidade (oxigenoterapia por hora, internação
@@ -27,7 +29,16 @@ class Servico(models.Model):
         "Cobrado por", max_length=20, blank=True, help_text='Ex.: "hora", "diária", "sessão". Em branco = por vez.',
     )
     descricao = models.TextField(blank=True)
-    codigo_servico_municipal = models.CharField(max_length=20, blank=True)
+    # Códigos da NFS-e — em branco = os padrões da clínica (⚙️ Clínica; nacional
+    # 050202 = subitem 5.02, clínica veterinária). Preencher só como exceção.
+    codigo_tributacao_nacional = models.CharField(
+        "Código de tributação nacional (exceção)", max_length=6, blank=True,
+        help_text="Em branco = o padrão da clínica (050202).",
+    )
+    codigo_servico_municipal = models.CharField(
+        "Código municipal (exceção)", max_length=20, blank=True,
+        help_text="Em branco = o padrão da clínica.",
+    )
     # Agenda: tempo que o serviço ocupa na agenda do veterinário (horários livres).
     duracao_min = models.PositiveSmallIntegerField("Duração na agenda (min)", default=30)
     tipo = models.CharField("Tipo de atendimento (cor na agenda)", max_length=20, choices=TIPO_COR_CHOICES, blank=True)
@@ -40,6 +51,13 @@ class Servico(models.Model):
 
     def __str__(self):
         return self.nome
+
+    def save(self, *args, **kwargs):
+        if not self.codigo:
+            from apps.estoque.models import proximo_codigo
+
+            self.codigo = proximo_codigo(Servico, prefixo="SERV")
+        super().save(*args, **kwargs)
 
 
 class TipoExame(models.Model):

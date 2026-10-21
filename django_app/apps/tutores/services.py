@@ -47,12 +47,13 @@ def escrubar_snapshots_tutor(tutor: Tutor) -> None:
     from apps.agenda.models import Agendamento
     from apps.atendimentos.models import Atendimento
     from apps.financeiro.models import Cobranca
-    from apps.lembretes.models import EnvioLembrete
+    from apps.lembretes.models import EnvioLembrete, MensagemWhatsApp
     from apps.pacientes.models import Paciente
 
     from apps.orcamentos.models import Orcamento
 
     EnvioLembrete.objects.filter(tutor=tutor).update(tutor_nome=PLACEHOLDER_TUTOR_EXCLUIDO, telefone="")
+    MensagemWhatsApp.objects.filter(tutor=tutor).update(telefone="", texto="")
     Orcamento.objects.filter(tutor=tutor).update(tutor_nome=PLACEHOLDER_TUTOR_EXCLUIDO, tutor_tel="")
     from apps.vendas.models import Venda
 

@@ -43,6 +43,14 @@ class ConfiguracaoClinica(models.Model):
     cst_csosn_venda = models.CharField("CSOSN/CST — produto normal", max_length=4, default="102")
     cfop_venda_st = models.CharField("CFOP — produto com substituição tributária", max_length=4, default="5405")
     cst_csosn_venda_st = models.CharField("CSOSN/CST — produto com substituição tributária", max_length=4, default="500")
+    # NFS-e: padrão de todos os serviços (cada serviço pode ter exceção no catálogo).
+    nfse_codigo_tributacao_nacional = models.CharField(
+        "Código de tributação nacional", max_length=6, default="050202",
+        help_text="050202 = subitem 5.02 (clínicas e ambulatórios veterinários).",
+    )
+    nfse_codigo_municipal = models.CharField(
+        "Código municipal", max_length=20, blank=True, help_text="Só se a prefeitura exigir um código próprio.",
+    )
 
     validade_orcamento_dias = models.PositiveSmallIntegerField(
         "Validade padrão do orçamento (dias)", default=15,

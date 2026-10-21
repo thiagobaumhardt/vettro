@@ -20,7 +20,7 @@ estava em produção nela). Ver o plano completo em
   SD2 saída, SD3 ajuste interno), importação de XML já captura NCM automaticamente.
   **+ Consultórios/locais cadastráveis livremente**, fechamento de agenda por dia ou turno
   (admin only, testado: vet não-admin recebe 403), e **lembrete de WhatsApp 24h antes**
-  (`enviar_lembretes_whatsapp`, backend substituível — provedor ainda não escolhido).
+  (`enviar_lembretes_whatsapp`, Cloud API da Meta por clínica — ver `apps/whatsapp`).
   **+ Bloqueio geral e recorrente** (paridade com o SimplesVet, que faz distinção entre
   bloqueio geral × individual e pontual × recorrente): `BloqueioAgenda.consultorio` agora aceita
   `None` = fecha a agenda inteira (todos os consultórios de uma vez, não só um por um); e
@@ -52,14 +52,28 @@ estava em produção nela). Ver o plano completo em
   ressalva em `static/dist/styles.css`), tipografia Livvic (textos, fonte real da marca) +
   Fraunces (títulos, substituta gratuita temporária da Roca Two, que é paga/sem licença web
   confirmada), toggle de sidebar mobile (hambúrguer + off-canvas) finalmente ligado.
-- 📱 **Backend real de WhatsApp implementado** (`WhatsAppMetaCloudBackend`, Meta Cloud API
-  oficial) — decisão tomada depois de pesquisa mostrando que Z-API/Evolution API conectam via
-  QR Code (mesmo risco de banimento do WhatsApp Web não-oficial, mesmo sendo pagas). Mensagem
-  vira variável de um template aprovado (obrigatório pra mensagem de negócio-pro-cliente fora
-  da janela de 24h). Testado com HTTP mockado: payload correto, tratamento de erro/config
-  ausente, fluxo ponta a ponta do comando `enviar_lembretes_whatsapp`. Falta só a conta Meta
-  Business + template aprovado de cada clínica pra ativar de verdade (`WHATSAPP_BACKEND` +
-  `WHATSAPP_META_*` nas envs).
+- 📱 **WhatsApp SaaS (Cloud API oficial da Meta, `apps/whatsapp`)** — o Vettro é *Tech Provider*
+  com um app Meta só; cada clínica conecta o **próprio número** em ⚙️ Clínica → WhatsApp pelo
+  Embedded Signup (v4): número novo dedicado ou **coexistência** com o app WhatsApp Business do
+  celular (respostas continuam chegando no celular; contatos/histórico sincronizados na conexão).
+  Token por clínica cifrado (`ConexaoWhatsApp`, schema public). Ao conectar, cria na WABA da
+  clínica os templates do Vettro (`apps/whatsapp/modelos.py`: agendamento/vacina/retorno =
+  utility, aviso do menu Lembretes = marketing) e acompanha a aprovação. Webhook único
+  `/whatsapp/webhook/` (assinatura `X-Hub-Signature-256`): status entregue/lida/falhou,
+  respostas dos tutores (menu Lembretes; "SAIR" revoga o consentimento) e aprovação de template.
+  Todas as mensagens ficam em `lembretes.MensagemWhatsApp`. A Meta cobra direto da clínica
+  (forma de pagamento no WhatsApp Manager). Sem Embedded Signup (app ainda sem revisão), a
+  plataforma conecta à mão em `/plataforma/` → Conexões de WhatsApp → Conectar manualmente.
+  **Hoje (só a Lume) o caminho é o manual, sem Tech Provider — passo a passo das duas fases em
+  `docs/whatsapp-meta.md`.** Para a fase 2, **configurar o app Meta:** produto WhatsApp + Facebook Login for Business (configuração
+  Embedded Signup → `META_EMBEDDED_SIGNUP_CONFIG_ID`), domínio em *Allowed domains* e *Valid
+  OAuth redirect URIs*, webhook `https://www.vettro.com.br/whatsapp/webhook/` com
+  `META_WEBHOOK_VERIFY_TOKEN` e campos `messages`, `message_template_status_update`,
+  `account_update`, `history`, `smb_app_state_sync`, `smb_message_echoes`; revisão do app
+  (Advanced Access em `whatsapp_business_management` e `whatsapp_business_messaging`) e
+  verificação da empresa. Envs: `WHATSAPP_BACKEND=apps.whatsapp.backends.WhatsAppMetaCloudBackend`,
+  `META_APP_ID`, `META_APP_SECRET`, `META_EMBEDDED_SIGNUP_CONFIG_ID`, `META_WEBHOOK_VERIFY_TOKEN`,
+  `WHATSAPP_CHAVE_CRIPTO` (Fernet; opcional).
 - 🧩 **Módulos habilitáveis por clínica** (pedido explícito do usuário) — o admin de
   plataforma decide, no provisionamento (editável depois no admin da Clinica), quais módulos
   cada clínica tem: Tutores/Pacientes/Financeiro/Estoque/Atendimentos/Agenda vêm marcados por

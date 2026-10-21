@@ -23,6 +23,7 @@ class ConfiguracaoClinicaForm(forms.ModelForm):
             "razao_social", "cnpj", "telefone", "email",
             "cep", "endereco", "numero", "complemento", "bairro", "cidade", "uf",
             "regime_tributario", "cfop_venda", "cst_csosn_venda", "cfop_venda_st", "cst_csosn_venda_st",
+            "nfse_codigo_tributacao_nacional", "nfse_codigo_municipal",
             "marca_dagua", "validade_orcamento_dias", "agenda_hora_inicio", "agenda_hora_fim", "agenda_intervalo_min",
             "estoque_frequencia_compra_dias",
         ]
@@ -32,6 +33,9 @@ class ConfiguracaoClinicaForm(forms.ModelForm):
         if len(valor) != digitos:
             raise forms.ValidationError(f"Use {digitos} dígitos.")
         return valor
+
+    def clean_nfse_codigo_tributacao_nacional(self):
+        return self._codigo("nfse_codigo_tributacao_nacional", 6)
 
     def clean_cfop_venda(self):
         return self._codigo("cfop_venda", 4)

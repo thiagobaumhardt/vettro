@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}WhatsApp — Vettro{% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+    <h2 style="margin:0;">WhatsApp da clínica</h2>
+    <a href="{% url 'core:configuracao' %}" class="btn-secondary btn">Voltar</a>
+  </div>
+
+  {% if conexao %}
+    <p style="margin:14px 0 0;">
+      {% if conexao.ativa %}<span class="badge" style="background:var(--c-ok);">Conectado</span>
+      {% else %}<span class="badge" style="background:var(--c-alerta);">Com erro</span>{% endif %}
+      <strong style="margin-left:6px;">{{ conexao.numero_exibicao|default:conexao.phone_number_id }}</strong>
+      {% if conexao.nome_exibicao %}· {{ conexao.nome_exibicao }}{% endif %}
+      {% if qualidade %}· Qualidade do número: {{ qualidade }}{% endif %}
+    </p>
+    {% if conexao.erro %}<p style="color:var(--danger-hover);">{{ conexao.erro }}</p>{% endif %}
+    <p style="color:var(--muted); font-size:.85rem;">
+      {% if conexao.coexistencia %}Número compartilhado com o app WhatsApp Business do celular: as respostas dos tutores aparecem lá normalmente.
+      {% else %}Número dedicado à API: as respostas dos tutores aparecem no menu Lembretes.{% endif %}
+      As mensagens são cobradas pela Meta direto na conta da clínica (cadastre a forma de pagamento no Gerenciador do WhatsApp da Meta).
+    </p>
+    {% if not modulo_ativo %}
+    <p style="background:var(--verde-claro); padding:8px 10px; font-size:.88rem;">
+      O módulo de lembretes por WhatsApp ainda não está habilitado para a clínica. Peça ao suporte do Vettro para habilitar.
+    </p>
+    {% endif %}
+  {% else %}
+    <p style="color:var(--muted);">
+      Conecte o WhatsApp da clínica para enviar lembretes de agendamento, vacina e retorno, e avisos aos tutores.
+      O número e a conta ficam no nome da clínica; o Vettro só envia as mensagens.
+    </p>
+    {% if signup_disponivel %}
+    <div class="section-title" style="margin-top:14px;">Qual número usar?</div>
+    <div class="form-grid">
+      <div style="border:1px solid var(--border); padding:12px;">
+        <strong>WhatsApp Business do celular</strong>
+        <p style="font-size:.85rem; color:var(--muted);">O número que a clínica já usa no app WhatsApp Business. Continua funcionando no celular, e as respostas dos tutores chegam lá.</p>
+        <button type="button" class="btn-primary btn" onclick="conectarWhatsApp(true)">Conectar número do celular</button>
+      </div>
+      <div style="border:1px solid var(--border); padding:12px;">
+        <strong>Número novo, só para o sistema</strong>
+        <p style="font-size:.85rem; color:var(--muted);">Um número que não está em nenhum app de WhatsApp. As respostas dos tutores aparecem no menu Lembretes.</p>
+        <button type="button" class="btn-secondary btn" onclick="conectarWhatsApp(false)">Conectar número novo</button>
+      </div>
+    </div>
+    <p id="whatsapp-aviso" style="color:var(--danger-hover); display:none;"></p>
+    <form method="post" action="{% url 'whatsapp:conectar' %}" id="form-conectar">
+      {% csrf_token %}
+      <input type="hidden" name="code"><input type="hidden" name="waba_id">
+      <input type="hidden" name="phone_number_id"><input type="hidden" name="coexistencia">
+    </form>
+    {% else %}
+    <p style="background:var(--verde-claro); padding:8px 10px; font-size:.88rem;">
+      A conexão automática ainda não está disponível. Fale com o suporte do Vettro para conectar o número da clínica.
+    </p>
+    {% endif %}
+  {% endif %}
+</div>
+
+{% if conexao %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+    <div class="section-title" style="margin:0;">Modelos de mensagem</div>
+    <form method="post" action="{% url 'whatsapp:sincronizar' %}">{% csrf_token %}<button type="submit" class="btn-secondary btn">Atualizar situação</button></form>
+  </div>
+  <p style="color:var(--muted); font-size:.85rem;">A Meta aprova cada modelo antes do primeiro envio (de alguns minutos a 1 dia). Utilidade custa cerca de US$ 0,007 por mensagem; marketing, cerca de US$ 0,06.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Mensagem</th><th>Categoria</th><th>Situação</th></tr></thead>
+      <tbody>
+        {% for m in modelos %}
+        <tr>
+          <td>{{ m.rotulo }}</td>
+          <td>{{ m.categoria }}</td>
+          <td>
+            {% if m.status == "APPROVED" %}<span class="badge" style="background:var(--c-ok);">{{ m.status_rotulo }}</span>
+            {% elif m.status == "PENDING" or m.status == "IN_APPEAL" %}<span class="badge" style="background:var(--c-info);">{{ m.status_rotulo }}</span>
+            {% else %}<span class="badge" style="background:var(--c-alerta);">{{ m.status_rotulo }}</span>{% endif %}
+            {% if m.motivo %}<div style="font-size:.82rem; color:var(--muted);">{{ m.motivo }}</div>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">Enviar teste</div>
+  <form method="post" action="{% url 'whatsapp:testar' %}" style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;">
+    {% csrf_token %}
+    <div><label for="tel-teste">WhatsApp</label><input type="text" id="tel-teste" name="telefone" data-mascara="telefone" value="+55 " required></div>
+    <button type="submit" class="btn-secondary btn">Enviar teste</button>
+  </form>
+  <p style="color:var(--muted); font-size:.82rem;">Usa o modelo de aviso (precisa estar aprovado).</p>
+</div>
+
+<div class="card">
+  <div class="section-title">Desconectar</div>
+  <p style="color:var(--muted); font-size:.85rem;">Os lembretes param de ser enviados. O número e a conta continuam da clínica na Meta, e dá para conectar de novo depois.</p>
+  <form method="post" action="{% url 'whatsapp:desconectar' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn-danger btn" data-confirm="Desconectar o WhatsApp da clínica?">Desconectar</button>
+  </form>
+</div>
+{% endif %}
+
+{% if not conexao and signup_disponivel %}
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/pt_BR/sdk.js"></script>
+<script>
+  // Embedded Signup da Meta: a janela devolve waba_id/phone_number_id por
+  // postMessage e o `code` no callback do FB.login; os dois vão pro servidor.
+  window.fbAsyncInit = function () {
+    FB.init({ appId: "{{ meta_app_id|escapejs }}", autoLogAppEvents: true, xfbml: false, version: "{{ meta_versao|escapejs }}" });
+  };
+  let sessaoWhatsApp = {};
+  window.addEventListener("message", function (evento) {
+    if (!evento.origin.endsWith("facebook.com")) return;
+    let dados;
+    try { dados = JSON.parse(evento.data); } catch (e) { return; }
+    if (dados.type !== "WA_EMBEDDED_SIGNUP") return;
+    if ((dados.event || "").startsWith("FINISH")) sessaoWhatsApp = dados.data || {};
+    else if (dados.event === "CANCEL") avisoWhatsApp("Conexão cancelada antes de terminar. Tente de novo quando quiser.");
+  });
+  function avisoWhatsApp(texto) {
+    const aviso = document.getElementById("whatsapp-aviso");
+    aviso.textContent = texto;
+    aviso.style.display = "block";
+  }
+  function conectarWhatsApp(coexistencia) {
+    if (typeof FB === "undefined") { avisoWhatsApp("Não foi possível carregar a janela da Meta. Verifique a conexão e recarregue a página."); return; }
+    const extras = { setup: {}, sessionInfoVersion: "3" };
+    if (coexistencia) extras.featureType = "whatsapp_business_app_onboarding";
+    FB.login(function (resposta) {
+      const code = resposta.authResponse && resposta.authResponse.code;
+      if (!code) return;
+      let tentativas = 0;
+      (function enviar() {
+        // O postMessage com os IDs às vezes chega logo depois do callback.
+        if (!sessaoWhatsApp.waba_id && tentativas++ < 20) { setTimeout(enviar, 250); return; }
+        const form = document.getElementById("form-conectar");
+        form.code.value = code;
+        form.waba_id.value = sessaoWhatsApp.waba_id || "";
+        form.phone_number_id.value = sessaoWhatsApp.phone_number_id || "";
+        form.coexistencia.value = coexistencia ? "1" : "0";
+        form.submit();
+      })();
+    }, { config_id: "{{ meta_config_id|escapejs }}", response_type: "code", override_default_response_type: true, extras: extras });
+  }
+</script>
+{% endif %}
+{% endblock %}

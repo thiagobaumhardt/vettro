@@ -1,8 +1,8 @@
 """Parser de NF-e (ENCAT/CONFAZ) pra importação de estoque — porte de
 backend/app/nfe.py, namespace-agnostic, aceita <nfeProc> completo ou <NFe>
 avulsa. Captura também os dados fiscais de cada item que a clínica precisa
-pra revender o produto (NFC-e): NCM, origem da mercadoria e se o ICMS tem
-substituição tributária."""
+pra revender o produto (NFC-e): NCM, CEST, origem da mercadoria, se o ICMS
+tem substituição tributária e se o PIS/COFINS é monofásico."""
 import xml.etree.ElementTree as ET
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -57,6 +57,17 @@ def _tributacao_icms(det) -> dict:
     return {"origem": _texto(grupo, "orig"), "tem_st": tem_st}
 
 
+# CST de PIS que indicam tributação monofásica: 02 (alíquota diferenciada —
+# fabricante/importador), 03 (por unidade de medida) e 04 (revenda a alíquota zero).
+CST_PIS_MONOFASICO = {"02", "03", "04"}
+
+
+def _pis_monofasico(det) -> bool:
+    pis = _achar(det, "PIS")
+    grupo = next(iter(pis), None) if pis is not None else None
+    return grupo is not None and _texto(grupo, "CST") in CST_PIS_MONOFASICO
+
+
 def parsear_nfe(conteudo_xml: bytes) -> list[dict]:
     try:
         raiz = ET.fromstring(conteudo_xml)
@@ -103,6 +114,8 @@ def parsear_nfe(conteudo_xml: bytes) -> list[dict]:
             "nome": nome,
             "codigo_barras": codigo_barras,
             "ncm": ncm,
+            "cest": _texto(prod, "CEST", ""),
+            "pis_cofins_monofasico": _pis_monofasico(det),
             **_tributacao_icms(det),
             "quantidade": quantidade,
             "valor_unitario": valor_unitario,
