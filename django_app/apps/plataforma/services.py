@@ -18,15 +18,30 @@ DOMINIO_REAL = "www.vettro.com.br"
 
 
 def provisionar_clinica(
-    *, nome: str, schema_name: str, admin_email: str, admin_nome: str, admin_senha: str | None = None
+    *, nome: str, schema_name: str, admin_email: str, admin_nome: str, admin_senha: str | None = None,
+    modulo_tutores: bool = True, modulo_pacientes: bool = True, modulo_financeiro: bool = True,
+    modulo_estoque: bool = True, modulo_atendimentos: bool = True, modulo_agenda: bool = True,
+    modulo_whatsapp_lembrete: bool = False,
 ) -> Clinica:
     """`admin_senha=None` (padrão, usado pela tela de admin de plataforma) —
     cria o admin SEM senha (set_unusable_password) e manda convite por
     e-mail pra ele definir a própria senha, mesmo padrão usado ao adicionar
     alguém em 🔑 Usuários (§5 do plano). Passar `admin_senha` diretamente
-    continua disponível pra scripts/seed automatizados (sem e-mail)."""
+    continua disponível pra scripts/seed automatizados (sem e-mail).
+
+    Módulos (`modulo_*`, pedido explícito do usuário): decididos aqui no
+    provisionamento, mas continuam editáveis depois direto no admin da
+    Clinica — controlam o que aparece pra TODOS os usuários dessa clínica,
+    independente do papel de cada um (ver Clinica.modulos_habilitados e
+    apps.core.decorators.secoes_permitidas)."""
     with transaction.atomic():
-        clinica = Clinica.objects.create(nome=nome, schema_name=schema_name)
+        clinica = Clinica.objects.create(
+            nome=nome, schema_name=schema_name,
+            modulo_tutores=modulo_tutores, modulo_pacientes=modulo_pacientes,
+            modulo_financeiro=modulo_financeiro, modulo_estoque=modulo_estoque,
+            modulo_atendimentos=modulo_atendimentos, modulo_agenda=modulo_agenda,
+            modulo_whatsapp_lembrete=modulo_whatsapp_lembrete,
+        )
         Dominio.objects.create(
             domain=f"{schema_name}.{DOMINIO_REAL}", tenant=clinica, is_primary=True
         )

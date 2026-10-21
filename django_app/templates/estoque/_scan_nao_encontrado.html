@@ -1,2 +1,2 @@
 <div class="card"><p>Código <strong>{{ codigo }}</strong> não cadastrado.</p>
-<a href="{% url 'estoque:novo' %}" class="btn-primary btn">Cadastrar novo insumo</a></div>
+{% if papel_ativo == "admin" %}<a href="{% url 'estoque:novo' %}" class="btn-primary btn">Cadastrar novo insumo</a>{% else %}<p style="color:var(--muted); margin:0;">Peça ao administrador da clínica para cadastrar.</p>{% endif %}</div>

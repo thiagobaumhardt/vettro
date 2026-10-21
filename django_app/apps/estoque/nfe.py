@@ -1,9 +1,11 @@
 """Parser de NF-e (ENCAT/CONFAZ) pra importação de estoque — porte de
 backend/app/nfe.py, namespace-agnostic, aceita <nfeProc> completo ou <NFe>
-avulsa. Passa a capturar também o NCM de cada item (código de produto usado
-no cálculo de imposto — ver atualização do plano)."""
+avulsa. Captura também os dados fiscais de cada item que a clínica precisa
+pra revender o produto (NFC-e): NCM, CEST, origem da mercadoria, se o ICMS
+tem substituição tributária e se o PIS/COFINS é monofásico."""
 import xml.etree.ElementTree as ET
 from datetime import date
+from decimal import Decimal, InvalidOperation
 
 
 class NFeInvalidaError(Exception):
@@ -32,6 +34,40 @@ def _texto(elemento, nome_tag, default=None):
     return achado.text if achado is not None and achado.text else default
 
 
+# CST (regime normal) e CSOSN (Simples Nacional) que indicam ICMS com
+# substituição tributária — o ICMS da revenda já foi recolhido antes, e a
+# clínica revende com a regra "com ST" (em geral CFOP 5405 / CSOSN 500).
+CST_COM_ST = {"10", "30", "60", "70"}
+CSOSN_COM_ST = {"201", "202", "203", "500"}
+
+
+def _tributacao_icms(det) -> dict:
+    """Lê o grupo <ICMS> do item: origem da mercadoria (0 = nacional, 1/2 =
+    estrangeira...) e se há substituição tributária."""
+    icms = _achar(det, "ICMS")
+    grupo = next(iter(icms), None) if icms is not None else None
+    if grupo is None:
+        return {"origem": None, "tem_st": False}
+    cst, csosn = _texto(grupo, "CST"), _texto(grupo, "CSOSN")
+    try:
+        valor_st = Decimal(_texto(grupo, "vICMSST", "0")) + Decimal(_texto(grupo, "vICMSSTRet", "0"))
+    except InvalidOperation:
+        valor_st = Decimal("0")
+    tem_st = cst in CST_COM_ST or csosn in CSOSN_COM_ST or (cst == "90" and valor_st > 0)
+    return {"origem": _texto(grupo, "orig"), "tem_st": tem_st}
+
+
+# CST de PIS que indicam tributação monofásica: 02 (alíquota diferenciada —
+# fabricante/importador), 03 (por unidade de medida) e 04 (revenda a alíquota zero).
+CST_PIS_MONOFASICO = {"02", "03", "04"}
+
+
+def _pis_monofasico(det) -> bool:
+    pis = _achar(det, "PIS")
+    grupo = next(iter(pis), None) if pis is not None else None
+    return grupo is not None and _texto(grupo, "CST") in CST_PIS_MONOFASICO
+
+
 def parsear_nfe(conteudo_xml: bytes) -> list[dict]:
     try:
         raiz = ET.fromstring(conteudo_xml)
@@ -55,13 +91,13 @@ def parsear_nfe(conteudo_xml: bytes) -> list[dict]:
         ncm = _texto(prod, "NCM")
 
         try:
-            quantidade = float(_texto(prod, "qCom", "0"))
-        except ValueError:
-            quantidade = 0.0
+            quantidade = Decimal(_texto(prod, "qCom", "0"))
+        except InvalidOperation:
+            quantidade = Decimal("0")
         try:
-            valor_unitario = float(_texto(prod, "vUnCom", "0"))
-        except ValueError:
-            valor_unitario = 0.0
+            valor_unitario = Decimal(_texto(prod, "vUnCom", "0"))
+        except InvalidOperation:
+            valor_unitario = Decimal("0")
 
         lote, validade = None, None
         rastro = _achar(det, "rastro")
@@ -78,8 +114,14 @@ def parsear_nfe(conteudo_xml: bytes) -> list[dict]:
             "nome": nome,
             "codigo_barras": codigo_barras,
             "ncm": ncm,
+            "cest": _texto(prod, "CEST", ""),
+            "pis_cofins_monofasico": _pis_monofasico(det),
+            **_tributacao_icms(det),
             "quantidade": quantidade,
             "valor_unitario": valor_unitario,
+            # Unidade comercial da nota (CX, UN, FR...) — a quantidade e o
+            # valor unitário da NF-e estão nela, não na unidade de uso.
+            "unidade_comercial": _texto(prod, "uCom", ""),
             "lote": lote,
             "validade": validade,
         })
@@ -88,3 +130,27 @@ def parsear_nfe(conteudo_xml: bytes) -> list[dict]:
         raise NFeInvalidaError("Nenhum item encontrado na NF-e.")
 
     return itens
+
+
+
+def parsear_cabecalho_nfe(conteudo_xml: bytes) -> dict:
+    """Emitente (fornecedor), número, chave e data de emissão da NF-e."""
+    try:
+        raiz = ET.fromstring(conteudo_xml)
+    except ET.ParseError as exc:
+        raise NFeInvalidaError("XML inválido.") from exc
+    inf_nfe = _achar(raiz, "infNFe")
+    if inf_nfe is None:
+        raise NFeInvalidaError("Tag <infNFe> não encontrada — XML não parece ser uma NF-e.")
+    emit = _achar(inf_nfe, "emit")
+    ide = _achar(inf_nfe, "ide")
+    chave = (inf_nfe.get("Id") or "").replace("NFe", "")
+    emissao = _texto(ide, "dhEmi") if ide is not None else None
+    return {
+        "cnpj": _texto(emit, "CNPJ", "") if emit is not None else "",
+        "nome": (_texto(emit, "xFant") or _texto(emit, "xNome", "")) if emit is not None else "",
+        "telefone": _texto(_achar(emit, "enderEmit"), "fone", "") if emit is not None and _achar(emit, "enderEmit") is not None else "",
+        "numero": _texto(ide, "nNF", "") if ide is not None else "",
+        "chave": chave if len(chave) == 44 else "",
+        "emissao": emissao[:10] if emissao else "",
+    }

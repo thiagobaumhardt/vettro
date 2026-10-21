@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Novo Orçamento — Vettro{% endblock %}
+{% block content %}
+<form method="post" class="card" x-data="formOrcamento({{ estado_json }}, {{ pacientes_json }}, {{ catalogo_json }})">
+  {% csrf_token %}
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <h2 style="margin:0;">Novo Orçamento</h2>
+    <a href="{% url 'orcamentos:lista' %}" class="btn-secondary btn">← Voltar</a>
+  </div>
+
+  <div class="form-grid">
+    <div>
+      <label>Tutor</label>
+      <select name="tutor" x-model="tutor" @change="paciente = ''" required>
+        <option value="">Selecione o tutor</option>
+        {% for t in tutores %}<option value="{{ t.pk }}">{{ t.nome }}{% if t.tel %} · {{ t.tel }}{% endif %}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Paciente (opcional)</label>
+      <select name="paciente" x-model="paciente">
+        <option value="">—</option>
+        <template x-for="p in pacientesDoTutor()" :key="p.id"><option :value="p.id" x-text="p.nome"></option></template>
+      </select>
+      <small style="color:var(--muted);" x-show="pacienteSel() && pacienteSel().peso" x-text="'Procedimentos com preço da faixa de ' + (pacienteSel() ? pacienteSel().peso : '') + ' kg'"></small>
+    </div>
+    <div><label>Válido até</label><input type="date" name="valido_ate" x-model="validoAte" required></div>
+  </div>
+
+  <div class="section-title" style="margin-top:18px;">Itens</div>
+  <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+    <select x-ref="catalogo" @change="adicionarDoCatalogo($event.target.value); $event.target.value = ''" style="max-width:360px;">
+      <option value="">+ Adicionar do catálogo...</option>
+      <optgroup label="Serviços"><template x-for="(s, i) in catalogo.servicos" :key="'s'+i"><option :value="'servicos:' + i" x-text="s.nome + ' — R$ ' + s.valor"></option></template></optgroup>
+      <optgroup label="Procedimentos cirúrgicos"><template x-for="(c, i) in catalogo.procedimentos" :key="'c'+i"><option :value="'procedimentos:' + i" x-text="c.nome"></option></template></optgroup>
+      <optgroup label="Insumos"><template x-for="(s, i) in catalogo.insumos" :key="'i'+i"><option :value="'insumos:' + i" x-text="s.nome + ' — R$ ' + s.valor"></option></template></optgroup>
+    </select>
+    <button type="button" class="btn-secondary btn" @click="itens.push({ descricao: '', qtd: 1, valor: '' })">+ Item livre</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Descrição</th><th style="width:90px;">Qtd</th><th style="width:140px;">Valor unit. (R$)</th><th style="width:130px; text-align:right;">Subtotal</th><th style="width:50px;"></th></tr></thead>
+      <tbody>
+        <template x-for="(item, i) in itens" :key="i">
+          <tr>
+            <td><input type="text" name="item_descricao" x-model="item.descricao" maxlength="200" required></td>
+            <td><input type="number" name="item_qtd" x-model="item.qtd" min="0.001" step="any" required></td>
+            <td><input type="number" name="item_valor" x-model="item.valor" min="0" step="0.01" required></td>
+            <td style="text-align:right;" x-text="'R$ ' + subtotal(item).toFixed(2)"></td>
+            <td><button type="button" class="btn-danger btn" @click="itens.splice(i, 1)" >Remover</button></td>
+          </tr>
+        </template>
+        <tr x-show="!itens.length"><td colspan="5" class="empty">Nenhum item. Adicione do catálogo ou um item livre.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="total-box" style="border:1.5px solid var(--primary); padding:12px 16px; margin-top:14px; display:flex; justify-content:space-between; align-items:center;">
+    <span>Total do orçamento</span>
+    <strong x-text="'R$ ' + total().toFixed(2)"></strong>
+  </div>
+
+  <div style="margin-top:12px;"><label>Observações (saem no PDF)</label><textarea name="obs" rows="3" x-model="obs"></textarea></div>
+  <p style="color:var(--muted); font-size:.85rem;">O PDF inclui o aviso de que os valores são de orçamento e a data de validade.</p>
+
+  <div style="margin-top:14px;"><button type="submit" class="btn-primary btn" :disabled="!itens.length">Salvar orçamento</button></div>
+</form>
+
+<script>
+  function formOrcamento(estado, pacientes, catalogo) {
+    return {
+      tutor: estado.tutor, paciente: estado.paciente, validoAte: estado.valido_ate, obs: estado.obs,
+      itens: estado.itens.length ? estado.itens : [], catalogo,
+      pacientesDoTutor() { return pacientes.filter(p => p.tutor === this.tutor); },
+      pacienteSel() { return pacientes.find(p => p.id === this.paciente); },
+      // Espelha apps.financeiro.services.valor_por_peso: P <10kg, M 10–25kg, G >25kg.
+      valorProcedimento(c) {
+        const peso = this.pacienteSel() ? parseFloat(this.pacienteSel().peso) : NaN;
+        let valor = null;
+        if (!isNaN(peso) && peso > 0) valor = peso < 10 ? c.p : (peso <= 25 ? c.m : c.g);
+        return valor ?? c.p ?? c.m ?? c.g ?? "0";
+      },
+      adicionarDoCatalogo(chave) {
+        if (!chave) return;
+        const [grupo, indice] = chave.split(":");
+        const origem = this.catalogo[grupo][parseInt(indice)];
+        const valor = grupo === "procedimentos" ? this.valorProcedimento(origem) : origem.valor;
+        this.itens.push({ descricao: origem.nome, qtd: 1, valor });
+      },
+      subtotal(item) { return (parseFloat(item.valor) || 0) * (parseFloat(String(item.qtd).replace(",", ".")) || 0); },
+      total() { return this.itens.reduce((soma, item) => soma + this.subtotal(item), 0); },
+    };
+  }
+</script>
+{% endblock %}

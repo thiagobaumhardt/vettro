@@ -1,0 +1,115 @@
+PERGUNTAS PARA O CONTADOR — EMISSÃO DE NOTAS FISCAIS
+Clínica: Lume Veterinária (atendimento veterinário a domicílio)
+Sistema de gestão: Vettro (vai emitir as notas pela API Focus NFe)
+Data: 30/09/2026
+
+Objetivo: configurar o sistema para emitir as notas automaticamente ao
+receber de um atendimento ou de uma venda. Preciso das respostas abaixo
+para cadastrar os dados fiscais corretos.
+
+
+1. DADOS DA EMPRESA
+--------------------------------------------------------------------------
+[ ] Razão social e CNPJ exatamente como estão na Receita Federal.
+[ ] Regime tributário: Simples Nacional, Lucro Presumido ou MEI?
+    Se Simples: qual anexo e qual alíquota estamos pagando hoje?
+[ ] Inscrição municipal (para nota de serviço): número?
+[ ] Inscrição estadual (para nota de produto): a clínica tem?
+    Se não tem, precisamos tirar? (ver item 3)
+[ ] Município onde o ISS é recolhido. Como o atendimento é a domicílio,
+    o ISS é devido no município da clínica ou no município do tutor?
+
+
+2. NOTA DE SERVIÇO (NFS-e) — consultas, vacinas aplicadas, cirurgias,
+   curativos, aplicação de medicação, retornos, plantão
+--------------------------------------------------------------------------
+[ ] Nosso município já usa o padrão NACIONAL de NFS-e ou ainda o sistema
+    próprio da prefeitura?
+[ ] Qual o código de serviço (item da LC 116 e código municipal) para:
+      - consulta veterinária
+      - vacinação (serviço de aplicação)
+      - cirurgia / procedimento cirúrgico
+      - curativo e aplicação de medicação
+      - taxa de deslocamento (atendimento em outra cidade, +R$ 50)
+      - acréscimo de plantão (+50%)
+    Tudo pode sair num código só, ou cada tipo precisa de um código?
+[ ] Alíquota de ISS para esses serviços.
+[ ] Há retenção de ISS ou de outros impostos em algum caso
+    (ex.: cliente pessoa jurídica)?
+[ ] O deslocamento e o plantão devem aparecer como itens separados na
+    nota ou somados ao valor do serviço?
+
+
+3. NOTA DE PRODUTO (NFC-e) — venda de balcão sem paciente
+   (ração, antipulgas, acessórios, medicamentos)
+--------------------------------------------------------------------------
+[ ] A clínica pode vender produtos com o CNPJ e o CNAE atuais, ou precisa
+    incluir um CNAE de comércio?
+[ ] Precisamos de inscrição estadual para emitir NFC-e?
+[ ] Precisamos do CSC (código de segurança do contribuinte) da SEFAZ?
+    Quem solicita?
+[ ] CFOP e CSOSN/CST: NÃO precisamos de código produto por produto.
+    O sistema usa uma regra com duas linhas. Confirme (ou corrija):
+      - produto normal ............................ CFOP 5102 / CSOSN 102
+      - produto com substituição tributária (ST) .. CFOP 5405 / CSOSN 500
+    (Qual produto tem ST o sistema descobre sozinho pelo XML da nota do
+    fornecedor.)
+[ ] O NCM de cada produto o sistema já lê do XML da nota do fornecedor.
+    Podemos confiar nesse NCM ou você quer revisar?
+[ ] Medicamento veterinário vendido no balcão tem alguma regra diferente?
+
+
+4. INSUMO USADO NO ATENDIMENTO (vacina, medicamento, material)
+--------------------------------------------------------------------------
+[ ] Quando usamos uma vacina ou um medicamento DENTRO de um atendimento,
+    o valor dele entra na nota de SERVIÇO (tudo junto) ou precisa sair
+    também numa nota de PRODUTO separada?
+[ ] Isso muda se o item for cobrado à parte na conta do tutor?
+
+
+5. DESCONTOS, CANCELAMENTOS E FORMA DE PAGAMENTO
+--------------------------------------------------------------------------
+[ ] O sistema permite desconto em R$ ou em % (com motivo). A nota deve
+    sair com o valor cheio e o desconto destacado, ou só com o valor final?
+[ ] Prazo e procedimento para cancelar uma nota emitida por engano.
+[ ] Se o tutor paga depois (fica "pendente"), a nota sai no atendimento
+    ou só quando ele paga?
+[ ] Pagamento no cartão sem integração com a maquininha (o valor é
+    digitado na máquina): tudo bem informar só "cartão de crédito/débito"
+    na nota, sem os dados da transação?
+
+
+6. REFORMA TRIBUTÁRIA (CBS / IBS)
+--------------------------------------------------------------------------
+[ ] Em 2026 as notas já precisam trazer os campos de CBS e IBS?
+    Quais valores/alíquotas informamos para a Lume?
+[ ] Muda algo para nós em 2027?
+
+
+7. CERTIFICADO DIGITAL
+--------------------------------------------------------------------------
+[ ] A clínica já tem certificado digital A1 (e-CNPJ)? Validade?
+    (O A3, em token/cartão, não serve para emissão automática pelo sistema.)
+[ ] Se não tem: você providencia ou indica onde tirar?
+[ ] Quem guarda a senha do certificado? (Ela vai ser cadastrada no Focus
+    NFe, não fica com a equipe da clínica.)
+
+
+8. ROTINA COM A CONTABILIDADE
+--------------------------------------------------------------------------
+[ ] Como você prefere receber as notas emitidas: acesso ao painel do
+    Focus NFe, envio automático dos XML por e-mail, ou relatório mensal?
+[ ] Existe algo que hoje fazemos à mão e que o sistema deveria gerar
+    (ex.: relatório de vendas por forma de pagamento, livro de serviços)?
+
+
+--------------------------------------------------------------------------
+O QUE PRECISO RECEBER NO FINAL
+--------------------------------------------------------------------------
+  - Regime tributário e alíquotas (ISS; ICMS se houver venda de produtos)
+  - Inscrição municipal e, se houver, inscrição estadual + CSC
+  - Código(s) de serviço para cada tipo de atendimento
+  - CFOP e CST/CSOSN para a venda de produtos
+  - Certificado digital A1 (arquivo .pfx + senha, entregue direto no
+    Focus NFe)
+  - Orientação sobre CBS/IBS em 2026

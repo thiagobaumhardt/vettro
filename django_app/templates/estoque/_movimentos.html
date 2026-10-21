@@ -6,7 +6,7 @@
       <tr>
         <td>{{ m.criado_em|date:"d/m/Y H:i" }}</td>
         <td>{{ m.get_tipo_display }} · {{ m.get_subtipo_display }}</td>
-        <td>{{ m.quantidade }}</td>
+        <td>{{ m.quantidade|floatformat:"-3" }} {{ insumo.unidade_rotulo }}</td>
         <td>{{ m.nota_fiscal_numero|default:"—" }}</td>
         <td>{{ m.observacao|default:"—" }}</td>
       </tr>

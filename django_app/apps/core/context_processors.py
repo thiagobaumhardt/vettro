@@ -3,9 +3,8 @@ def clinica_ativa(request):
     em cada view (usado pela sidebar/topbar/tabs da Ficha)."""
     from .decorators import secoes_permitidas
 
-    papel = request.session.get("papel") if hasattr(request, "session") else None
     return {
         "clinica_nome_ativa": request.session.get("clinica_nome") if hasattr(request, "session") else None,
-        "papel_ativo": papel,
-        "secoes_permitidas": secoes_permitidas(papel),
+        "papel_ativo": request.session.get("papel") if hasattr(request, "session") else None,
+        "secoes_permitidas": secoes_permitidas(request),
     }

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Saídas de estoque — Vettro{% endblock %}
+{% block content %}
+{% include "estoque/_subnav.html" %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+    <h2 style="margin:0;">Outras saídas de estoque</h2>
+    <a href="{% url 'estoque:saida_nova' %}" class="btn-primary btn">+ Registrar saída</a>
+  </div>
+  <p style="color:var(--muted); margin-top:-6px;">Consumo interno, perda de validade, avaria, doação e devolução de compra — a baixa no estoque é feita na hora.</p>
+  <form method="get" class="ag-filtros" style="margin-top:0;">
+    <input type="hidden" name="visao" value="{{ visao }}">
+    <label>De<input type="date" name="desde" value="{{ desde|date:'Y-m-d' }}"></label>
+    <label>Até<input type="date" name="ate" value="{{ ate|date:'Y-m-d' }}"></label>
+    <label>Tipo
+      <select name="tipo"><option value="">Todos</option>{% for v, r in tipos %}<option value="{{ v }}" {% if tipo == v %}selected{% endif %}>{{ r }}</option>{% endfor %}</select>
+    </label>
+    <button class="btn-secondary btn" style="align-self:flex-end;">Filtrar</button>
+  </form>
+  <div class="ag-visoes" style="margin-top:14px;">
+    <a href="?visao=lista&desde={{ desde|date:'Y-m-d' }}&ate={{ ate|date:'Y-m-d' }}&tipo={{ tipo }}" class="{% if visao == 'lista' %}ativa{% endif %}">Lançamentos</a>
+    <a href="?visao=resumo&desde={{ desde|date:'Y-m-d' }}&ate={{ ate|date:'Y-m-d' }}&tipo={{ tipo }}" class="{% if visao == 'resumo' %}ativa{% endif %}">Resumo</a>
+  </div>
+</div>
+
+{% if visao == "resumo" %}
+<div class="ag-metricas">
+  <div class="card ag-metrica"><span>Custo total das saídas</span><strong>R$ {{ resumo.total|floatformat:2 }}</strong><small>{{ desde|date:"d/m" }} a {{ ate|date:"d/m/Y" }}</small></div>
+</div>
+<div class="resumo-grid">
+  {% include "estoque/_resumo_bloco.html" with titulo="Por tipo" linhas=resumo.grupos.tipo %}
+  {% include "estoque/_resumo_bloco.html" with titulo="Por motivo" linhas=resumo.grupos.motivo %}
+  {% include "estoque/_resumo_bloco.html" with titulo="Por produto" linhas=resumo.grupos.produto %}
+  {% include "estoque/_resumo_bloco.html" with titulo="Por solicitante" linhas=resumo.grupos.solicitante %}
+</div>
+{% else %}
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Data</th><th>Tipo</th><th>Motivo / detalhe</th><th>Produtos</th><th>Solicitante</th><th style="text-align:right;">Custo</th></tr></thead>
+      <tbody>
+        {% for s in saidas %}
+        <tr>
+          <td>{{ s.data|date:"d/m/Y" }}</td>
+          <td><span class="ag-status">{{ s.get_tipo_display }}</span></td>
+          <td>{{ s.motivo.nome|default:"" }}{% if s.beneficiario %} · para {{ s.beneficiario }}{% endif %}{% if s.detalhe %}<br><small style="color:var(--muted);">{{ s.detalhe }}</small>{% endif %}</td>
+          <td>{% for i in s.itens.all %}{{ i.quantidade|floatformat:"-3" }} {{ i.insumo.unidade_rotulo }} {{ i.insumo.nome }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
+          <td>{{ s.solicitante|default:"—" }}<br><small style="color:var(--muted);">por {{ s.usuario_nome }}</small></td>
+          <td style="text-align:right;">R$ {{ s.total_custo }}</td>
+        </tr>
+        {% empty %}<tr><td colspan="6" class="empty">Nenhuma saída no período.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

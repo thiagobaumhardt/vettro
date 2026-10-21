@@ -1,0 +1,43 @@
+{# Os 3 tipos ficam sempre visíveis — um clique já abre o formulário certo. #}
+<div class="section-title">Nova receita</div>
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:24px;">
+  <a href="{% url 'receitas:nova' paciente.pk %}?tipo=livre" class="receita-opcao">
+    <strong>Receita livre</strong>
+    <span>Texto digitado manualmente.</span>
+  </a>
+  <a href="{% url 'receitas:nova' paciente.pk %}?tipo=simples" class="receita-opcao">
+    <strong>Receita simples</strong>
+    <span>Medicamentos com uso, farmácia, concentração, quantidade, periodicidade e período.</span>
+  </a>
+  <a href="{% url 'receitas:nova' paciente.pk %}?tipo=controlada" class="receita-opcao">
+    <strong>Receita controlada</strong>
+    <span>1 medicamento por receita, impressa em 2 vias (farmácia e tutor).</span>
+  </a>
+</div>
+
+<div class="section-title">Receitas emitidas</div>
+{% if receitas %}
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Data</th><th>Tipo</th><th>Conteúdo</th><th>Veterinário(a)</th><th>Ações</th></tr></thead>
+    <tbody>
+      {% for r in receitas %}
+      <tr>
+        <td style="white-space:nowrap;">{{ r.criado_em|date:"d/m/Y H:i" }}</td>
+        <td>{{ r.get_tipo_display }}</td>
+        <td>{% if r.tipo == "livre" %}{{ r.texto|truncatechars:70 }}{% else %}{% for i in r.itens %}{{ i.medicamento }}{% if i.concentracao %} {{ i.concentracao }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}</td>
+        <td>{{ r.vet_nome }}</td>
+        <td style="white-space:nowrap;">
+          <a href="{% url 'receitas:pdf' paciente.pk r.pk %}" target="_blank" class="btn-secondary btn">Imprimir</a>
+          <form method="post" action="{% url 'receitas:excluir' paciente.pk r.pk %}" style="display:inline;">
+            {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir esta receita?">Excluir</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty">Nenhuma receita emitida.</div>
+{% endif %}

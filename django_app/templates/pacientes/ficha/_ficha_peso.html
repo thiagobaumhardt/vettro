@@ -1,0 +1,58 @@
+{% if erro %}<div class="login-error" style="margin-bottom:14px;">{{ erro }}</div>{% endif %}
+
+<div class="card" style="box-shadow:none; border:1px solid var(--border); margin-bottom:18px;">
+  <div class="section-title">Nova pesagem</div>
+  <form hx-post="{% url 'pacientes:pesagem_criar' paciente.pk %}" hx-target="#ficha-conteudo" hx-swap="innerHTML">
+    {% csrf_token %}
+    <div class="form-grid">
+      <div><label>Peso (kg)</label><input type="text" name="peso" inputmode="decimal" placeholder="Ex.: 12,5" required autofocus></div>
+      <div><label>Data da pesagem</label><input type="date" name="data" value="{{ hoje|date:'Y-m-d' }}" max="{{ hoje|date:'Y-m-d' }}"></div>
+      <div class="full"><label>Observação (opcional)</label><input type="text" name="obs" maxlength="200" placeholder="Ex.: em jejum, pós-cirurgia..."></div>
+    </div>
+    <div style="margin-top:12px;"><button type="submit" class="btn-primary btn">Registrar peso</button></div>
+  </form>
+</div>
+
+<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+  <div class="section-title" style="margin:0;">Evolução do peso</div>
+  {% if pesagens %}<a href="{% url 'pacientes:pesagens_pdf' paciente.pk %}" target="_blank" class="btn-secondary btn">Gerar PDF do histórico</a>{% endif %}
+</div>
+{% if grafico %}
+<div class="peso-grafico">
+  <svg viewBox="0 0 {{ grafico.largura }} {{ grafico.altura }}" role="img" aria-label="Gráfico de linhas da evolução do peso">
+    {% for g in grafico.grade %}
+    <line x1="{{ grafico.esq }}" x2="{{ grafico.dir }}" y1="{{ g.y }}" y2="{{ g.y }}" stroke="var(--border)" stroke-width="1"></line>
+    <text x="{{ grafico.esq }}" y="{{ g.y }}" dx="-8" dy="4" text-anchor="end" class="peso-eixo">{{ g.rotulo }}</text>
+    {% endfor %}
+    <line x1="{{ grafico.esq }}" x2="{{ grafico.dir }}" y1="{{ grafico.base }}" y2="{{ grafico.base }}" stroke="var(--border-2)" stroke-width="1"></line>
+    {% for d in grafico.datas %}<text x="{{ d.x }}" y="{{ grafico.rotulo_y }}" text-anchor="middle" class="peso-eixo">{{ d.rotulo }}</text>{% endfor %}
+    <polyline points="{{ grafico.linha }}" fill="none" stroke="var(--verde-oliva)" stroke-width="2.5" stroke-linejoin="round"></polyline>
+    {% for pt in grafico.pontos %}<circle cx="{{ pt.x }}" cy="{{ pt.y }}" r="4.5" fill="var(--verde-escuro)"><title>{{ pt.p.data|date:"d/m/Y" }}: {{ pt.p.peso }} kg</title></circle>{% endfor %}
+  </svg>
+  <small style="color:var(--muted);">kg × data · mínimo {{ grafico.minimo|floatformat:"-2" }} kg, máximo {{ grafico.maximo|floatformat:"-2" }} kg · passe o mouse nos pontos para ver o valor</small>
+</div>
+{% elif pesagens %}<p class="empty" style="margin-bottom:8px;">O gráfico aparece a partir da 2ª pesagem.</p>{% endif %}
+
+<div class="section-title" style="margin-top:18px;">Histórico de pesagens</div>
+{% if pesagens %}
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Data</th><th style="text-align:right;">Peso</th><th style="text-align:right;">Variação</th><th>Observação</th><th>Registrado por</th><th></th></tr></thead>
+    <tbody>
+      {% for p in pesagens %}
+      <tr>
+        <td>{{ p.data|date:"d/m/Y" }}{% if forloop.first %} <span class="badge badge-vet">Atual</span>{% endif %}</td>
+        <td style="text-align:right;"><strong>{{ p.peso }} kg</strong></td>
+        <td style="text-align:right;">{% if p.variacao is None %}—{% elif p.variacao > 0 %}<span style="color:var(--terroso);">+{{ p.variacao }} kg</span>{% elif p.variacao < 0 %}<span style="color:var(--verde-oliva);">{{ p.variacao }} kg</span>{% else %}0{% endif %}</td>
+        <td>{{ p.obs|default:"—" }}</td>
+        <td>{{ p.usuario_nome|default:"—" }}</td>
+        <td style="text-align:right;">
+          <button class="btn-danger btn" data-confirm="Excluir a pesagem de {{ p.data|date:'d/m/Y' }} ({{ p.peso }} kg)?"
+                  hx-post="{% url 'pacientes:pesagem_excluir' paciente.pk p.pk %}" hx-target="#ficha-conteudo">Excluir</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}<div class="empty">Nenhuma pesagem registrada ainda.</div>{% endif %}

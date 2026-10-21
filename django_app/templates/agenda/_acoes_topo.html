@@ -1,0 +1,23 @@
+{# Filtrar + Novo agendamento, na linha da data (o painel de filtros abre acima). #}
+<div class="ag-acoes">
+  <div class="ag-locais" x-data="{ aberto: false }" @click.outside="aberto = false">
+    <button type="button" class="btn-secondary btn" @click="aberto = !aberto" :aria-expanded="aberto">Locais{% if ver %} ({{ n_locais }}/{{ consultorios|length }}){% endif %}</button>
+    <form method="get" class="ag-locais-lista" x-show="aberto" x-cloak>
+      <input type="hidden" name="visao" value="{{ visao }}"><input type="hidden" name="data" value="{{ data_ref|date:'Y-m-d' }}">
+      <span class="ag-locais-titulo">Ver na agenda</span>
+      {% for c in consultorios %}
+      <label><input type="checkbox" name="ver" value="{{ c.pk }}" {% if not ver or c.pk|stringformat:'s' in ver %}checked{% endif %}> {{ c.nome }}</label>
+      {% endfor %}
+      <div class="ag-locais-botoes">
+        <button type="submit" class="btn-primary btn">Mostrar</button>
+        <button type="submit" name="ver_todos" value="1" class="btn-secondary btn">Todos</button>
+      </div>
+    </form>
+  </div>
+  <button type="button" class="btn-secondary btn" :class="filtrosAbertos && 'ativo'" @click="filtrosAbertos = !filtrosAbertos"
+                :aria-expanded="filtrosAbertos">Filtrar{% if n_filtros %} ({{ n_filtros }}){% endif %}</button>
+        {% if visao == "fila" %}
+        <a href="{% url 'agenda:novo' %}?chegou=1&data={{ data_ref|date:'Y-m-d' }}{% if filtros.consultorio and filtros.consultorio != 'sem' %}&consultorio={{ filtros.consultorio }}{% endif %}&voltar={{ voltar|urlencode }}" class="btn-secondary btn">+ Chegada sem agendamento</a>
+        {% endif %}
+        <a href="{% url 'agenda:novo' %}?data={{ data_ref|date:'Y-m-d' }}{% if filtros.consultorio and filtros.consultorio != 'sem' %}&consultorio={{ filtros.consultorio }}{% endif %}&voltar={{ voltar|urlencode }}" class="btn-primary btn">+ Novo agendamento</a>
+</div>

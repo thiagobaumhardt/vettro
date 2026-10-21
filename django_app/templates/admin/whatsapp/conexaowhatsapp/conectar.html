@@ -1,0 +1,12 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+  <h1>Conectar WhatsApp manualmente</h1>
+  <p>Caminho atual (fase 1, sem Tech Provider): WABA, ID do número e token de system user gerados no portfólio de negócios da clínica. Assina os webhooks na WABA e cria os modelos de mensagem. Passo a passo em <code>docs/whatsapp-meta.md</code>.</p>
+  <form method="post">
+    {% csrf_token %}
+    <table>
+      {{ form.as_table }}
+    </table>
+    <input type="submit" value="Conectar" class="default">
+  </form>
+{% endblock %}

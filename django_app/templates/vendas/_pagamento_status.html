@@ -1,0 +1,45 @@
+{# Situação do pagamento na maquininha. Enquanto pendente, consulta de novo a cada 2s (HTMX). #}
+{% if transacao.status == "pendente" %}
+<div hx-get="{% url 'vendas:pagamento_status' venda.pk %}" hx-trigger="every 2s" hx-target="#pagamento-status" hx-swap="innerHTML"
+     style="padding:16px; border:1.5px solid var(--primary); background:var(--c-neutro);">
+  <p style="margin:0 0 6px; font-size:1.15rem;"><strong>Aguardando o cliente pagar na maquininha...</strong></p>
+  <p style="margin:0 0 12px; color:var(--muted);">
+    R$ {{ transacao.valor }} · {{ transacao.get_forma_display }}{% if transacao.parcelas > 1 %} em {{ transacao.parcelas }}x{% endif %}.
+    A tela atualiza sozinha quando a maquininha responder.
+  </p>
+  <form method="post" action="{% url 'vendas:pagamento_cancelar' venda.pk %}">
+    {% csrf_token %}<button type="submit" class="btn-secondary btn">Cancelar cobrança na maquininha</button>
+  </form>
+</div>
+{% else %}
+<div style="padding:16px; border:1px solid var(--perigo-suave); background:var(--c-alerta);">
+  <p style="margin:0 0 6px;"><strong>
+    {% if not transacao %}Pagamento ainda não enviado à maquininha.
+    {% elif transacao.status == "negado" %}Pagamento recusado.
+    {% elif transacao.status == "cancelado" %}Cobrança cancelada na maquininha.
+    {% else %}Erro de comunicação com a maquininha.{% endif %}
+  </strong></p>
+  {% if transacao.mensagem_erro %}<p style="margin:0 0 10px; color:var(--c-alerta-texto);">{{ transacao.mensagem_erro }}</p>{% endif %}
+  <form method="post" action="{% url 'vendas:pagamento_cobrar' venda.pk %}">
+    {% csrf_token %}<button type="submit" class="btn-primary btn">Cobrar de novo na maquininha ({{ venda.get_forma_pagamento_display }}{% if venda.parcelas > 1 %} {{ venda.parcelas }}x{% endif %})</button>
+  </form>
+</div>
+
+<form method="post" action="{% url 'vendas:pagamento_trocar' venda.pk %}" x-data="{ forma: '{{ venda.forma_pagamento }}' }"
+      class="form-grid" style="margin-top:14px;">
+  {% csrf_token %}
+  <div>
+    <label>Ou trocar a forma de pagamento</label>
+    <select name="forma_pagamento" x-model="forma" required>
+      {% for valor, rotulo in formas %}<option value="{{ valor }}">{{ rotulo }}</option>{% endfor %}
+    </select>
+  </div>
+  <div x-show="forma === 'credito'">
+    <label>Parcelas</label>
+    <select name="parcelas">{% for n in max_parcelas %}<option value="{{ n }}" {% if n == venda.parcelas %}selected{% endif %}>{{ n }}x</option>{% endfor %}</select>
+  </div>
+  <div style="align-self:end;">
+    <button type="submit" class="btn-secondary btn" x-text="forma === 'dinheiro' ? 'Recebi em dinheiro' : 'Cobrar na maquininha'">Confirmar</button>
+  </div>
+</form>
+{% endif %}

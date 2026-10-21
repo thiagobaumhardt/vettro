@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Novo Atendimento — Vettro{% endblock %}
+{% block content %}
+{# O paciente é escolhido no próprio formulário do atendimento. Só Consulta e #}
+{# Procedimento cirúrgico (que abrem na Ficha) pedem o paciente aqui, ao clicar. #}
+<div class="card" x-data="{ pacienteId: '{{ paciente_inicial|escapejs }}', pendente: '',
+    naFicha(tipo) { return tipo === 'consulta' || tipo === 'cirurgia'; },
+    destino(tipo) {
+      if (tipo === 'consulta') return `/pacientes/${this.pacienteId}/?aba=anamnese&abrir=consulta`;
+      if (tipo === 'cirurgia') return `/pacientes/${this.pacienteId}/?aba=cirurgias`;
+      return `{% url 'atendimentos:novo' %}?tipo=${tipo}` + (this.pacienteId ? `&paciente=${this.pacienteId}&voltar=paciente` : '');
+    },
+    escolher(tipo) {
+      if (this.naFicha(tipo) && !this.pacienteId) { this.pendente = tipo; return; }
+      window.location = this.destino(tipo);
+    } }">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <h2 style="margin:0;">Novo atendimento</h2>
+    <a href="{% url 'atendimentos:lista' %}" class="btn-secondary btn">← Atendimentos</a>
+  </div>
+
+  <label>Que tipo de atendimento é?</label>
+  <div class="hub-tipos">
+    <template x-for="t in [
+        ['consulta', 'Consulta'],
+        ['vacinacao', 'Vacina'],
+        ['cirurgia', 'Procedimento cirúrgico'],
+        ['retorno', 'Retorno'],
+        ['aplicacao_medicacao', 'Aplicação de medicação'],
+        ['curativo', 'Curativo'],
+        ['emergencia', 'Emergência'],
+        ['ambulatorial', 'Ambulatorial'],
+      ]" :key="t[0]">
+      <button type="button" class="hub-tipo" :class="pendente === t[0] && 'selecionado'" @click="escolher(t[0])"
+              :style="'--tipo-cor: var(--et-' + t[0] + ')'">
+        <strong x-text="t[1]"></strong>
+      </button>
+    </template>
+  </div>
+
+  <div x-show="pendente" x-cloak style="margin-top:18px; max-width:480px;">
+    <label for="hub-paciente" x-text="(pendente === 'consulta' ? 'Consulta' : 'Procedimento cirúrgico') + ' — de qual paciente? (abre na Ficha dele)'"></label>
+    <div style="display:flex; gap:10px;">
+      <select id="hub-paciente" x-model="pacienteId" style="flex:1;">
+        <option value="">Selecione o paciente...</option>
+        {% for p in pacientes %}<option value="{{ p.pk }}">{{ p.nome }}{% if p.tutor %} — {{ p.tutor.nome }}{% endif %}</option>{% endfor %}
+      </select>
+      <button type="button" class="btn-primary btn" :disabled="!pacienteId" @click="window.location = destino(pendente)">Continuar</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

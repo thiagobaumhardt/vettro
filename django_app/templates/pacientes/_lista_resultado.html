@@ -5,7 +5,9 @@
     <tbody>
       {% for p in pacientes %}
       <tr>
-        <td><a href="{% url 'pacientes:ficha' p.pk %}">{{ p.especie_emoji }} {{ p.nome }}</a></td>
+        <td>
+          <a href="{% url 'pacientes:ficha' p.pk %}">{{ p.nome }}</a>
+        </td>
         <td>{{ p.get_especie_display }}{% if p.raca %} · {{ p.raca }}{% endif %}</td>
         <td>{% if p.tutor %}{{ p.tutor.nome }}{% else %}—{% endif %}</td>
         <td>
@@ -21,5 +23,5 @@
   </table>
 </div>
 {% else %}
-<div class="empty"><span class="icon">🐾</span>Nenhum paciente encontrado.</div>
+<div class="empty">Nenhum paciente encontrado.</div>
 {% endif %}

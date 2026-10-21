@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Agenda — Vettro{% endblock %}
+{% block content %}
+<div x-data="agendaArrastar({ inicio: '{{ cfg.inicio|time:'H:i' }}', passo: {{ cfg.intervalo }}, alturaLinha: {{ altura_linha }} })"
+     @htmx:after-swap.window="if ($event.detail.target.id === 'ag-detalhe') detalheAberto = true">
+
+  {# ---------- Barra de topo: visões, navegação, filtros ---------- #}
+  <div class="card ag-topo" x-show="filtrosAbertos" x-cloak>
+    <div class="ag-painel-filtros">
+    <label class="ag-rotulo-visao">Ver por</label>
+    <div class="ag-visoes" role="tablist">
+      <a href="{{ urls_visao.dia }}" class="{% if visao == 'dia' %}ativa{% endif %}">Dia</a>
+      <a href="{{ urls_visao.semana }}" class="{% if visao == 'semana' %}ativa{% endif %}">Semana</a>
+      <a href="{{ urls_visao.mes }}" class="{% if visao == 'mes' %}ativa{% endif %}">Mês</a>
+      <a href="{{ urls_visao.fila }}" class="{% if visao == 'fila' %}ativa{% endif %}">Ordem de chegada</a>
+    </div>
+    <form method="get" class="ag-filtros">
+      <input type="hidden" name="visao" value="{{ visao }}">
+      <input type="hidden" name="data" value="{{ data_ref|date:'Y-m-d' }}">
+      <label>Serviço
+        <select name="servico" onchange="this.form.submit()">
+          <option value="">Todos</option>
+          {% for s in servicos %}<option value="{{ s.id }}" {% if filtros.servico == s.id|stringformat:'s' %}selected{% endif %}>{{ s.nome }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Status
+        <select name="status" onchange="this.form.submit()">
+          <option value="">Todos (menos cancelados)</option>
+          {% for valor, rotulo in status_choices %}<option value="{{ valor }}" {% if filtros.status == valor %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}
+        </select>
+      </label>
+      {% if visao == "dia" or visao == "fila" %}
+      <label>Data<input type="date" name="data" value="{{ data_ref|date:'Y-m-d' }}" onchange="this.form.submit()"></label>
+      {% endif %}
+      {% if n_filtros %}<a href="?visao={{ visao }}&data={{ data_ref|date:'Y-m-d' }}" class="btn-secondary btn" style="align-self:flex-end;">Limpar filtros</a>{% endif %}
+    </form>
+    </div>
+  </div>
+
+  <div class="ag-corpo">
+    <div class="ag-principal">
+      <div class="ag-legendas">
+        <div class="ag-legenda ag-legenda-status" aria-label="Legenda dos status">
+          <strong>Status:</strong>
+          {% for valor, rotulo in status_choices %}<span><i class="ag-legenda-st st-{{ valor }}"></i>{{ rotulo }}</span>{% if valor == "agendado" %}<span><i class="ag-legenda-st st-atrasado"></i>Atrasado</span>{% endif %}{% endfor %}
+        </div>
+      </div>
+      {% if visao == "dia" %}{% include "agenda/_dia.html" %}
+      {% elif visao == "semana" %}{% include "agenda/_semana.html" %}
+      {% elif visao == "mes" %}{% include "agenda/_mes.html" %}
+      {% else %}{% include "agenda/_fila.html" %}{% endif %}
+    </div>
+
+  </div>
+
+  {# ---------- Confirmação ao arrastar um bloco ---------- #}
+  <div class="modal-backdrop" x-show="mover.aberto" x-cloak @click.self="mover.aberto = false" @keydown.escape.window="mover.aberto = false">
+    <div class="modal-card ag-modal" style="max-width:460px;">
+      <h3 style="margin-top:0;">Mover agendamento?</h3>
+      <p><strong x-text="mover.nome"></strong></p>
+      <p style="margin:4px 0;">De: <span x-text="mover.de"></span></p>
+      <p style="margin:4px 0;">Para: <strong x-text="mover.para"></strong></p>
+      <form method="post" :action="mover.url">
+        {% csrf_token %}
+        <input type="hidden" name="voltar" value="{{ voltar }}">
+        <input type="hidden" name="data" :value="mover.data">
+        <input type="hidden" name="hora" :value="mover.hora">
+        <input type="hidden" name="consultorio" :value="mover.consultorio">
+        <label style="display:flex; align-items:center; gap:8px; margin:12px 0 0;"><input type="checkbox" name="encaixe" value="1"> Encaixe (permite mover por cima de outro horário)</label>
+        <div style="display:flex; gap:10px; margin-top:16px;">
+          <button type="submit" class="btn-primary btn">Confirmar</button>
+          <button type="button" class="btn-secondary btn" @click="mover.aberto = false">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# ---------- Janela de detalhe do agendamento ---------- #}
+  <div class="modal-backdrop" x-show="detalheAberto" x-cloak @click.self="detalheAberto = false" @keydown.escape.window="detalheAberto = false">
+    <div class="modal-card ag-modal">
+      <button type="button" class="ag-fechar" @click="detalheAberto = false" aria-label="Fechar">Fechar</button>
+      <div id="ag-detalhe"></div>
+    </div>
+  </div>
+</div>
+<script>
+  // Arrastar um bloco da grade pra outro horário/consultório/dia — confirma numa janela antes de salvar.
+  function agendaArrastar(cfg) {
+    const [hi, mi] = cfg.inicio.split(":").map(Number);
+    const pad = n => String(n).padStart(2, "0");
+    return {
+      detalheAberto: false, filtrosAbertos: false, soltando: false, arrastado: null,
+      mover: { aberto: false, url: "", nome: "", de: "", para: "", data: "", hora: "", consultorio: "" },
+      arrastar(ev, id, nome, duracao, data, hora, local) {
+        this.arrastado = { id, nome, duracao, data, hora, local };
+        ev.dataTransfer.effectAllowed = "move";
+        ev.dataTransfer.setData("text/plain", id);
+        // Posição do mouse dentro do bloco: o horário novo é o do TOPO do bloco.
+        this.arrastado.offsetY = ev.offsetY || 0;
+        this.soltando = true;
+      },
+      soltar(ev, coluna, data, consultorio, nomeLocal) {
+        if (!this.arrastado) return;
+        const y = ev.clientY - coluna.getBoundingClientRect().top - this.arrastado.offsetY;
+        const passos = Math.max(0, Math.round(y / cfg.alturaLinha));
+        const minutos = hi * 60 + mi + passos * cfg.passo;
+        const hora = pad(Math.floor(minutos / 60)) + ":" + pad(minutos % 60);
+        const a = this.arrastado;
+        if (hora === a.hora && data === a.data && (consultorio === "manter" || nomeLocal === a.local)) { this.arrastado = null; return; }
+        const [ano, mes, dia] = data.split("-");
+        this.mover = {
+          aberto: true, url: `/agenda/${a.id}/mover/`, nome: a.nome,
+          de: `${a.data.split("-").reverse().join("/")} às ${a.hora}` + (a.local ? ` · ${a.local}` : ""),
+          para: `${dia}/${mes}/${ano} às ${hora}` + (consultorio !== "manter" ? (nomeLocal ? ` · ${nomeLocal}` : "") : (a.local ? ` · ${a.local}` : "")),
+          data, hora, consultorio,
+        };
+        this.arrastado = null;
+      },
+    };
+  }
+</script>
+{% endblock %}

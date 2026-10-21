@@ -1,0 +1,28 @@
+{# Linha do tempo do paciente — usada na aba Ficha (recentes) e na aba Histórico (completa, com filtro). #}
+{% if linha_do_tempo %}
+<div style="border-left:2px solid var(--border); margin-left:8px; padding-left:18px;">
+  {% for e in linha_do_tempo %}
+  <div style="position:relative; padding:0 0 8px;" {% if com_filtro %}x-show="!filtro || filtro === '{{ e.categoria }}'"{% endif %}>
+    <span style="position:absolute; left:-24px; top:14px; width:10px; height:10px; background:var(--verde-oliva); box-shadow:0 0 0 3px var(--surface);"></span>
+    {% if e.na_ficha %}<a class="tl-link" href="{{ e.url }}" hx-get="{{ e.hx_url|default:e.url }}" hx-target="#ficha-conteudo" hx-push-url="{{ e.url }}" @click="aba = '{{ e.aba }}'">
+    {% elif e.url %}<a class="tl-link" href="{{ e.url }}">{% else %}<div class="tl-link">{% endif %}
+    <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+      <span>
+        <strong>{{ e.titulo }}</strong>
+        <span style="color:var(--muted);">· {{ e.data|date:"d/m/Y" }} {{ e.hora|time:"H:i" }}</span>
+        {% if e.plantao %}<span class="badge" style="background:var(--c-aviso);">Plantão</span>{% endif %}
+      </span>
+      <span>
+        {% if e.total is not None %}R$ {{ e.total }}{% endif %}
+        {% if e.url %}<span class="tl-ver">ver →</span>{% endif %}
+      </span>
+    </div>
+    {% if e.detalhe %}<div>{{ e.detalhe|truncatechars:160 }}</div>{% endif %}
+    {% if e.obs %}<small style="color:var(--muted);">{{ e.obs|truncatechars:160 }}</small>{% endif %}
+    {% if e.url %}</a>{% else %}</div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty">Nenhum atendimento registrado.</div>
+{% endif %}

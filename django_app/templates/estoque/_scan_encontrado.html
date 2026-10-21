@@ -1,2 +1,2 @@
-<div class="card"><p>Encontrado: <strong>{{ insumo.nome }}</strong> ({{ insumo.qtd }} un.)</p>
+<div class="card"><p>Encontrado: <strong>{{ insumo.nome }}</strong> ({{ insumo.qtd|floatformat:"-3" }} {{ insumo.unidade_rotulo }})</p>
 <a href="{% url 'estoque:entrada_manual' %}?insumo={{ insumo.pk }}" class="btn-primary btn">Repor estoque</a></div>

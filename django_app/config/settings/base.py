@@ -3,6 +3,12 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+# Variáveis de django_app/.env (dev) — em produção vêm do ambiente real e têm
+# prioridade (override=False).
+from dotenv import load_dotenv  # noqa: E402
+
+load_dotenv(BASE_DIR / ".env", override=False)
+
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-insecure-secret-troque-em-producao")
 DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
@@ -12,6 +18,7 @@ SHARED_APPS = [
     "django_tenants",
     "apps.plataforma",
     "apps.contas",
+    "apps.whatsapp",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -28,9 +35,15 @@ TENANT_APPS = [
     "apps.tutores",
     "apps.estoque",
     "apps.financeiro",
+    "apps.pagamentos",
     "apps.pacientes",
     "apps.atendimentos",
     "apps.agenda",
+    "apps.lembretes",
+    "apps.orcamentos",
+    "apps.receitas",
+    "apps.documentos",
+    "apps.vendas",
     "apps.auditoria",
     "apps.usuarios_clinica",
     "apps.dashboard",
@@ -58,6 +71,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.contas.middleware.ExigirTrocaDeSenhaMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.core.middleware.PermissionsPolicyMiddleware",
@@ -146,10 +160,28 @@ VALIDADE_ALERTA_DIAS = 60
 LOGIN_MAX_TENTATIVAS = 5
 LOGIN_JANELA_SEGUNDOS = 15 * 60
 
-# Provedor de WhatsApp ainda não escolhido pelo usuário (Z-API / Meta Cloud
-# API / Twilio, ver §8 do plano) — backend "console" só loga, não envia de
-# verdade. Trocar aqui pro backend real assim que decidido, nada mais muda.
-WHATSAPP_BACKEND = os.environ.get("WHATSAPP_BACKEND", "apps.agenda.notificacoes.WhatsAppConsoleBackend")
+# WhatsApp — Cloud API oficial da Meta (apps/whatsapp). Passo a passo completo
+# em docs/whatsapp-meta.md. Token/número de cada clínica ficam em
+# whatsapp.ConexaoWhatsApp, não em env; aqui só os dados do app Meta.
+# FASE 1 (hoje, só a Lume): app Meta criado no portfólio da Lume, conexão
+#   manual em /plataforma/ → Conexões de WhatsApp; META_EMBEDDED_SIGNUP_CONFIG_ID
+#   fica VAZIO (a tela da clínica esconde o botão de conexão automática).
+# FASE 2 (2ª clínica em diante): app do Vettro aprovado como Tech Provider;
+#   trocar META_APP_ID/SECRET pelos dele, preencher o CONFIG_ID e reconectar a
+#   Lume pelo Embedded Signup (o segredo do webhook muda junto com o app).
+# Backend "console" (dev) só loga; produção:
+# WHATSAPP_BACKEND=apps.whatsapp.backends.WhatsAppMetaCloudBackend.
+WHATSAPP_BACKEND = os.environ.get("WHATSAPP_BACKEND", "apps.whatsapp.backends.WhatsAppConsoleBackend")
+META_APP_ID = os.environ.get("META_APP_ID", "")
+META_APP_SECRET = os.environ.get("META_APP_SECRET", "")  # também valida a assinatura do webhook
+META_EMBEDDED_SIGNUP_CONFIG_ID = os.environ.get("META_EMBEDDED_SIGNUP_CONFIG_ID", "")  # Facebook Login for Business (Embedded Signup v4)
+META_WEBHOOK_VERIFY_TOKEN = os.environ.get("META_WEBHOOK_VERIFY_TOKEN", "")
+META_GRAPH_VERSION = os.environ.get("META_GRAPH_VERSION", "v26.0")
+# Chave Fernet que cifra o token de cada clínica (vazia = derivada do SECRET_KEY).
+WHATSAPP_CHAVE_CRIPTO = os.environ.get("WHATSAPP_CHAVE_CRIPTO", "")
+# Popup do Embedded Signup (FB.login) precisa conversar com a página que o
+# abriu — o padrão do Django ("same-origin") corta esse canal.
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
 
 # E-mail — usado pro convite de "definir senha" ao adicionar alguém em
 # 🔑 Usuários (§5 do plano). Backend "console" (dev): imprime o e-mail no
@@ -165,3 +197,10 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Vettro <nao-responda@vettro.com.br>")
 SITE_URL = os.environ.get("SITE_URL", "http://localhost:8000")
+
+# TEF (maquininha integrada) — exigida na NFC-e do RS pra cartão/Pix (Decreto
+# 56.670). Provedor ainda não contratado. "Console" é sandbox: aprova ~4s
+# depois de enviar (valor terminado em ,99 é negado), não fala com maquininha
+# nenhuma. Trocar via TEF_BACKEND quando o provedor for definido e homologado
+# (ver apps/pagamentos/tef.py: iniciar/consultar/cancelar).
+TEF_BACKEND = os.environ.get("TEF_BACKEND", "apps.pagamentos.tef.TEFConsoleBackend")

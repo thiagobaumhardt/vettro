@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Vacinas — Vettro{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <div class="section-title" style="margin:0;">{% if editando %}Editar Vacina{% else %}Nova Vacina{% endif %}</div>
+    <a href="{% url 'atendimentos:lista' %}" class="btn-secondary btn">← Atendimentos</a>
+  </div>
+  <form method="post" action="{% if editando %}{% url 'atendimentos:vacina_editar' editando.pk %}{% else %}{% url 'atendimentos:vacina_nova' %}{% endif %}">
+    {% csrf_token %}
+    {% if form.errors %}<p style="color:var(--danger-hover);">Verifique os campos: {% for campo, erros in form.errors.items %}{{ erros|join:", " }} {% endfor %}</p>{% endif %}
+    <div class="form-grid">
+      <div><label>Nome</label>{{ form.nome }}</div>
+      <div><label>Espécie</label>{{ form.especie }}<small style="color:var(--muted);">Em branco = qualquer espécie.</small></div>
+      <div><label>Doses no protocolo inicial (1 a 3)</label>{{ form.doses_iniciais }}</div>
+      <div><label>Intervalo entre doses (dias)</label>{{ form.intervalo_dias }}</div>
+      <div>
+        <label style="display:flex; align-items:center; gap:8px;">{{ form.reforco_anual }} Reforço anual</label>
+      </div>
+      <div><label>Item do estoque</label>{{ form.insumo }}<small style="color:var(--muted);">Sai 1 unidade a cada aplicação.</small></div>
+    </div>
+    <div style="margin-top:12px; display:flex; gap:10px;">
+      <button type="submit" class="btn-primary btn">Salvar</button>
+      {% if editando %}<a href="{% url 'atendimentos:vacinas' %}" class="btn-secondary btn">Cancelar</a>{% endif %}
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="section-title">Vacinas cadastradas</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Nome</th><th>Espécie</th><th>Protocolo</th><th>Item do estoque</th><th>Ações</th></tr></thead>
+      <tbody>
+        {% for v in vacinas %}
+        <tr>
+          <td>{{ v.nome }}</td>
+          <td>{{ v.get_especie_display|default:"Qualquer" }}</td>
+          <td>{{ v.doses_iniciais }} dose{{ v.doses_iniciais|pluralize }}{% if v.doses_iniciais > 1 %} a cada {{ v.intervalo_dias }} dias{% endif %}{% if v.reforco_anual %} + reforço anual{% endif %}</td>
+          <td>{% if v.insumo %}{{ v.insumo.nome }} <small style="color:var(--muted);">({{ v.insumo.qtd|floatformat:"-3" }} {{ v.insumo.unidade_rotulo }})</small>{% else %}<span style="color:var(--muted);">— sem baixa no estoque</span>{% endif %}</td>
+          <td>
+            <a href="{% url 'atendimentos:vacina_editar' v.pk %}" class="btn-secondary btn">Editar</a>
+            <form method="post" action="{% url 'atendimentos:vacina_excluir' v.pk %}" style="display:inline;">
+              {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir a vacina {{ v.nome }}? O histórico de aplicações é mantido.">Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="5" class="empty">Nenhuma vacina cadastrada.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

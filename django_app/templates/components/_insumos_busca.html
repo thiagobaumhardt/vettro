@@ -1,0 +1,51 @@
+{% comment %}
+  Busca de insumos com "adicionar" — usar DENTRO do x-data do formulário (que tem
+  insumosSel e qtyTick). Envia insumo_ids + qtd_<id>, igual à lista antiga.
+  Parâmetros: insumos_json, rotulo (opcional). Estilo: .ib-* em static/dist/styles.css.
+{% endcomment %}
+<div class="ib" x-data="buscaInsumos({{ insumos_json|default:'[]' }})" @click.outside="busca = ''">
+  <label>{{ rotulo|default:"Insumos utilizados" }}</label>
+  <div class="ib-campo">
+    <input type="search" x-model="busca" @input="destaque = 0" autocomplete="off"
+           placeholder="Pesquisar pelo nome ou código de barras..."
+           @keydown.enter.prevent="confirmar()" @keydown.arrow-down.prevent="mover(1)"
+           @keydown.arrow-up.prevent="mover(-1)" @keydown.escape="busca = ''">
+  </div>
+
+  <div class="ib-menu" x-show="busca.trim()" x-cloak>
+    <template x-for="(i, idx) in resultados()" :key="i.id">
+      <button type="button" class="ib-opcao" :class="idx === destaque && 'ativo'"
+              @click="adicionar(i)" @mouseenter="destaque = idx">
+        <span class="ib-nome" x-text="i.nome"></span>
+        <span class="ib-meta">
+          <span x-text="preco(i)"></span>
+          <span class="ib-chip" :class="estoqueBaixo(i) && 'baixo'" x-text="'estoque: ' + i.estoque + ' ' + i.unidade"></span>
+        </span>
+      </button>
+    </template>
+    <p class="ib-vazio" x-show="!resultados().length">Nenhum insumo encontrado.</p>
+  </div>
+
+  <div class="ib-lista">
+    <template x-for="id in insumosSel" :key="id">
+      <div class="ib-item">
+        <input type="hidden" name="insumo_ids" :value="id">
+        <div class="ib-info">
+          <span class="ib-nome" x-text="insumo(id).nome"></span>
+          <span class="ib-meta">
+            <span x-text="preco(insumo(id))"></span>
+            <span class="ib-chip baixo" x-show="semEstoqueSuficiente(id)" x-text="'só ' + insumo(id).estoque + ' ' + insumo(id).unidade + ' em estoque'"></span>
+          </span>
+        </div>
+        <div class="ib-qtd">
+          <button type="button" @click="alterar(id, -1)" aria-label="Diminuir">−</button>
+          <input type="number" :name="'qtd_' + id" min="0.001" step="any" x-model="qtds[id]" @input="qtyTick++">
+          <button type="button" @click="alterar(id, 1)" aria-label="Aumentar">+</button>
+        </div>
+        <span class="ib-subtotal" x-text="subtotal(id)"></span>
+        <button type="button" class="ib-remover" @click="remover(id)">Remover</button>
+      </div>
+    </template>
+  </div>
+  <small class="ib-nenhum" x-show="!insumosSel.length">Nenhum insumo adicionado.</small>
+</div>

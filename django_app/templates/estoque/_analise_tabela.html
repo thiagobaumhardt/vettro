@@ -1,0 +1,29 @@
+{# Tabela da análise de estoque. Parâmetros: linhas, modo (repor|excedentes|parados|novos). #}
+{% if linhas %}
+<div class="table-wrap">
+  <table>
+    <thead><tr>
+      <th>Produto</th><th style="text-align:right;">Em estoque</th><th style="text-align:right;">Consumo 90 dias</th>
+      <th style="text-align:right;">Dura</th><th style="text-align:right;">Ideal</th>
+      {% if modo == "repor" %}<th style="text-align:right;">Comprar</th>{% elif modo == "excedentes" %}<th style="text-align:right;">Excesso</th>{% elif modo == "parados" %}<th style="text-align:right;">Parado há</th>{% else %}<th>Cadastrado</th>{% endif %}
+      <th style="text-align:right;">Valor</th>
+    </tr></thead>
+    <tbody>
+      {% for l in linhas %}
+      <tr>
+        <td><strong>{{ l.insumo.nome }}</strong></td>
+        <td style="text-align:right;">{{ l.insumo.qtd|floatformat:"-3" }} {{ l.insumo.unidade_rotulo }}</td>
+        <td style="text-align:right;">{{ l.consumo_90|floatformat:"-3" }}</td>
+        <td style="text-align:right;">{% if l.cobertura_dias is not None %}{{ l.cobertura_dias }} dias{% else %}—{% endif %}</td>
+        <td style="text-align:right;">{{ l.ideal|floatformat:"-1" }}</td>
+        {% if modo == "repor" %}<td style="text-align:right;"><strong>{{ l.embalagens }} {{ l.insumo.embalagem|default:"emb." }}</strong>{% if l.insumo.fracionado %}<br><small style="color:var(--muted);">{{ l.falta|floatformat:"-1" }} {{ l.insumo.unidade_rotulo }}</small>{% endif %}</td>
+        {% elif modo == "excedentes" %}<td style="text-align:right;">{{ l.excesso|floatformat:"-1" }} {{ l.insumo.unidade_rotulo }}</td>
+        {% elif modo == "parados" %}<td style="text-align:right;">{{ l.dias_parado }} dias</td>
+        {% else %}<td>{{ l.criado|date:"d/m/Y" }}</td>{% endif %}
+        <td style="text-align:right;">R$ {{ l.valor|floatformat:2 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}<p class="ag-vazio">Nenhum produto nesta lista.</p>{% endif %}

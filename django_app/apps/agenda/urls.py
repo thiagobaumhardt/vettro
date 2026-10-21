@@ -6,10 +6,12 @@ app_name = "agenda"
 
 urlpatterns = [
     path("", views.calendario, name="calendario"),
-    path("novo/", views.form_view, name="novo"),
-    path("<uuid:pk>/editar/", views.form_view, name="editar"),
-    path("<uuid:pk>/status/", views.status_view, name="status"),
+    path("novo/", views.novo, name="novo"),
+    path("<uuid:pk>/", views.detalhe, name="detalhe"),
+    path("<uuid:pk>/editar/", views.editar, name="editar"),
+    path("<uuid:pk>/acao/", views.acao, name="acao"),
     path("<uuid:pk>/reagendar/", views.reagendar_view, name="reagendar"),
+    path("<uuid:pk>/mover/", views.mover_view, name="mover"),
     path("<uuid:pk>/excluir/", views.excluir, name="excluir"),
     path("consultorios/", views.consultorios_lista, name="consultorios"),
     path("consultorios/novo/", views.consultorio_salvar, name="consultorio_novo"),

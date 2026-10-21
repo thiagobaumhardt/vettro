@@ -1,0 +1,6 @@
+{# Última pesagem no cabeçalho da ficha (recarregado após pesar/excluir). #}
+{% with u=paciente.ultima_pesagem %}
+{% if u %}<p class="peso-cabecalho"><strong>{{ u.peso }} kg</strong> <span>pesado em {{ u.data|date:"d/m/Y" }}</span></p>
+{% elif paciente.peso %}<p class="peso-cabecalho"><strong>{{ paciente.peso }} kg</strong> <span>sem data de pesagem</span></p>
+{% else %}<p class="peso-cabecalho"><span>Sem pesagem registrada</span></p>{% endif %}
+{% endwith %}

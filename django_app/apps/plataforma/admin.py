@@ -9,12 +9,28 @@ from .services import provisionar_clinica
 class ProvisionarClinicaForm(forms.Form):
     """Sem campo de senha — o admin da clínica nova recebe um convite por
     e-mail pra definir a própria senha (§5 do plano), mesmo mecanismo usado
-    em 🔑 Usuários."""
+    em 🔑 Usuários.
+
+    Módulos (pedido explícito do usuário): os principais já vêm marcados
+    (tutores/pacientes/financeiro/estoque/atendimentos/agenda), mas dá pra
+    desmarcar antes de criar — e continuam editáveis depois direto no
+    cadastro da Clinica, sem precisar reprovisionar nada."""
 
     nome = forms.CharField(label="Nome da clínica", max_length=200)
     schema_name = forms.SlugField(label="Identificador (schema)", max_length=63)
     admin_nome = forms.CharField(label="Nome do admin da clínica", max_length=150)
     admin_email = forms.EmailField(label="E-mail do admin da clínica")
+
+    modulo_tutores = forms.BooleanField(label="Tutores", required=False, initial=True)
+    modulo_pacientes = forms.BooleanField(label="Pacientes", required=False, initial=True)
+    modulo_financeiro = forms.BooleanField(label="Serviços/Financeiro", required=False, initial=True)
+    modulo_estoque = forms.BooleanField(label="Estoque", required=False, initial=True)
+    modulo_atendimentos = forms.BooleanField(label="Atendimentos", required=False, initial=True)
+    modulo_agenda = forms.BooleanField(label="Agenda", required=False, initial=True)
+    modulo_whatsapp_lembrete = forms.BooleanField(
+        label="Lembrete de WhatsApp (Agenda)", required=False, initial=False,
+        help_text="Exige conta Meta Business + template aprovado configurados — deixe desmarcado até a clínica ter isso pronto.",
+    )
 
 
 @admin.register(Clinica)

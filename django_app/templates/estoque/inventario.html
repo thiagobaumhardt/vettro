@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}{{ inv.descricao }} — Inventário — Vettro{% endblock %}
+{% block content %}
+{% include "estoque/_subnav.html" %}
+<div class="card" x-data="contagem({{ catalogo_json }})">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+    <div>
+      <h2 style="margin:0;">{{ inv.descricao }}</h2>
+      <span style="color:var(--muted);">{{ inv.categoria|default:"Todos os produtos" }} · {{ inv.get_status_display }}</span>
+    </div>
+    <a href="{% url 'estoque:inventarios' %}" class="btn-secondary btn">← Inventários</a>
+  </div>
+
+  {% if inv.status == "aberto" %}
+  <form class="inv-leitor" hx-post="{% url 'estoque:inventario_contar' inv.pk %}" hx-target="#inv-itens" x-ref="form"
+        @htmx:after-request="limpar()">
+    {% csrf_token %}
+    <div class="inv-campos">
+      <div style="flex:2; min-width:220px;">
+        <label>Código de barras <small style="color:var(--muted);">(leitor, digitação ou câmera)</small></label>
+        <input type="text" name="codigo" x-ref="codigo" x-model="codigo" inputmode="numeric" autocomplete="off" autofocus
+               placeholder="Aponte o leitor aqui..." @keydown.enter.prevent="enviar()">
+      </div>
+      <div style="flex:2; min-width:220px;">
+        <label>ou produto</label>
+        <select name="insumo" x-model="insumo">
+          <option value="">— pelo nome —</option>
+          <template x-for="p in catalogo" :key="p.id"><option :value="p.id" x-text="p.nome"></option></template>
+        </select>
+      </div>
+      <div style="flex:1; min-width:120px;">
+        <label>Quantidade</label>
+        <input type="number" name="quantidade" step="any" min="0" x-model="quantidade" placeholder="1">
+      </div>
+      <div style="flex:1; min-width:150px;">
+        <label>Validade (opcional)</label>
+        <input type="date" name="validade" x-model="validade">
+      </div>
+    </div>
+    <div class="inv-acoes">
+      <label style="display:flex; gap:6px; align-items:center; margin:0;"><input type="radio" name="modo" value="somar" x-model="modo"> Somar à contagem (cada leitura = +1)</label>
+      <label style="display:flex; gap:6px; align-items:center; margin:0;"><input type="radio" name="modo" value="definir" x-model="modo"> Definir o total contado</label>
+      <button type="button" class="btn-primary btn" @click="enviar()">Lançar</button>
+      <button type="button" class="btn-secondary btn" x-show="temCamera" @click="abrirCamera()">Ler com a câmera</button>
+    </div>
+    <div x-show="cameraAberta" x-cloak class="inv-camera">
+      <video x-ref="video" playsinline muted></video>
+      <button type="button" class="btn-secondary btn" @click="fecharCamera()">Fechar câmera</button>
+    </div>
+  </form>
+  {% endif %}
+
+  <div id="inv-itens">{% include "estoque/_inventario_itens.html" %}</div>
+
+  {% if inv.status == "aberto" %}
+  <div class="ag-det-acoes ag-det-perigo" style="margin-top:16px;">
+    <form method="post" action="{% url 'estoque:inventario_finalizar' inv.pk %}">{% csrf_token %}
+      <button class="btn-primary btn" data-confirm="Finalizar? As diferenças viram ajustes no estoque e as validades contadas são atualizadas.">Finalizar e ajustar o estoque</button></form>
+    <form method="post" action="{% url 'estoque:inventario_finalizar' inv.pk %}">{% csrf_token %}<input type="hidden" name="acao" value="cancelar">
+      <button class="btn-danger btn" data-confirm="Cancelar este inventário? Nada será ajustado.">Cancelar inventário</button></form>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  function contagem(catalogo) {
+    return {
+      catalogo, codigo: "", insumo: "", quantidade: "", validade: "", modo: "somar",
+      temCamera: "BarcodeDetector" in window && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+      cameraAberta: false, stream: null,
+      enviar() { if (this.codigo || this.insumo) htmx.trigger(this.$refs.form, "submit"); },
+      limpar() { this.codigo = ""; this.insumo = ""; this.quantidade = ""; this.validade = ""; this.$nextTick(() => this.$refs.codigo.focus()); },
+      // Leitura pela câmera do celular (Chrome/Android: BarcodeDetector).
+      async abrirCamera() {
+        try {
+          this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        } catch (e) { alert("Não foi possível abrir a câmera."); return; }
+        this.cameraAberta = true;
+        const video = this.$refs.video;
+        video.srcObject = this.stream;
+        await video.play();
+        const detector = new BarcodeDetector({ formats: ["ean_13", "ean_8", "code_128", "upc_a", "upc_e"] });
+        let ultimo = "", quando = 0;
+        const ler = async () => {
+          if (!this.cameraAberta) return;
+          try {
+            const achados = await detector.detect(video);
+            if (achados.length) {
+              const valor = achados[0].rawValue;
+              if (valor !== ultimo || Date.now() - quando > 2000) {  // evita contar a mesma leitura várias vezes
+                ultimo = valor; quando = Date.now();
+                this.codigo = valor;
+                this.$nextTick(() => this.enviar());
+                if (navigator.vibrate) navigator.vibrate(80);
+              }
+            }
+          } catch (e) { /* frame sem código */ }
+          requestAnimationFrame(ler);
+        };
+        ler();
+      },
+      fecharCamera() {
+        this.cameraAberta = false;
+        if (this.stream) this.stream.getTracks().forEach(t => t.stop());
+      },
+    };
+  }
+</script>
+{% endblock %}

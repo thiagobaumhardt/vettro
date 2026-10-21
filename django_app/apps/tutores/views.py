@@ -14,13 +14,15 @@ from . import services
 from .forms import TutorForm
 from .models import Tutor
 
+PAPEIS_VEEM_VALOR_A_PAGAR = {"admin", "vet", "atendente"}
+
 
 @requer_secao("tutores")
 def lista(request):
     termo = request.GET.get("q", "").strip()
     tutores = Tutor.objects.all()
     if termo:
-        tutores = tutores.filter(Q(nome__icontains=termo) | Q(tel__icontains=termo))
+        tutores = tutores.filter(Q(nome__icontains=termo) | Q(tel__icontains=termo) | Q(tel2__icontains=termo))
 
     contexto = {"tutores": tutores, "termo": termo}
     template = "tutores/_lista_resultado.html" if request.headers.get("HX-Request") else "tutores/lista.html"
@@ -32,6 +34,7 @@ def form_view(request, pk=None):
     tutor = get_object_or_404(Tutor, pk=pk) if pk else None
 
     consentimento_anterior = tutor.consentimento_dados if tutor else False
+    consentimento_whatsapp_anterior = tutor.consentimento_whatsapp if tutor else False
 
     if request.method == "POST":
         form = TutorForm(request.POST, instance=tutor)
@@ -39,6 +42,9 @@ def form_view(request, pk=None):
             era_novo = tutor is None
             novo = form.save(commit=False)
             services.salvar_consentimento(novo, consentimento_anterior, form.cleaned_data["consentimento_dados"])
+            services.salvar_consentimento_whatsapp(
+                novo, consentimento_whatsapp_anterior, form.cleaned_data["consentimento_whatsapp"]
+            )
             novo.save()
             registrar_auditoria(
                 usuario=request.user, acao="criar" if era_novo else "atualizar",
@@ -56,7 +62,26 @@ def form_view(request, pk=None):
 def detalhe(request, pk):
     tutor = get_object_or_404(Tutor, pk=pk)
     pacientes = Paciente.objects.filter(tutor=tutor)
-    return render(request, "tutores/detalhe.html", {"tutor": tutor, "pacientes": pacientes})
+    contexto = {"tutor": tutor, "pacientes": pacientes}
+    # Só o TOTAL em aberto — o detalhe das cobranças continua admin only.
+    if request.session.get("papel") in PAPEIS_VEEM_VALOR_A_PAGAR:
+        from apps.financeiro.services import valor_a_pagar_do_tutor
+
+        contexto["valor_a_pagar"] = valor_a_pagar_do_tutor(tutor)
+    # Aba Financeiro: quem recebe pagamentos (Recepção/admin) e o vet (só
+    # consulta — vê se o atendimento que acabou de fazer já foi pago).
+    from apps.core.decorators import secoes_permitidas
+
+    pode_receber = "recepcao" in secoes_permitidas(request)
+    if pode_receber or request.session.get("papel") == "vet":
+        from apps.financeiro.models import Cobranca
+
+        contexto["cobrancas"] = (Cobranca.objects.filter(paciente__tutor=tutor)
+                                 .select_related("paciente", "recebimento").prefetch_related("recebimento__pagamentos"))
+        aba = request.GET.get("aba", "animais")
+        contexto["aba"] = "financeiro" if aba in ("financeiro", "cobrancas") else "animais"
+        contexto["pode_receber"] = pode_receber
+    return render(request, "tutores/detalhe.html", contexto)
 
 
 @requer_secao("tutores")
@@ -64,6 +89,7 @@ def excluir(request, pk):
     tutor = get_object_or_404(Tutor, pk=pk)
     if request.method == "POST":
         nome, tutor_id = tutor.nome, tutor.id
+        services.escrubar_snapshots_tutor(tutor)
         tutor.delete()
         registrar_auditoria(
             usuario=request.user, acao="excluir", entidade="tutor",

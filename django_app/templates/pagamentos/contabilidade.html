@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Contabilidade — Vettro{% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+    <h2 style="margin:0;">Notas fiscais para a contabilidade</h2>
+    <a href="{% url 'core:configuracao' %}" class="btn-secondary btn">Voltar</a>
+  </div>
+  <p style="color:var(--muted);">Pacote do mês para enviar ao contador: XMLs das notas autorizadas e dos cancelamentos, e um relatório separando a receita de serviços da receita de vendas de produtos.</p>
+  <form method="get" style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;">
+    <div><label for="mes">Mês</label><input type="month" id="mes" name="mes" value="{{ mes_valor }}"></div>
+    <button type="submit" class="btn-secondary btn">Ver</button>
+  </form>
+</div>
+
+<div class="card">
+  <div class="section-title">Resumo de {{ mes_rotulo }}</div>
+  {% if resumo.simulacao %}
+  <p style="background:var(--c-alerta); padding:8px 10px; font-size:.88rem;">Há notas de simulação neste mês (sem valor fiscal). O emissor real ainda não está ligado.</p>
+  {% endif %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Receita</th><th>Documento</th><th>Notas</th><th>Canceladas</th><th>Total</th></tr></thead>
+      <tbody>
+        <tr><td>Serviços</td><td>NFS-e</td><td>{{ resumo.servicos.qtd }}</td><td>{{ resumo.servicos.canceladas }}</td><td>R$ {{ resumo.servicos.total|floatformat:2 }}</td></tr>
+        <tr><td>Venda de produtos</td><td>NFC-e</td><td>{{ resumo.vendas.qtd }}</td><td>{{ resumo.vendas.canceladas }}</td><td>R$ {{ resumo.vendas.total|floatformat:2 }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="margin-top:14px;">
+    {% if notas %}
+    <a href="{% url 'notas:contabilidade_zip' %}?mes={{ mes_valor }}" class="btn-primary btn">Baixar pacote do mês (ZIP)</a>
+    {% else %}
+    <div class="empty">Nenhuma nota emitida em {{ mes_rotulo }}.</div>
+    {% endif %}
+  </div>
+</div>
+
+{% if notas %}
+<div class="card">
+  <div class="section-title">Notas do mês</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Documento</th><th>Número</th><th>Emissão</th><th>Situação</th><th>Valor</th><th></th></tr></thead>
+      <tbody>
+        {% for n in notas %}
+        <tr>
+          <td>{{ n.get_tipo_display }}</td>
+          <td>{{ n.numero }}</td>
+          <td style="white-space:nowrap;">{{ n.emitida_em|date:"d/m/Y H:i" }}</td>
+          <td>{{ n.get_status_display }}{% if n.simulacao %} (simulação){% endif %}</td>
+          <td>R$ {{ n.valor_total|floatformat:2 }}</td>
+          <td><a href="{% url 'notas:pdf' n.pk %}" target="_blank" rel="noopener">PDF</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

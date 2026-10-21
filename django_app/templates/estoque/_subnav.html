@@ -1,0 +1,10 @@
+{# Abas do módulo Estoque. Parâmetro: aba (produtos|saidas|inventario|analise|etiquetas). #}
+<nav class="subnav" aria-label="Estoque">
+  <a href="{% url 'estoque:lista' %}" class="{% if not aba or aba == 'produtos' %}ativa{% endif %}">Produtos</a>
+  <a href="{% url 'estoque:saidas' %}" class="{% if aba == 'saidas' %}ativa{% endif %}">Saídas</a>
+  <a href="{% url 'estoque:inventarios' %}" class="{% if aba == 'inventario' %}ativa{% endif %}">Inventário</a>
+  {% if papel_ativo == "admin" %}
+  <a href="{% url 'estoque:analise' %}" class="{% if aba == 'analise' %}ativa{% endif %}">Análise</a>
+  {% endif %}
+  <a href="{% url 'estoque:etiquetas' %}" class="{% if aba == 'etiquetas' %}ativa{% endif %}">Etiquetas</a>
+</nav>

@@ -1,0 +1,14 @@
+{# Situação da nota fiscal de uma cobrança ou venda. Espera `nota` (ou None). #}
+{% if nota %}
+<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 14px; padding:10px 14px;
+            {% if nota.status == 'emitida' %}background:var(--c-ok); border:1px solid var(--verde-oliva-suave);{% elif nota.status == 'erro' %}background:var(--c-alerta); border:1px solid var(--perigo-suave);{% else %}background:var(--c-neutro); border:1px solid var(--border-2);{% endif %}">
+  <span><strong>{{ nota.get_tipo_display }}</strong>
+    {% if nota.status == "emitida" %}nº {{ nota.numero }} emitida{% if nota.emitida_em %} em {{ nota.emitida_em|date:"d/m/Y H:i" }}{% endif %}
+    {% elif nota.status == "cancelada" %}nº {{ nota.numero }} — cancelada
+    {% elif nota.status == "erro" %}<span style="color:var(--c-alerta-texto);">não autorizada: {{ nota.mensagem_erro }}</span>
+    {% else %}{{ nota.get_status_display }}{% endif %}
+  </span>
+  {% if nota.simulacao %}<span class="badge" style="background:var(--c-alerta); color:var(--c-alerta-texto);">SIMULAÇÃO — sem valor fiscal</span>{% endif %}
+  {% if nota.status != "erro" %}<a href="{% url 'notas:pdf' nota.pk %}" target="_blank" class="btn-secondary btn">Ver nota (PDF)</a>{% endif %}
+</div>
+{% endif %}

@@ -1,0 +1,67 @@
+{# Grade de horários (Dia: uma coluna por consultório; Semana: uma por dia). #}
+{% if cancelados %}
+<div class="ag-cancelados" x-data="{ aberto: false }">
+  <button type="button" class="ag-cancelados-botao" @click="aberto = !aberto">Cancelados ({{ cancelados|length }})</button>
+  <div class="ag-cancelados-lista" x-show="aberto" x-cloak @click.outside="aberto = false">
+    {% for a in cancelados %}
+    <button type="button" class="ag-cancelado-item" hx-get="{% url 'agenda:detalhe' a.pk %}?voltar={{ voltar|urlencode }}" hx-target="#ag-detalhe">
+      <span class="riscado"><strong>{% if visao == "semana" %}{{ a.data|date:"d/m" }} {% endif %}{{ a.hora|time:"H:i"|default:"--:--" }}</strong> {{ a.pac_nome }}{% if a.consultorio %} · {{ a.consultorio.nome }}{% endif %}</span>
+      <small>{{ a.motivo_cancelamento|default:"sem motivo" }}</small>
+    </button>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% if sem_horario %}
+<div class="card ag-sem-horario">
+  <div class="section-title">Sem horário definido / fora do expediente</div>
+  {% for a in sem_horario %}
+  <button type="button" class="ag-chip st-{{ a.status_exibido.0 }}"
+          hx-get="{% url 'agenda:detalhe' a.pk %}?voltar={{ voltar|urlencode }}" hx-target="#ag-detalhe">
+    {% if visao == "semana" %}{{ a.data|date:"d/m" }} {% endif %}{{ a.hora|time:"H:i"|default:"--:--" }} · {{ a.pac_nome }}
+  </button>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="card ag-grade-card">
+  <div class="ag-grade" style="--ag-colunas: {{ colunas|length }};">
+    <div class="ag-cabecalho">
+      <div class="ag-horas-cab"></div>
+      {% for col in colunas %}
+      <div class="ag-col-cab{% if col.hoje %} hoje{% endif %}">
+        {% if visao == "semana" %}<a href="?visao=dia&data={{ col.data|date:'Y-m-d' }}{% if filtros.consultorio %}&consultorio={{ filtros.consultorio }}{% endif %}">{{ col.titulo }}</a>
+        {% else %}{{ col.titulo }}{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="ag-corpo-grade">
+      <div class="ag-horas">
+        {% for h in linhas %}<div class="ag-hora" style="height:{{ altura_linha }}px;">{{ h|time:"H:i" }}</div>{% endfor %}
+      </div>
+      {% for col in colunas %}
+      <div class="ag-col" style="height:{{ altura_grade }}px;"
+           @dragover.prevent="$el.classList.add('ag-col-alvo')" @dragleave="$el.classList.remove('ag-col-alvo')"
+           @drop.prevent="$el.classList.remove('ag-col-alvo'); soltar($event, $el, '{% if visao == 'semana' %}{{ col.data|date:'Y-m-d' }}{% else %}{{ data_ref|date:'Y-m-d' }}{% endif %}', '{% if visao == 'semana' %}manter{% else %}{{ col.consultorio_id }}{% endif %}', '{% if visao == 'semana' %}{% else %}{{ col.titulo|escapejs }}{% endif %}')">
+        {% for h in linhas %}
+        <a class="ag-slot" style="height:{{ altura_linha }}px;" title="Agendar às {{ h|time:'H:i' }}"
+           href="{% url 'agenda:novo' %}?data={% if visao == 'semana' %}{{ col.data|date:'Y-m-d' }}{% else %}{{ data_ref|date:'Y-m-d' }}{% endif %}&hora={{ h|time:'H:i' }}{% if col.consultorio_id %}&consultorio={{ col.consultorio_id }}{% elif filtros.consultorio and filtros.consultorio != 'sem' %}&consultorio={{ filtros.consultorio }}{% endif %}&voltar={{ voltar|urlencode }}"></a>
+        {% endfor %}
+        {% for f in col.fechados %}
+        <div class="ag-fechado" style="top:{{ f.top }}px; height:{{ f.altura }}px;" title="{{ f.b.alvo }}: {{ f.b.motivo }}">
+          <span>{{ f.b.motivo }}</span>
+        </div>
+        {% endfor %}
+        {% for x in col.cancelados %}
+        <button type="button" class="ag-cancelado-mini" style="top:{{ x.top }}px; right:{{ x.direita }}px;"
+                title="Cancelado: {{ x.a.hora|time:'H:i' }} {{ x.a.pac_nome }} — {{ x.a.motivo_cancelamento|default:'sem motivo' }}"
+                hx-get="{% url 'agenda:detalhe' x.a.pk %}?voltar={{ voltar|urlencode }}" hx-target="#ag-detalhe"><span>Cancelado</span> {{ x.a.pac_nome|truncatechars:14 }}</button>
+        {% endfor %}
+        {% for c in col.cartoes %}{% include "agenda/_cartao.html" with mostrar_local=mostrar_local %}{% endfor %}
+        {% if agora_top is not None and not col.data %}<div class="ag-agora" style="top:{{ agora_top }}px;"></div>{% endif %}
+        {% if col.hoje and agora_top_semana is not None %}<div class="ag-agora" style="top:{{ agora_top_semana }}px;"></div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>

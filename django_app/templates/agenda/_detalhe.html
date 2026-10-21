@@ -1,0 +1,72 @@
+{% load formatos %}
+{# Detalhe do agendamento (janela) com as ações da agenda/fila. #}
+<div class="ag-det-topo">
+  <div>
+    <h3 style="margin:0;">{{ a.pac_nome }}</h3>
+    <span style="color:var(--muted);">{{ a.data|date:"d/m/Y" }}{% if a.hora %} · {{ a.hora|time:"H:i" }}–{{ a.hora_fim|time:"H:i" }}{% endif %} · {{ a.duracao_min|duracao }}</span>
+  </div>
+  <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+    <span class="ag-status st-{{ a.status_exibido.0 }}">{{ a.status_exibido.1 }}</span>
+    {% for s in a.servicos %}<span class="ag-etiqueta">{{ s.nome }}</span>{% endfor %}{% for e in a.exames %}<span class="ag-etiqueta">{{ e.nome }}</span>{% endfor %}
+    {% if a.encaixe %}<span class="ag-etiqueta">Encaixe</span>{% endif %}
+  </div>
+</div>
+
+<div class="form-grid" style="margin:14px 0;">
+  <div><label>Consultório</label>{{ a.consultorio.nome|default:"—" }}</div>
+  <div><label>Tutor</label>{{ a.tutor_nome|default:"—" }}</div>
+  <div><label>Telefone</label>{{ a.tutor_tel|default:"—" }}</div>
+  <div class="full"><label>Serviços</label>{% for s in a.servicos %}{{ s.nome }}{% if not forloop.last %}, {% endif %}{% empty %}{{ a.servicos_livre|default:"—" }}{% endfor %}{% if a.servicos and a.servicos_livre %}, {{ a.servicos_livre }}{% endif %}</div>
+  {% if a.status == "cancelado" %}<div class="full"><label>Motivo do cancelamento</label><strong style="color:var(--st-cancelado);">{{ a.motivo_cancelamento|default:"—" }}</strong>{% if a.cancelado_em %} <small style="color:var(--muted);">· {{ a.cancelado_em|date:"d/m/Y H:i" }}{% if a.cancelado_por_nome %} por {{ a.cancelado_por_nome }}{% endif %}</small>{% endif %}</div>{% endif %}
+  {% if a.queixa %}<div class="full"><label>Queixa</label>{{ a.queixa }}</div>{% endif %}
+  {% if a.obs %}<div class="full"><label>Observações</label>{{ a.obs|linebreaksbr }}</div>{% endif %}
+  {% if a.chegada_em or a.inicio_atendimento_em %}
+  <div><label>Chegada</label>{{ a.chegada_em|date:"H:i"|default:"—" }}</div>
+  <div><label>Início / fim</label>{{ a.inicio_atendimento_em|date:"H:i"|default:"—" }} / {{ a.fim_atendimento_em|date:"H:i"|default:"—" }}</div>
+  {% if a.espera_min is not None %}<div><label>Tempo de espera</label>{{ a.espera_min }} min</div>{% endif %}
+  {% if a.atendimento_min is not None %}<div><label>Tempo de atendimento</label>{{ a.atendimento_min }} min</div>{% endif %}
+  {% endif %}
+</div>
+
+{% with u=voltar %}
+<div class="ag-det-acoes">
+  {% if a.status == "agendado" %}
+  <form method="post" action="{% url 'agenda:acao' a.pk %}">{% csrf_token %}<input type="hidden" name="voltar" value="{{ u }}"><input type="hidden" name="acao" value="chegou"><button class="btn-secondary btn">Chegou</button></form>
+  {% endif %}
+  {% if a.status == "agendado" or a.status == "aguardando" %}
+  <form method="post" action="{% url 'agenda:acao' a.pk %}">{% csrf_token %}<input type="hidden" name="voltar" value="{{ u }}"><input type="hidden" name="acao" value="iniciar"><button class="btn-secondary btn">Iniciar atendimento</button></form>
+  {% endif %}
+  {% if a.status == "em_atendimento" %}
+  <form method="post" action="{% url 'agenda:acao' a.pk %}">{% csrf_token %}<input type="hidden" name="voltar" value="{{ u }}"><input type="hidden" name="acao" value="finalizar"><button class="btn-primary btn">Finalizar atendimento</button></form>
+  {% endif %}
+  {% if a.status == "realizado" or a.status == "cancelado" %}
+  <form method="post" action="{% url 'agenda:acao' a.pk %}">{% csrf_token %}<input type="hidden" name="voltar" value="{{ u }}"><input type="hidden" name="acao" value="reabrir"><button class="btn-secondary btn" data-confirm="Reabrir este agendamento?">Reabrir</button></form>
+  {% endif %}
+  {% if a.paciente_id %}<a href="{% url 'pacientes:ficha' a.paciente_id %}" class="btn-secondary btn">Abrir ficha</a>{% endif %}
+  <a href="{% url 'agenda:editar' a.pk %}?voltar={{ u|urlencode }}" class="btn-secondary btn">Editar</a>
+</div>
+
+<div class="ag-det-acoes ag-det-perigo">
+  {% if a.status != "cancelado" and a.status != "realizado" %}
+  <div x-data="{ cancelando: false, motivo: '' }" style="flex-basis:100%;">
+    <button type="button" class="btn-danger btn" x-show="!cancelando" @click="cancelando = true">Cancelar agendamento</button>
+    <form x-show="cancelando" x-cloak method="post" action="{% url 'agenda:acao' a.pk %}" class="ag-cancelar">
+      {% csrf_token %}<input type="hidden" name="voltar" value="{{ u }}"><input type="hidden" name="acao" value="cancelar">
+      <label>Motivo do cancelamento</label>
+      <select name="motivo" x-model="motivo" required>
+        <option value="">Selecione...</option>
+        {% for m in motivos_cancelamento %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+        <option value="Outro">Outro (escrever)</option>
+      </select>
+      <input type="text" name="motivo_outro" x-show="motivo === 'Outro'" x-cloak :required="motivo === 'Outro'" maxlength="200" placeholder="Descreva o motivo" style="margin-top:6px;">
+      <small style="color:var(--muted); display:block; margin-top:4px;">O horário fica livre para outro agendamento.</small>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button type="submit" class="btn-danger btn">Confirmar cancelamento</button>
+        <button type="button" class="btn-secondary btn" @click="cancelando = false">Voltar</button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+  <form method="post" action="{% url 'agenda:excluir' a.pk %}">{% csrf_token %}<input type="hidden" name="voltar" value="{{ u }}"><button class="btn-danger btn" data-confirm="Excluir este agendamento?">Excluir</button></form>
+</div>
+{% endwith %}

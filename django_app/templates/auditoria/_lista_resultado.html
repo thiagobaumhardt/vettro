@@ -9,7 +9,7 @@
         <td>{{ log.usuario_nome|default:"—" }}</td>
         <td>
           {% if log.acao == "login_falha" %}
-          <span class="badge" style="background:#feebc8; color:#7b341e;">{{ log.get_acao_display }}</span>
+          <span class="badge" style="background:var(--c-aviso); color:var(--c-atencao-texto);">{{ log.get_acao_display }}</span>
           {% else %}
           <span class="badge badge-vet">{{ log.get_acao_display }}</span>
           {% endif %}
@@ -23,5 +23,5 @@
   </table>
 </div>
 {% else %}
-<div class="empty"><span class="icon">🛡️</span>Nenhum evento registrado.</div>
+<div class="empty">Nenhum evento registrado.</div>
 {% endif %}

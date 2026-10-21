@@ -1,0 +1,80 @@
+{# Ordem de chegada do dia: quem está aguardando, em atendimento, previstos e finalizados, com os tempos. #}
+<div class="ag-periodo"><a href="{{ url_anterior }}" class="btn-secondary btn ag-seta" aria-label="Anterior" title="Anterior">‹</a><strong>{{ titulo }}</strong><a href="{{ url_proximo }}" class="btn-secondary btn ag-seta" aria-label="Próximo" title="Próximo">›</a><span>ordem de chegada</span>{% include "agenda/_acoes_topo.html" %}</div>
+<div class="ag-metricas">
+  <div class="card ag-metrica"><span>Aguardando agora</span><strong>{{ aguardando|length }}</strong></div>
+  <div class="card ag-metrica"><span>Espera média hoje</span><strong>{% if metricas_dia.espera_media is not None %}{{ metricas_dia.espera_media }} min{% else %}—{% endif %}</strong></div>
+  <div class="card ag-metrica"><span>Atendimento médio hoje</span><strong>{% if metricas_dia.atendimento_medio is not None %}{{ metricas_dia.atendimento_medio }} min{% else %}—{% endif %}</strong></div>
+  <div class="card ag-metrica"><span>Espera média 30 dias</span><strong>{% if metricas_30.espera_media is not None %}{{ metricas_30.espera_media }} min{% else %}—{% endif %}</strong>
+    <small>{% if metricas_30.atendimento_medio is not None %}atendimento médio {{ metricas_30.atendimento_medio }} min · {{ metricas_30.n_atendimento }} atend.{% endif %}</small></div>
+</div>
+
+
+<div class="card">
+  <div class="section-title">Aguardando atendimento — ordem de chegada</div>
+  {% for a in aguardando %}
+  <div class="ag-fila-linha">
+    <span class="ag-fila-pos">{{ forloop.counter }}º</span>
+    <div class="ag-fila-info">
+      <button type="button" class="ag-link-nome" hx-get="{% url 'agenda:detalhe' a.pk %}?voltar={{ voltar|urlencode }}" hx-target="#ag-detalhe">{{ a.pac_nome }}</button>
+      {% for s in a.servicos %}<span class="ag-etiqueta">{{ s.nome }}</span>{% endfor %}{% for e in a.exames %}<span class="ag-etiqueta">{{ e.nome }}</span>{% endfor %}
+      <small>Chegou {{ a.chegada_em|date:"H:i" }}{% if a.hora %} · agendado {{ a.hora|time:"H:i" }}{% else %} · sem agendamento{% endif %}{% if a.consultorio %} · {{ a.consultorio.nome }}{% endif %}</small>
+    </div>
+    <span class="ag-fila-tempo {% if a.esperando_min > 30 %}alto{% endif %}">esperando {{ a.esperando_min }} min</span>
+    <form method="post" action="{% url 'agenda:acao' a.pk %}">{% csrf_token %}<input type="hidden" name="voltar" value="{{ voltar }}"><input type="hidden" name="acao" value="iniciar"><button class="btn-primary btn">Iniciar atendimento</button></form>
+  </div>
+  {% empty %}<p class="ag-vazio">Ninguém aguardando.</p>{% endfor %}
+</div>
+
+<div class="card">
+  <div class="section-title">Em atendimento</div>
+  {% for a in em_atendimento %}
+  <div class="ag-fila-linha">
+    <span class="ag-fila-pos">●</span>
+    <div class="ag-fila-info">
+      <button type="button" class="ag-link-nome" hx-get="{% url 'agenda:detalhe' a.pk %}?voltar={{ voltar|urlencode }}" hx-target="#ag-detalhe">{{ a.pac_nome }}</button>
+      <small>Início {{ a.inicio_atendimento_em|date:"H:i" }}{% if a.espera_min is not None %} · esperou {{ a.espera_min }} min{% endif %}{% if a.consultorio %} · {{ a.consultorio.nome }}{% endif %}</small>
+    </div>
+    <span class="ag-fila-tempo">há {{ a.atendendo_min }} min</span>
+    <form method="post" action="{% url 'agenda:acao' a.pk %}">{% csrf_token %}<input type="hidden" name="voltar" value="{{ voltar }}"><input type="hidden" name="acao" value="finalizar"><button class="btn-primary btn">Finalizar</button></form>
+  </div>
+  {% empty %}<p class="ag-vazio">Nenhum atendimento em andamento.</p>{% endfor %}
+</div>
+
+<div class="card">
+  <div class="section-title">Previstos — ainda não chegaram</div>
+  {% for a in previstos %}
+  <div class="ag-fila-linha">
+    <span class="ag-fila-pos">{{ a.hora|time:"H:i"|default:"--:--" }}</span>
+    <div class="ag-fila-info">
+      <button type="button" class="ag-link-nome" hx-get="{% url 'agenda:detalhe' a.pk %}?voltar={{ voltar|urlencode }}" hx-target="#ag-detalhe">{{ a.pac_nome }}</button>
+      <span class="ag-status st-{{ a.status_exibido.0 }}">{{ a.status_exibido.1 }}</span>
+      <small>{{ a.tutor_nome }}{% if a.tutor_tel %} · {{ a.tutor_tel }}{% endif %}{% if a.consultorio %} · {{ a.consultorio.nome }}{% endif %}</small>
+    </div>
+    <form method="post" action="{% url 'agenda:acao' a.pk %}">{% csrf_token %}<input type="hidden" name="voltar" value="{{ voltar }}"><input type="hidden" name="acao" value="chegou"><button class="btn-secondary btn">Chegou</button></form>
+    <form method="post" action="{% url 'agenda:acao' a.pk %}">{% csrf_token %}<input type="hidden" name="voltar" value="{{ voltar }}"><input type="hidden" name="acao" value="cancelar"><input type="hidden" name="motivo" value="Faltou (não compareceu)"><button class="btn-secondary btn" data-confirm="Cancelar {{ a.pac_nome }} por falta (não compareceu)? O horário fica livre.">Faltou</button></form>
+  </div>
+  {% empty %}<p class="ag-vazio">Nenhum agendamento previsto.</p>{% endfor %}
+</div>
+
+<div class="card">
+  <div class="section-title">Finalizados</div>
+  {% if finalizados %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Paciente</th><th>Chegada</th><th>Início</th><th>Fim</th><th>Espera</th><th>Atendimento</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for a in finalizados %}
+        <tr>
+          <td><button type="button" class="ag-link-nome" hx-get="{% url 'agenda:detalhe' a.pk %}?voltar={{ voltar|urlencode }}" hx-target="#ag-detalhe">{{ a.pac_nome }}</button></td>
+          <td>{{ a.chegada_em|date:"H:i"|default:"—" }}</td><td>{{ a.inicio_atendimento_em|date:"H:i"|default:"—" }}</td>
+          <td>{{ a.fim_atendimento_em|date:"H:i"|default:"—" }}</td>
+          <td>{% if a.espera_min is not None %}{{ a.espera_min }} min{% else %}—{% endif %}</td>
+          <td>{% if a.atendimento_min is not None %}{{ a.atendimento_min }} min{% else %}—{% endif %}</td>
+          <td><span class="ag-status st-{{ a.status_exibido.0 }}">{{ a.status_exibido.1 }}</span>{% if a.motivo_cancelamento %}<br><small style="color:var(--muted);">{{ a.motivo_cancelamento }}</small>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}<p class="ag-vazio">Nenhum atendimento finalizado.</p>{% endif %}
+</div>

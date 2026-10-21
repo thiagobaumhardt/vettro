@@ -39,7 +39,7 @@ def criar_anamnese(*, paciente, dados_clinicos: dict, servico_ids, usos_insumos,
 
     financeiro_services.criar_cobranca_automatica(
         paciente=paciente, servicos_itens=servicos_para_cobranca, insumos_itens=insumos_itens,
-        total=total, obs=f"Anamnese de {anamnese.data:%d/%m/%Y}",
+        total=total, obs=f"Consulta de {anamnese.data:%d/%m/%Y}",
     )
     return anamnese
 
@@ -86,15 +86,171 @@ def criar_cirurgia(*, paciente, dados: dict, categoria_ids, usos_insumos, planta
     return cirurgia
 
 
+ICONES_ATENDIMENTO = {
+    "vacinacao": "💉", "retorno": "↩", "aplicacao_medicacao": "💊", "curativo": "🩹", "emergencia": "🚨",
+}
+CATEGORIAS_HISTORICO = {
+    "atendimento": "Atendimentos", "vacinacao": "Vacinas", "ficha_clinica": "Consultas",
+    "cirurgia": "Cirurgias", "receita": "Receitas", "documento": "Documentos", "nota": "Anotações",
+}
+
+
+def linha_do_tempo(paciente, secoes: set) -> list[dict]:
+    """Histórico do paciente, do mais recente pro mais antigo: Atendimentos
+    (inclui vacinação/retorno), fichas clínicas (Anamnese), Cirurgias,
+    Receitas e Documentos emitidos. Só entra o que o perfil pode ver —
+    Atendimentos exigem "atendimentos", o resto exige "pacientes_clinico"."""
+    from django.urls import reverse
+    from django.utils import timezone
+
+    eventos = []
+    if "atendimentos" in secoes:
+        for a in paciente.atendimentos.select_related("retorno_de"):
+            if a.tipo == "vacinacao":
+                detalhe = f"{a.vacina_nome} · {a.get_dose_display()}"
+                if a.data_proxima_dose:
+                    detalhe += f" · próxima em {a.data_proxima_dose:%d/%m/%Y}"
+            elif a.tipo == "retorno":
+                detalhe = f"Retorno de {a.retorno_de.numero}" if a.retorno_de else "Retorno"
+            else:
+                detalhe = ", ".join(s["nome"] for s in a.servicos)
+            if a.data_retorno:
+                detalhe = " · ".join(filter(None, [detalhe, f"retorno previsto para {a.data_retorno:%d/%m/%Y}"]))
+            eventos.append({
+                "data": a.data, "hora": a.hora, "icone": ICONES_ATENDIMENTO.get(a.tipo, "🩺"),
+                "titulo": f"{a.numero} · {a.get_tipo_display()}", "detalhe": detalhe,
+                "obs": a.obs, "total": a.total, "plantao": a.plantao,
+                "categoria": "vacinacao" if a.tipo == "vacinacao" else "atendimento",
+                "url": reverse("pacientes:registro", args=[paciente.pk, "atendimento", a.pk]),
+                "na_ficha": True, "aba": "historico",
+            })
+    if "pacientes_clinico" in secoes:
+        for an in paciente.anamneses.all():
+            eventos.append({
+                "data": an.data, "hora": an.hora, "icone": "📋", "titulo": "Consulta",
+                "detalhe": an.queixa, "obs": "", "total": an.total, "plantao": an.plantao,
+                "categoria": "ficha_clinica", "na_ficha": True, "aba": "anamnese",
+                "url": reverse("pacientes:registro", args=[paciente.pk, "consulta", an.pk]),
+            })
+        for c in paciente.cirurgias.all():
+            eventos.append({
+                "data": c.data, "hora": c.hora, "icone": "🔪", "titulo": "Cirurgia",
+                "detalhe": c.proc, "obs": "", "total": c.total, "plantao": c.plantao,
+                "categoria": "cirurgia", "na_ficha": True, "aba": "anamnese",
+                "url": reverse("pacientes:registro", args=[paciente.pk, "cirurgia", c.pk]),
+            })
+        for r in paciente.receitas.all():
+            quando = timezone.localtime(r.criado_em)
+            conteudo = r.texto if r.tipo == "livre" else ", ".join(i["medicamento"] for i in r.itens)
+            eventos.append({
+                "data": quando.date(), "hora": quando.time(), "icone": "💊", "titulo": r.get_tipo_display(),
+                "detalhe": conteudo, "obs": f"Emitida por {r.vet_nome}" if r.vet_nome else "", "total": None,
+                "plantao": False, "categoria": "receita",
+                "url": reverse("receitas:detalhe", args=[paciente.pk, r.pk]),
+            })
+        for d in paciente.documentos.all():
+            quando = timezone.localtime(d.criado_em)
+            eventos.append({
+                "data": quando.date(), "hora": quando.time(), "icone": "📄", "titulo": d.titulo,
+                "detalhe": "", "obs": f"Emitido por {d.vet_nome}" if d.vet_nome else "", "total": None,
+                "plantao": False, "categoria": "documento", "url": reverse("documentos:detalhe", args=[d.pk]),
+            })
+    if "pacientes" in secoes:
+        # Anotações: qualquer perfil com acesso a Pacientes vê (igual à aba Anotações).
+        ficha = reverse("pacientes:ficha", args=[paciente.pk])
+        for n in paciente.notas.all():
+            quando = timezone.localtime(n.criado_em)
+            eventos.append({
+                "data": quando.date(), "hora": quando.time(),
+                "titulo": f"Anotação · {n.titulo}" if n.titulo else "Anotação",
+                "detalhe": n.conteudo, "obs": f"Editada em {timezone.localtime(n.editado_em):%d/%m/%Y %H:%M}" if n.editado_em else "",
+                "total": None, "plantao": False, "categoria": "nota",
+                "na_ficha": True, "aba": "notas", "url": f"{ficha}?aba=notas",
+                "hx_url": reverse("pacientes:ficha_aba", args=[paciente.pk, "notas"]),
+            })
+    eventos.sort(key=lambda e: (e["data"], e["hora"]), reverse=True)
+    return eventos
+
+
 def usos_insumos_do_post(post) -> list[dict]:
     """Lê os checkboxes `insumo_ids` + inputs `qtd_<id>` do POST — mesmo
-    padrão usado em Anamnese/Cirurgia/Atendimentos."""
-    usos = []
-    for insumo_id in post.getlist("insumo_ids"):
-        qtd_bruta = post.get(f"qtd_{insumo_id}", "1")
-        try:
-            qtd = max(1, int(qtd_bruta))
-        except ValueError:
-            qtd = 1
-        usos.append({"insumo_id": insumo_id, "qtd": qtd})
-    return usos
+    padrão usado em Anamnese/Cirurgia/Atendimentos. A quantidade está na
+    unidade de uso e pode ser fração ("2,5" ml); financeiro.montar_insumos
+    valida (e recusa zero/negativo/texto com mensagem)."""
+    return [
+        {"insumo_id": insumo_id, "qtd": post.get(f"qtd_{insumo_id}") or "1"}
+        for insumo_id in post.getlist("insumo_ids")
+    ]
+
+
+# --- Peso ------------------------------------------------------------------------
+
+def sincronizar_peso(paciente) -> None:
+    """Paciente.peso = pesagem mais recente (se houver alguma)."""
+    ultima = paciente.ultima_pesagem
+    if ultima and paciente.peso != ultima.peso:
+        paciente.peso = ultima.peso
+        paciente.save(update_fields=["peso"])
+
+
+def registrar_pesagem(paciente, *, peso, data=None, obs: str = "", usuario=None):
+    from datetime import date as _date
+
+    from .models import Pesagem
+
+    pesagem = Pesagem.objects.create(
+        paciente=paciente, peso=peso, data=data or _date.today(), obs=(obs or "").strip()[:200],
+        usuario_nome=getattr(usuario, "nome", "") if usuario else "",
+    )
+    sincronizar_peso(paciente)
+    return pesagem
+
+
+def indices_rotulos(xs: list[float], distancia_min: float, maximo: int = 7) -> list[int]:
+    """Quais pontos ganham rótulo de data no eixo X: o último sempre; os
+    demais só se ficarem longe o bastante do vizinho já rotulado."""
+    escolhidos = [len(xs) - 1]
+    for i in range(len(xs) - 2, -1, -1):
+        if escolhidos[-1] is not None and xs[escolhidos[-1]] - xs[i] >= distancia_min:
+            escolhidos.append(i)
+    escolhidos = sorted(escolhidos)
+    if len(escolhidos) > maximo:
+        passo = len(escolhidos) / maximo
+        escolhidos = sorted({escolhidos[int(k * passo)] for k in range(maximo)} | {escolhidos[-1]})
+    return escolhidos
+
+
+def grafico_pesos(cronologico: list, *, largura=900, altura=260) -> dict | None:
+    """Pontos do gráfico de linhas do peso (mais antiga → mais recente), com o
+    eixo X proporcional às datas e linhas de grade em kg. Coordenadas já como
+    string (template/SVG). None se houver menos de 2 pesagens."""
+    if len(cronologico) < 2:
+        return None
+    esq, dir_, topo, base = 52, 16, 14, 34
+    pesos = [float(p.peso) for p in cronologico]
+    minimo, maximo = min(pesos), max(pesos)
+    folga = max((maximo - minimo) * 0.15, 0.5)
+    y_min, y_max = max(minimo - folga, 0), maximo + folga
+    dias = [(p.data - cronologico[0].data).days for p in cronologico]
+    total_dias = max(dias[-1], 1)
+
+    def x(d):
+        return esq + d / total_dias * (largura - esq - dir_)
+
+    def y(v):
+        return topo + (y_max - v) / (y_max - y_min) * (altura - topo - base)
+
+    pontos = [{"x": f"{x(d):.1f}", "y": f"{y(v):.1f}", "p": p} for d, v, p in zip(dias, pesos, cronologico)]
+    grade = []
+    for k in range(5):
+        v = y_min + (y_max - y_min) * k / 4
+        grade.append({"y": f"{y(v):.1f}", "rotulo": f"{v:.1f}".replace(".", ",")})
+    # Rótulos de data no eixo X: no máximo 6, espaçados.
+    datas = [{"x": pontos[i]["x"], "rotulo": cronologico[i].data.strftime("%d/%m/%y")}
+             for i in indices_rotulos([float(p["x"]) for p in pontos], 62)]
+    return {
+        "largura": str(largura), "altura": str(altura), "esq": str(esq), "dir": str(largura - dir_),
+        "base": f"{altura - base:.1f}", "rotulo_y": f"{altura - base + 22:.1f}",
+        "linha": " ".join(f"{p['x']},{p['y']}" for p in pontos), "pontos": pontos, "grade": grade, "datas": datas,
+        "minimo": minimo, "maximo": maximo,
+    }

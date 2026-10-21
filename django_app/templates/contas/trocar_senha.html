@@ -1,0 +1,29 @@
+{% extends "base_public.html" %}
+{% block title %}Trocar senha — Vettro{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <div class="login-card">
+    <h1>Vettro</h1>
+    {% if obrigatoria %}
+    <p class="subtitle">Olá, {{ request.user.nome }}! Você entrou com uma senha provisória — crie a sua senha para continuar.</p>
+    {% else %}
+    <p class="subtitle">Trocar minha senha</p>
+    {% endif %}
+    {% if form.errors %}<div class="login-error">{% for campo, erros in form.errors.items %}{{ erros|join:" " }} {% endfor %}</div>{% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <label for="id_old_password">{% if obrigatoria %}Senha provisória{% else %}Senha atual{% endif %}</label>
+      {{ form.old_password }}
+      <label for="id_new_password1" style="margin-top:12px;">Nova senha</label>
+      {{ form.new_password1 }}
+      <p style="font-size:.78rem; color:var(--muted); margin:4px 0 12px;">Mínimo 8 caracteres, com letras e números.</p>
+      <label for="id_new_password2">Confirme a nova senha</label>
+      {{ form.new_password2 }}
+      <button type="submit" class="btn-primary btn" style="width:100%; justify-content:center; margin-top:16px;">Salvar nova senha</button>
+    </form>
+    <p style="text-align:center; margin-top:14px; font-size:.85rem;">
+      {% if not obrigatoria %}<a href="/">← Voltar</a> · {% endif %}<a href="{% url 'contas:logout' %}">Sair</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

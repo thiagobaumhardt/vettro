@@ -30,6 +30,7 @@ def _limpar_clinica_ativa(request):
     request.session.pop("clinica_id", None)
     request.session.pop("clinica_nome", None)
     request.session.pop("papel", None)
+    request.session.pop("modulos_habilitados", None)
 
 
 def _ativar_clinica(request, vinculo: UsuarioClinica):
@@ -41,6 +42,10 @@ def _ativar_clinica(request, vinculo: UsuarioClinica):
     request.session["clinica_id"] = str(vinculo.clinica_id)
     request.session["clinica_nome"] = vinculo.clinica.nome
     request.session["papel"] = vinculo.papel
+    # Módulos habilitados pra essa clínica (pedido explícito do usuário) —
+    # cacheado na sessão pra não bater no schema public a cada request; ver
+    # apps.core.decorators.secoes_permitidas, que cruza isso com o papel.
+    request.session["modulos_habilitados"] = list(vinculo.clinica.modulos_habilitados())
 
     from apps.auditoria.services import registrar as registrar_auditoria
 
@@ -149,3 +154,23 @@ def definir_senha_view(request, uidb64, token):
         form = SetPasswordForm(usuario)
 
     return render(request, "contas/definir_senha.html", {"form": form})
+
+
+@login_required
+def trocar_senha(request):
+    """A própria pessoa troca a senha (pede a atual). Também é a tela
+    obrigatória de quem está com senha provisória (Usuario.trocar_senha)."""
+    from django.contrib import messages
+    from django.contrib.auth import update_session_auth_hash
+    from django.contrib.auth.forms import PasswordChangeForm
+
+    obrigatoria = request.user.trocar_senha
+    form = PasswordChangeForm(request.user, request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        usuario = form.save()
+        usuario.trocar_senha = False
+        usuario.save(update_fields=["trocar_senha"])
+        update_session_auth_hash(request, usuario)  # não desloga depois de trocar
+        messages.success(request, "Senha alterada.")
+        return redirect("/")
+    return render(request, "contas/trocar_senha.html", {"form": form, "obrigatoria": obrigatoria})

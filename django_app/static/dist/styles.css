@@ -1,59 +1,83 @@
 /*
   Fallback hand-escrito enquanto o build real do Tailwind não roda neste
-  ambiente (sem Node/npm disponível). Reencoda o design system da marca
-  real Lume (ver identidade visual — Apresentação Lume, Studio Ananda Souza,
-  2026), aplicado em cima da mesma estrutura de classes já usada em todos os
-  templates (.card, .btn-*, .badge etc.) — nenhum template precisou mudar.
+  ambiente (sem Node/npm). Design system da marca Lume — cores MEDIDAS nas
+  imagens da identidade (paleta "Vitalidade / Tranquilidade / Clareza / Luz /
+  Proximidade" e página de tipografia), aplicadas sobre as mesmas classes que
+  os templates já usam (.card, .btn-*, .badge...).
 
-  IMPORTANTE — duas ressalvas sobre fidelidade à marca:
-  1) Cores: o material da Lume não trouxe códigos hex oficiais pra paleta
-     própria (só nomes: verde-escuro, verde-oliva, verde-claro, marfim,
-     amarelo, terroso). Os valores abaixo são uma estimativa visual feita a
-     partir da apresentação — não são os hex exatos de um guia de marca. Se
-     vocês tiverem os valores exatos (Figma/Canva/PDF com swatches), me
-     passem que eu ajusto com precisão.
-  2) Tipografia: a marca usa Roca Two (títulos) + Livvic (textos). Roca Two
-     é uma fonte PAGA (fundição TipoType) — sem confirmação de licença de
-     uso web, uso aqui a Fraunces (Google Fonts, gratuita, eixo "soft"
-     arredondado) como substituta temporária de visual próximo. Livvic é a
-     fonte real da marca e já está aplicada de verdade.
+  Tipografia: Roca Two (títulos e destaques) + Livvic (textos e apoio).
+  Roca Two é PAGA e não está no Google Fonts: o @font-face abaixo usa os
+  arquivos de static/fonts/ (RocaTwo-Regular.woff2 / RocaTwo-Bold.woff2) ou a
+  fonte instalada no computador, se houver. Sem nenhum dos dois, cai na
+  Fraunces "SOFT" (Google Fonts, arredondada), a substituta mais próxima.
 */
 
+@font-face {
+  font-family: "Roca Two";
+  src: local("Roca Two"), local("RocaTwo-Regular"), url("../fonts/RocaTwo-Regular.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Roca Two";
+  src: local("Roca Two Bold"), local("RocaTwo-Bold"), url("../fonts/RocaTwo-Bold.woff2") format("woff2");
+  font-weight: 600 700; font-style: normal; font-display: swap;
+}
+
 :root {
-  /* Paleta nomeada da Lume (estimativa visual, ver ressalva acima) */
-  --verde-escuro: #4B5530;      /* Confiança */
-  --verde-escuro-2: #333B22;    /* extremo mais escuro, usado em gradientes */
-  --verde-oliva: #7C8752;       /* Vitalidade — cor principal da marca */
-  --verde-oliva-hover: #626D3F;
-  --verde-claro: #D9DEBB;       /* Tranquilidade */
-  --marfim: #F3F0D8;            /* Clareza — fundo base */
-  --amarelo: #E5AE3E;           /* Luz — acento pontual */
-  --terroso: #BC7440;           /* Proximidade — acento/CTA */
-  --terroso-hover: #A25F31;
+  /* Paleta da Lume — valores medidos na identidade visual */
+  --verde-oliva: #949C56;       /* Vitalidade — cor principal */
+  --verde-claro: #E5E8C5;       /* Tranquilidade */
+  --marfim: #F5EFCB;            /* Clareza */
+  --amarelo: #EFC15A;           /* Luz — detalhes */
+  --terroso: #C17D46;           /* Proximidade — chamadas pontuais */
+  --verde-escuro: #545936;      /* texto e títulos da identidade */
+  --verde-profundo: #60663C;    /* faixa escura da identidade */
+  --fundo-externo: #DEE3BC;     /* fundo atrás dos cartões na identidade */
+  --branco-gelo: #F6F7F3;       /* fundo das telas */
 
-  /* Aliases usados nos templates (mantidos pra não precisar tocar em cada
-     arquivo — só os valores mudaram pra bater com a Lume de verdade) */
-  --bg: var(--marfim);
-  --text: #2B2B20;
-  --primary: var(--verde-oliva);
-  --primary-hover: var(--verde-oliva-hover);
-  --sidebar-from: var(--verde-escuro);
-  --sidebar-to: var(--verde-escuro-2);
-  --sidebar-active: #5C6640;
-  --card-bg: rgba(255, 255, 255, .96);
-  --border: #E3DFC4;
-  --border-2: #CAC6A0;
-  --muted: #8B8768;
-  --muted-2: #6B6850;
-  --btn-secondary-bg: #EDE9CD;
-  --btn-secondary-hover: #E2DCB8;
-  --danger: #fc8181;
-  --danger-hover: #e53e3e;
+  /* Derivadas (mesma família de cor, para estados e contraste) */
+  --verde-escuro-hover: #444929;
+  --verde-oliva-suave: #C9CE9C;
+  --amarelo-suave: #F8E5B4;
+  --terroso-suave: #F1DAC4;
+  --terroso-escuro: #8A4E22;
+  --perigo: #A9442B;            /* vermelho-terra, para excluir/erro */
+  --perigo-hover: #8C3520;
+  --perigo-suave: #F4D6C8;
+
+  /* Aliases usados nos templates */
+  --bg: var(--branco-gelo);
+  --text: var(--verde-escuro);
+  --primary: #7A8240;                     /* botões: verde mais claro (2026-10), texto branco */
+  --primary-hover: #687036;
+  --sidebar-bg: #111111;                  /* menu lateral preto (2026-10) */
+  --sidebar-active: #2B2B2B;
+  --card-bg: #FFFFFF;
+  --surface: #FFFFFF;                     /* campos e áreas internas dos cartões */
+  --border: #E3E5DB;
+  --border-2: #CDD0C0;
+  --muted: #7C7D5A;
+  --muted-2: #62653F;
+  --btn-secondary-bg: var(--verde-claro);
+  --btn-secondary-hover: var(--verde-oliva-suave);
+  --danger: var(--perigo);
+  --danger-hover: var(--perigo-hover);
   --accent: var(--terroso);
-  --accent-hover: var(--terroso-hover);
+  --accent-hover: var(--terroso-escuro);
 
-  --font-heading: 'Fraunces', 'Georgia', serif;
-  --font-body: 'Livvic', 'Segoe UI', sans-serif;
+  /* Fundos semânticos para selos/avisos (substituem os azuis/vermelhos genéricos) */
+  --c-neutro: var(--verde-claro);
+  --c-ok: #DCE5BE;
+  --c-info: #EEF0D8;
+  --c-info-borda: var(--verde-oliva-suave);
+  --c-aviso: var(--amarelo-suave);
+  --c-aviso-borda: var(--amarelo);
+  --c-alerta: var(--perigo-suave);
+  --c-alerta-texto: var(--perigo-hover);
+  --c-atencao-texto: var(--terroso-escuro);
+
+  --font-heading: "Roca Two", "Fraunces", Georgia, serif;
+  --font-body: "Livvic", "Segoe UI", system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -63,11 +87,16 @@ body {
   font-family: var(--font-body);
   background: var(--bg);
   color: var(--text);
+  line-height: 1.5;
 }
 
-a { color: inherit; }
+a { color: var(--verde-escuro); text-decoration-color: var(--verde-oliva); }
+a:hover { color: var(--verde-escuro-hover); }
 
-h1, h2, .brand, .login-card h1 { font-family: var(--font-heading); font-weight: 600; }
+h1, h2, h3, .brand, .login-card h1 {
+  font-family: var(--font-heading); font-weight: 600; color: var(--verde-escuro);
+  font-variation-settings: "SOFT" 100, "WONK" 0; letter-spacing: -.005em;
+}
 
 .app-shell { display: flex; min-height: 100vh; }
 .app-content { flex: 1; padding: 24px; max-width: 1200px; }
@@ -75,42 +104,51 @@ h1, h2, .brand, .login-card h1 { font-family: var(--font-heading); font-weight: 
 /* --- Sidebar --- */
 .sidebar {
   width: 232px;
-  background: linear-gradient(180deg, var(--sidebar-from), var(--sidebar-to));
-  color: #fff;
+  background: var(--sidebar-bg);
+  color: var(--marfim);
   display: flex;
   flex-direction: column;
   padding: 18px 0;
 }
-.sidebar .brand { padding: 0 18px 18px; font-weight: 600; font-size: 1.3rem; }
+.sidebar .brand { padding: 0 18px 18px; font-size: 1.45rem; color: var(--marfim); }
 .sidebar nav { display: flex; flex-direction: column; gap: 2px; }
 .sidebar a {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 18px; text-decoration: none; color: var(--verde-claro);
-  font-size: .92rem;
+  font-size: .92rem; border-left: 3px solid transparent;
 }
-.sidebar a.active, .sidebar a:hover { background: var(--sidebar-active); color: #fff; }
+.sidebar a:hover { background: rgba(245, 239, 203, .08); color: var(--marfim); }
+.sidebar a.active { background: var(--sidebar-active); color: var(--marfim); border-left-color: var(--amarelo); font-weight: 600; }
 
 /* --- Topbar --- */
 .topbar {
   display: flex; align-items: center; gap: 16px;
   padding: 14px 24px; border-bottom: 1px solid var(--border);
-  background: var(--card-bg);
+  background: #FFFFFF;
 }
+.topbar strong { font-family: var(--font-heading); font-size: 1.1rem; font-weight: 600; }
 .topbar .spacer { flex: 1; }
 .topbar .user-menu { display: flex; align-items: center; gap: 10px; font-size: .88rem; }
-.hamburger { display: none; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text); }
+.perfil-menu { position: relative; }
+.perfil-menu-botao { background: transparent; border: 1px solid transparent; color: var(--verde-escuro); font: inherit; font-weight: 600; padding: 6px 8px; cursor: pointer; }
+.perfil-menu-botao:hover, .perfil-menu-botao[aria-expanded="true"] { border-color: var(--border); background: var(--surface); }
+.perfil-menu-itens { position: absolute; right: 0; top: calc(100% + 4px); min-width: 220px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 6px 18px rgba(0,0,0,.08); z-index: 60; display: flex; flex-direction: column; }
+.perfil-menu-titulo { padding: 9px 14px 6px; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.perfil-menu-itens a { padding: 9px 14px; color: var(--verde-escuro); text-decoration: none; border-top: 1px solid var(--border); }
+.perfil-menu-itens a:hover { background: var(--branco-gelo); }
+.hamburger { display: none; background: none; border: 1px solid var(--border-2); padding: 6px 12px; font-family: inherit; font-weight: 600; font-size: .85rem; cursor: pointer; color: var(--text); }
 
 /* --- Cards / forms --- */
 .card {
   background: var(--card-bg);
-  border-radius: 10px;
-  padding: 22px;
-  box-shadow: 0 4px 20px rgba(60, 64, 40, .18);
+  border-radius: 0;
+  padding: 24px;
+  border: 1px solid var(--border);
   margin-bottom: 18px;
 }
 .section-title {
-  font-size: .78rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .04em; color: var(--muted-2);
+  font-size: .76rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--muted-2);
   border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 14px;
 }
 h2 { color: var(--verde-escuro); }
@@ -120,35 +158,45 @@ h2 { color: var(--verde-escuro); }
 
 label { display: block; font-size: .85rem; margin-bottom: 4px; color: var(--muted-2); }
 input, select, textarea {
-  width: 100%; padding: 9px 12px; border-radius: 7px;
-  border: 1.5px solid var(--border-2); font-size: .95rem; font-family: inherit;
+  width: 100%; padding: 10px 12px; border-radius: 0;
+  border: 1px solid var(--border-2); font-size: .95rem; font-family: inherit;
+  background: var(--surface); color: var(--text);
 }
-input:focus, select:focus, textarea:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+input[type="checkbox"], input[type="radio"] { width: auto; accent-color: var(--verde-escuro); }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--verde-escuro); box-shadow: inset 0 0 0 1px var(--verde-escuro); }
+
+/* --- Tables --- */
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+thead th { font-size: .76rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-2); font-weight: 600; }
+tbody tr:hover { background: rgba(229, 232, 197, .45); }
 
 /* --- Buttons --- */
 .btn {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 9px 20px; border-radius: 7px; border: none;
-  font-size: .9rem; cursor: pointer; text-decoration: none;
+  padding: 10px 20px; border-radius: 0; border: 1px solid transparent;
+  font-size: .88rem; font-family: inherit; font-weight: 600; letter-spacing: .01em; cursor: pointer; text-decoration: none;
   transition: background .15s;
 }
-.btn-primary { background: var(--primary); color: #fff; }
-.btn-primary:hover { background: var(--primary-hover); }
-.btn-secondary { background: var(--btn-secondary-bg); color: var(--text); }
-.btn-secondary:hover { background: var(--btn-secondary-hover); }
-.btn-danger { background: var(--danger); color: #fff; }
-.btn-danger:hover { background: var(--danger-hover); }
-/* Acento terroso — usado em chamadas/CTA pontuais, igual "AGENDE A CONSULTA" no material da marca */
-.btn-accent { background: var(--accent); color: #fff; border-radius: 20px; }
-.btn-accent:hover { background: var(--accent-hover); }
+.btn:focus-visible { outline: 2px solid var(--amarelo); outline-offset: 2px; }
+.btn-primary { background: var(--primary); color: #FFFFFF; }
+.btn-primary:hover { background: var(--primary-hover); color: #FFFFFF; }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+.btn-secondary { background: #FFFFFF; color: var(--verde-escuro); border: 1px solid var(--border-2); }
+.btn-secondary:hover { background: var(--btn-secondary-hover); color: var(--verde-escuro); }
+.btn-danger { background: var(--danger); color: var(--marfim); }
+.btn-danger:hover { background: var(--danger-hover); color: var(--marfim); }
+/* Acento terroso — chamadas pontuais, como as pílulas da identidade */
+.btn-accent { background: var(--accent); color: #FFF8EC; }
+.btn-accent:hover { background: var(--accent-hover); color: #FFF8EC; }
 
 /* --- Badges --- */
 .badge {
-  display: inline-block; padding: 2px 10px; border-radius: 20px;
-  font-size: .75rem; font-weight: 600;
+  display: inline-block; padding: 2px 10px; border-radius: 0;
+  font-size: .75rem; font-weight: 600; background: var(--c-neutro); color: var(--verde-escuro);
 }
-.badge-admin { background: #dbeafe; color: #1e40af; }
-.badge-vet { background: var(--verde-claro); color: var(--verde-escuro); }
+.badge-admin { background: var(--amarelo); color: var(--verde-escuro); }
+.badge-vet { background: var(--verde-oliva); color: var(--marfim); }
 
 /* --- Empty state --- */
 .empty { text-align: center; color: var(--muted); padding: 40px 0; }
@@ -157,72 +205,485 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--primary); o
 /* --- Login --- */
 .login-wrap {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, var(--sidebar-from), var(--sidebar-to));
+  background: var(--verde-escuro);  /* #545936 */
+  padding: 16px;
 }
 .login-card {
-  background: var(--card-bg); border-radius: 12px; padding: 36px 32px;
-  width: 100%; max-width: 360px; box-shadow: 0 10px 40px rgba(0,0,0,.3);
+  background: #FFFFFF; border-radius: 0; padding: 36px 32px;
+  width: 100%; max-width: 380px; box-shadow: 0 10px 40px rgba(40, 44, 20, .35);
 }
-.login-card h1 { text-align: center; margin: 0 0 4px; font-size: 2rem; color: var(--verde-escuro); }
-.login-card .subtitle { text-align: center; color: var(--muted); margin-bottom: 20px; font-size: .88rem; }
+.login-card h1 { text-align: center; margin: 0 0 4px; font-size: 2.2rem; }
+.login-card .subtitle { text-align: center; color: var(--muted); margin-bottom: 20px; font-size: .9rem; }
 .login-error {
-  background: #fff5f5; border: 1px solid var(--danger); color: #9b2c2c;
-  border-radius: 7px; padding: 10px 12px; font-size: .85rem; margin-bottom: 14px;
+  background: var(--c-alerta); border: 1px solid var(--perigo); color: var(--c-alerta-texto);
+  border-radius: 0; padding: 10px 12px; font-size: .85rem; margin-bottom: 14px;
 }
 
 /* --- Clinic picker --- */
 .clinica-lista { display: flex; flex-direction: column; gap: 10px; }
 .clinica-opcao {
   display: block; width: 100%; text-align: left; padding: 14px 16px;
-  border: 1.5px solid var(--border-2); border-radius: 8px; background: #fff;
-  cursor: pointer; font-size: .95rem;
+  border: 1.5px solid var(--border-2); border-radius: 0; background: var(--surface);
+  cursor: pointer; font-size: .95rem; font-family: inherit; color: var(--text);
 }
-.clinica-opcao:hover { border-color: var(--primary); background: #F8F7EA; }
+.clinica-opcao:hover { border-color: var(--verde-oliva); background: var(--verde-claro); }
 
 /* --- Toast / Confirm --- */
-#toast-region {
-  position: fixed; bottom: 20px; right: 20px; z-index: 100;
-}
+#toast-region { position: fixed; bottom: 20px; right: 20px; z-index: 100; }
 #toast {
-  padding: 12px 18px; border-radius: 8px; color: #fff; font-size: .9rem;
-  box-shadow: 0 6px 20px rgba(0,0,0,.2);
+  padding: 12px 18px; border-radius: 0; color: var(--marfim); font-size: .9rem;
+  box-shadow: 0 6px 20px rgba(40, 44, 20, .25); max-width: 420px;
 }
-#toast.ok { background: var(--primary); }
-#toast.erro { background: var(--danger-hover); }
+#toast.ok { background: var(--verde-escuro); }
+#toast.erro { background: var(--perigo); }
 
 .modal-backdrop {
-  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  position: fixed; inset: 0; background: rgba(40, 44, 20, .45);
   display: flex; align-items: center; justify-content: center; z-index: 200;
 }
-.modal-card {
-  background: #fff; border-radius: 10px; padding: 24px; max-width: 380px; width: 90%;
-}
+.modal-card { background: #FFFFFF; border-radius: 0; padding: 24px; max-width: 380px; width: 90%; }
 .modal-card .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
 
-/* --- Responsivo / mobile (Fase 5) --- */
+[x-cloak] { display: none !important; }
+
+/* --- Responsivo / mobile --- */
 @media (max-width: 640px) {
   .form-grid { grid-template-columns: 1fr; }
-
   .hamburger { display: inline-flex; }
-
   .sidebar {
     position: fixed; top: 0; bottom: 0; left: 0; z-index: 50;
     transform: translateX(-100%); transition: transform .2s ease;
   }
   .sidebar.aberta { transform: translateX(0); }
-
-  .sidebar-backdrop {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 40;
-  }
+  .sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(40, 44, 20, .45); z-index: 40; }
   .sidebar-backdrop.aberta { display: block; }
-
   .app-content { padding: 14px; }
   .topbar { padding: 10px 14px; }
   .card { padding: 16px; }
-
-  .table-wrap { overflow-x: auto; }
-
   .agenda-grid { grid-template-columns: 1fr !important; }
 }
 
 .table-wrap { overflow-x: auto; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* Busca de insumos (components/_insumos_busca.html) */
+.ib { position: relative; }
+.ib-campo { position: relative; }
+.ib-campo input[type=search] { border-radius: 0; height: 42px; }
+
+.ib-menu {
+  position: absolute; left: 0; right: 0; z-index: 30; margin-top: 6px; padding: 6px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 0;
+  box-shadow: 0 8px 20px rgba(84, 89, 54, .10); max-height: 300px; overflow-y: auto;
+}
+.ib-opcao {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%;
+  padding: 9px 12px; border: 0; border-radius: 0; background: none; color: var(--text);
+  font: inherit; text-align: left; cursor: pointer;
+}
+.ib-opcao.ativo { background: var(--verde-claro); }
+.ib-nome { font-weight: 600; }
+.ib-meta { font-size: .8rem; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ib-chip { padding: 1px 8px; border-radius: 0; background: var(--c-ok); color: var(--verde-escuro); font-size: .75rem; }
+.ib-chip.baixo { background: var(--perigo-suave); color: var(--perigo); }
+.ib-vazio { margin: 0; padding: 10px 12px; color: var(--muted); }
+.ib-lista { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.ib-item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 0;
+}
+.ib-item .ib-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ib-qtd { display: inline-flex; align-items: center; border: 1.5px solid var(--border-2); border-radius: 0; overflow: hidden; }
+.ib-qtd button { width: 30px; height: 32px; border: 0; background: var(--btn-secondary-bg); color: var(--verde-escuro); font-size: 1rem; cursor: pointer; }
+.ib-qtd button:hover { background: var(--btn-secondary-hover); }
+.ib-qtd input { width: 64px; height: 32px; border: 0; border-radius: 0; text-align: center; padding: 0 4px; -moz-appearance: textfield; }
+.ib-qtd input::-webkit-outer-spin-button, .ib-qtd input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.ib-subtotal { min-width: 84px; text-align: right; font-weight: 600; }
+.ib-remover { padding: 6px 10px; border: 0; border-radius: 0; background: none; color: var(--muted); cursor: pointer; font: inherit; font-size: .85rem; }
+.ib-remover:hover { background: var(--perigo-suave); color: var(--perigo); }
+.ib-nenhum { display: block; margin-top: 8px; color: var(--muted); font-size: .85rem; }
+@media (max-width: 560px) {
+  .ib-item { flex-wrap: wrap; }
+  .ib-item .ib-info { flex-basis: 100%; }
+  .ib-subtotal { flex: 1; }
+}
+
+/* Abas da Ficha do paciente — destaque controlado no navegador (Alpine), já que o
+   conteúdo troca por HTMX sem recarregar a barra de abas. */
+.aba-ficha { border-radius: 0; transition: none; }
+.aba-ficha.ativa { background: var(--primary); color: var(--marfim); }
+
+/* Visual reto: nada arredondado (pedido do usuário, 2026-10). */
+*, *::before, *::after { border-radius: 0 !important; }  /* visual reto em tudo — exceção: .hub-tipo (botões do hub de novo atendimento) */
+
+/* Linha do tempo da Ficha: cada registro é clicável e abre o detalhe. */
+.tl-link { display: block; padding: 8px 10px; margin-left: -10px; color: inherit; text-decoration: none; }
+a.tl-link:hover { background: var(--bg); color: inherit; }
+a.tl-link:hover .tl-ver { text-decoration: underline; }
+.tl-ver { margin-left: 8px; color: var(--verde-escuro); font-weight: 600; font-size: .85rem; }
+
+/* Aba Receitas: os 3 tipos como botões grandes, sempre visíveis. */
+.receita-opcao {
+  display: flex; flex-direction: column; gap: 4px; padding: 16px 18px;
+  background: var(--surface); border: 1px solid var(--border-2); border-top: 3px solid var(--primary);
+  color: var(--text); text-decoration: none;
+}
+.receita-opcao strong { font-size: 1rem; }
+.receita-opcao span { color: var(--muted); font-size: .85rem; }
+.receita-opcao:hover { background: var(--primary); border-color: var(--primary); color: var(--marfim); }
+.receita-opcao:hover span { color: var(--verde-claro); }
+
+/* ===================== Agenda (estilo SimplesVet) ===================== */
+:root {
+  /* Cor de cada tipo de atendimento — a mesma na Agenda (etiqueta) e no hub
+     de novo atendimento. Cores bem distintas entre si, texto branco. */
+  --et-consulta: #2E9E6B;           /* verde esmeralda */
+  --et-vacinacao: #F07E26;          /* laranja */
+  --et-cirurgia: #2D6CB5;           /* azul */
+  --et-retorno: #8152B8;            /* roxo */
+  --et-aplicacao_medicacao: #1597A5; /* ciano */
+  --et-curativo: #C2477E;           /* rosa */
+  --et-emergencia: #D93838;         /* vermelho */
+  --et-ambulatorial: #556270;       /* grafite */
+  --et-exame: #A0782C;              /* bronze */
+}
+.ag-topo { padding: 14px 18px; }
+.ag-linha-topo { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.ag-visoes { display: inline-flex; border: 1px solid var(--border-2); }
+.ag-visoes a { padding: 8px 14px; text-decoration: none; color: var(--verde-escuro); font-weight: 600; font-size: .88rem; }
+.ag-visoes a + a { border-left: 1px solid var(--border-2); }
+.ag-visoes a.ativa { background: var(--primary); color: var(--marfim); }
+.ag-nav { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 260px; }
+.ag-nav .btn { padding: 8px 12px; }
+.ag-titulo { font-family: var(--font-heading); font-size: 1.05rem; margin-left: 6px; white-space: nowrap; }
+.ag-acoes { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+.ag-filtros { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-top: 12px; }
+.ag-filtros label { font-size: .78rem; margin: 0; display: flex; flex-direction: column; gap: 3px; min-width: 150px; }
+.ag-filtros select, .ag-filtros input { padding: 7px 9px; font-size: .88rem; }
+.ag-alerta { align-self: center; padding: 6px 12px; background: var(--c-aviso); border: 1px solid var(--amarelo);
+  color: var(--c-atencao-texto); font-weight: 600; font-size: .85rem; text-decoration: none; }
+.ag-legenda { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: .78rem; color: var(--muted); }
+.ag-legenda span { display: inline-flex; align-items: center; gap: 5px; }
+.ag-legenda i { width: 10px; height: 10px; display: inline-block; }
+.et-consulta { background: var(--et-consulta); } .et-retorno { background: var(--et-retorno); } .et-ambulatorial { background: var(--et-ambulatorial); } .et-emergencia { background: var(--et-emergencia); } .et-vacinacao { background: var(--et-vacinacao); } .et-aplicacao_medicacao { background: var(--et-aplicacao_medicacao); } .et-curativo { background: var(--et-curativo); } .et-exame { background: var(--et-exame); }
+
+.ag-corpo { display: grid; grid-template-columns: 1fr; gap: 18px; align-items: start; }
+.ag-corpo.com-lateral { grid-template-columns: minmax(0, 1fr) 300px; }
+.ag-lateral .card { padding: 16px; }
+.ag-lateral label { font-size: .8rem; }
+.ag-resumo { color: var(--muted); font-size: .85rem; margin: 0 0 8px; }
+.ag-vazio { color: var(--muted); margin: 0; }
+
+/* Grade Dia/Semana */
+.ag-grade-card { padding: 0; overflow-x: auto; }
+.ag-grade { min-width: calc(64px + var(--ag-colunas) * 150px); }
+.ag-cabecalho { display: grid; grid-template-columns: 64px repeat(var(--ag-colunas), minmax(150px, 1fr));
+  position: sticky; top: 0; z-index: 3; background: var(--surface); border-bottom: 1px solid var(--border-2); }
+.ag-col-cab { padding: 10px 8px; font-weight: 700; font-size: .85rem; text-align: center; border-left: 1px solid var(--border); }
+.ag-col-cab a { color: inherit; text-decoration: none; }
+.ag-col-cab.hoje { background: var(--primary); color: var(--marfim); }
+.ag-corpo-grade { display: grid; grid-template-columns: 64px repeat(var(--ag-colunas), minmax(150px, 1fr)); }
+.ag-hora { font-size: .75rem; color: var(--muted); text-align: right; padding: 2px 8px 0 0; border-top: 1px solid var(--border); box-sizing: border-box; }
+.ag-col { position: relative; border-left: 1px solid var(--border); }
+.ag-slot { display: block; border-top: 1px solid var(--border); box-sizing: border-box; text-decoration: none; }
+.ag-slot:hover { background: var(--c-info); }
+.ag-slot:hover::after { content: "+ agendar"; font-size: .72rem; color: var(--muted); padding: 2px 6px; display: block; }
+.ag-fechado { position: absolute; left: 0; right: 0; z-index: 1; pointer-events: none;
+  background: repeating-linear-gradient(135deg, rgba(84, 89, 54, .10) 0 6px, rgba(84, 89, 54, .03) 6px 12px);
+  border-top: 1px solid var(--border-2); border-bottom: 1px solid var(--border-2); }
+.ag-fechado span { font-size: .72rem; color: var(--muted-2); padding: 2px 6px; display: block; }
+.ag-agora { position: absolute; left: 0; right: 0; height: 2px; background: var(--perigo); z-index: 2; pointer-events: none; }
+.ag-cartao { position: absolute; z-index: 2; display: flex; flex-direction: column; gap: 1px; overflow: hidden;
+  padding: 4px 6px; text-align: left; font: inherit; cursor: pointer;
+  background: var(--c-ok); color: var(--verde-escuro); border: 1px solid var(--verde-oliva); border-left-width: 4px; }
+.ag-cartao:hover { filter: brightness(.97); box-shadow: 0 2px 8px rgba(84, 89, 54, .2); }
+.ag-cartao > span { flex-shrink: 0; }
+.ag-cartao-hora { font-weight: 600; font-size: .75rem; opacity: .85; margin-right: 2px; }
+.ag-cartao-nome { font-weight: 700; font-size: .84rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ag-cartao-info { font-size: .74rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ag-cartao-status { font-size: .66rem; text-transform: uppercase; letter-spacing: .04em; opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.et-borda-consulta { border-left-color: var(--et-consulta) !important; }
+.et-borda-retorno { border-left-color: var(--et-retorno) !important; }
+.et-borda-ambulatorial { border-left-color: var(--et-ambulatorial) !important; }
+.et-borda-emergencia { border-left-color: var(--et-emergencia) !important; }
+.et-borda-vacinacao { border-left-color: var(--et-vacinacao) !important; }
+.et-borda-aplicacao_medicacao { border-left-color: var(--et-aplicacao_medicacao) !important; }
+.et-borda-curativo { border-left-color: var(--et-curativo) !important; }
+.et-borda-exame { border-left-color: var(--et-exame) !important; }
+/* Status: agendado = verde claro; chegou = amarelo; em atendimento = verde escuro; encerrados = apagados */
+/* A cor da agenda vem do STATUS (fundo branco; borda e rótulo na cor do status). */
+:root {
+  --st-agendado: #2D6CB5;        /* azul */
+  --st-aguardando: #D9A400;      /* amarelo — chegou */
+  --st-em_atendimento: #2E9E6B;  /* verde */
+  --st-realizado: #6B7280;       /* cinza — atendido */
+  --st-cancelado: #D93838;       /* vermelho */
+}
+.st-agendado { --st-cor: var(--st-agendado); } .st-aguardando { --st-cor: var(--st-aguardando); }
+.st-em_atendimento { --st-cor: var(--st-em_atendimento); } .st-realizado { --st-cor: var(--st-realizado); }
+.st-cancelado { --st-cor: var(--st-cancelado); }
+.ag-cartao[class*="st-"], .ag-chip[class*="st-"], .ag-mes-item[class*="st-"] {
+  background: #FFFFFF; color: var(--verde-escuro); border-color: var(--st-cor); border-left: 5px solid var(--st-cor); }
+.ag-cartao[class*="st-"] .ag-cartao-status { color: var(--st-cor); opacity: 1; font-weight: 700; }
+.ag-cartao.st-cancelado .ag-cartao-nome, .ag-chip.st-cancelado, .ag-mes-item.st-cancelado { text-decoration: line-through; }
+.ag-cartao.st-realizado, .ag-cartao.st-cancelado { opacity: .8; }
+.ag-status[class*="st-"] { background: var(--st-cor); color: #FFFFFF; border-color: transparent; }
+.ag-sem-horario { padding: 12px 16px; }
+.ag-chip { display: inline-block; margin: 0 6px 6px 0; padding: 5px 10px; font: inherit; font-size: .85rem; cursor: pointer;
+  border: 1px solid var(--verde-oliva); border-left-width: 4px; background: var(--c-ok); color: var(--verde-escuro); }
+.ag-status, .ag-etiqueta { display: inline-block; padding: 2px 8px; font-size: .72rem; font-weight: 700; border: 1px solid var(--border-2); }
+.ag-etiqueta[class*="et-"] { color: #FFFFFF; border-color: transparent; }
+
+/* Mês */
+.ag-mes-card { padding: 0; }
+.ag-mes { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.ag-mes-cab { padding: 8px; font-size: .78rem; font-weight: 700; color: var(--muted-2); text-transform: uppercase; border-bottom: 1px solid var(--border-2); }
+.ag-mes-dia { min-height: 112px; padding: 6px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 3px; }
+.ag-mes-dia:hover { background: var(--c-info); }
+.ag-mes-dia.fora { color: var(--muted); background: var(--bg); }
+.ag-mes-dia.hoje .ag-mes-num { background: var(--primary); color: var(--marfim); padding: 0 6px; }
+.ag-mes-dia.fechado { background: repeating-linear-gradient(135deg, rgba(84, 89, 54, .08) 0 6px, transparent 6px 12px); }
+.ag-mes-num { font-weight: 700; align-self: flex-start; }
+.ag-mes-item { font-size: .74rem; padding: 1px 5px; border: 1px solid var(--verde-oliva); border-left-width: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ag-mes-mais, .ag-mes-fechado { font-size: .72rem; color: var(--muted); }
+
+/* Ordem de chegada */
+.ag-metricas { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.ag-metrica { margin: 0; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+.ag-metrica span { font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.ag-metrica strong { font-size: 1.35rem; font-family: var(--font-heading); }
+.ag-metrica small { color: var(--muted); }
+.ag-fila-linha { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.ag-fila-pos { min-width: 48px; font-weight: 700; font-family: var(--font-heading); }
+.ag-fila-info { flex: 1; min-width: 200px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ag-fila-info small { flex-basis: 100%; color: var(--muted); }
+.ag-fila-tempo { font-weight: 700; font-size: .88rem; color: var(--verde-escuro); }
+.ag-fila-tempo.alto { color: var(--perigo); }
+.ag-link-nome { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: var(--verde-escuro); cursor: pointer; text-align: left; }
+.ag-link-nome:hover { text-decoration: underline; }
+
+/* Lateral: horários livres e comunicados */
+.ag-livres-vet { margin-top: 10px; }
+.ag-livres-vet strong { font-size: .88rem; }
+.ag-livres-horas { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.ag-livres-horas a { padding: 3px 8px; font-size: .8rem; border: 1px solid var(--border-2); text-decoration: none; color: var(--verde-escuro); background: var(--surface); }
+.ag-livres-horas a:hover { background: var(--primary); color: var(--marfim); border-color: var(--primary); }
+.ag-link-acao { background: none; border: 0; padding: 0; font: inherit; font-size: .78rem; color: var(--perigo); cursor: pointer; }
+
+/* Janela de detalhe e formulário */
+.ag-modal { max-width: 640px; max-height: 90vh; overflow-y: auto; position: relative; }
+.ag-fechar { position: absolute; top: 10px; right: 12px; background: none; border: 0; font: inherit; font-size: .82rem; color: var(--muted); cursor: pointer; }
+.ag-det-topo { display: flex; justify-content: space-between; gap: 12px; padding-right: 50px; }
+.ag-det-acoes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.ag-det-perigo { padding-top: 10px; border-top: 1px solid var(--border); }
+.ag-servicos { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 14px;
+  border: 1px solid var(--border-2); padding: 10px; max-height: 200px; overflow-y: auto; }
+.ag-servicos label { display: flex; align-items: center; gap: 6px; margin: 0; font-size: .9rem; color: var(--text); }
+.ag-servicos small { color: var(--muted); margin-left: auto; }
+
+@media (max-width: 900px) {
+  .ag-corpo.com-lateral { grid-template-columns: 1fr; }
+  .ag-mes-dia { min-height: 70px; }
+  .ag-mes-item { display: none; }
+}
+
+/* ===================== Estoque (estilo SimplesVet) ===================== */
+.subnav { display: flex; flex-wrap: wrap; border: 1px solid var(--border-2); background: var(--surface); margin-bottom: 18px; }
+.subnav a { padding: 10px 16px; text-decoration: none; color: var(--verde-escuro); font-weight: 600; font-size: .88rem; border-right: 1px solid var(--border); }
+.subnav a:hover { background: var(--c-info); }
+.subnav a.ativa { background: var(--primary); color: var(--marfim); }
+.resumo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+.resumo-grid .card { margin: 0; }
+.barra-linha { padding: 6px 0; border-bottom: 1px solid var(--border); }
+.barra-rotulo { display: flex; justify-content: space-between; gap: 10px; font-size: .9rem; }
+.barra { height: 8px; background: var(--c-info); margin: 4px 0 2px; }
+.barra i { display: block; height: 100%; background: var(--verde-oliva); }
+.barra-linha small { color: var(--muted); font-size: .76rem; }
+.inv-leitor { margin-top: 16px; padding: 14px; background: var(--c-info); border: 1px solid var(--border-2); }
+.inv-campos { display: flex; gap: 10px; flex-wrap: wrap; }
+.inv-campos label { font-size: .8rem; }
+.inv-campos input[name="codigo"] { font-size: 1.1rem; height: 46px; }
+.inv-acoes { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-top: 10px; font-size: .88rem; }
+.inv-camera { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.inv-camera video { width: 100%; max-width: 420px; background: #000; }
+
+/* Cadastro de produto: lucro por unidade (compra × venda). */
+.lucro-box { display: flex; align-items: baseline; gap: 10px; padding: 9px 12px; background: var(--c-ok); border: 1px solid var(--verde-oliva); }
+.lucro-box strong { font-size: 1.1rem; }
+.lucro-box span { color: var(--muted-2); font-size: .85rem; }
+.lucro-box.negativo { background: var(--c-alerta); border-color: var(--perigo); color: var(--c-alerta-texto); }
+
+/* Recepção: receber pagamento */
+.rec-totais { margin-top: 14px; border: 1px solid var(--border); background: var(--branco-gelo); padding: 10px 14px; max-width: 420px; }
+.rec-totais > div { display: flex; justify-content: space-between; padding: 3px 0; }
+.rec-totais .rec-total { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 8px; font-size: 1.1rem; }
+.rec-forma { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.rec-forma select, .rec-forma input { width: auto; min-width: 140px; }
+.rec-aviso { color: var(--perigo); font-weight: 600; }
+.rec-ok { color: var(--verde-escuro); font-weight: 600; }
+
+/* Ficha: peso */
+.peso-cabecalho { margin: 2px 0 0; color: var(--muted); }
+.peso-cabecalho strong { color: var(--verde-escuro); font-size: 1.05rem; }
+.peso-grafico { border: 1px solid var(--border); background: var(--surface); padding: 12px; margin-bottom: 8px; }
+.peso-grafico svg { width: 100%; height: auto; display: block; }
+.peso-eixo { font-size: 11px; fill: var(--muted); }
+
+/* Hub "Novo atendimento": 8 botões coloridos, 2 fileiras de 4 (2 colunas no celular) */
+.hub-tipos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 760px) { .hub-tipos { grid-template-columns: repeat(2, 1fr); } }
+.hub-tipo { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  min-height: 104px; padding: 16px 14px; border: 2px solid transparent; border-radius: 8px !important; color: #FFFFFF; font: inherit; cursor: pointer;
+  background: var(--tipo-cor, var(--verde-oliva)); transition: filter .15s, transform .15s; }
+.hub-tipo strong { font-size: 1.4rem; line-height: 1.25; }
+.hub-tipo:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.hub-tipo.selecionado { border-color: var(--verde-escuro); box-shadow: 0 0 0 3px var(--surface) inset; }
+
+/* Agenda: data/período logo acima da grade (perto dos títulos dos consultórios) */
+.ag-periodo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 6px; }
+.ag-seta { padding: 4px 12px; font-size: 1.1rem; line-height: 1; }
+.ag-periodo strong { font-family: var(--font-heading); font-size: 1.3rem; color: var(--verde-escuro); }
+.ag-periodo span { color: var(--muted); font-size: .85rem; }
+
+.ag-painel-filtros { }
+.ag-rotulo-visao { font-size: .78rem; margin: 0 0 4px; }
+
+/* Campo travado (ex.: dados vindos do cadastro do paciente) */
+input[readonly] { background: var(--branco-gelo); color: var(--muted); }
+
+.ag-duracao { margin: 0; padding: 10px 0; font-weight: 600; color: var(--verde-escuro); }
+
+.ag-periodo .ag-acoes { margin-left: auto; }
+.ag-periodo { margin-bottom: 8px; }
+
+/* Cor do agendamento = tipo do serviço (mesmas cores do hub de novo atendimento) */
+.tipo-consulta { --tipo-cor: var(--et-consulta); } .tipo-vacinacao { --tipo-cor: var(--et-vacinacao); }
+.tipo-cirurgia { --tipo-cor: var(--et-cirurgia); } .tipo-retorno { --tipo-cor: var(--et-retorno); }
+.tipo-aplicacao_medicacao { --tipo-cor: var(--et-aplicacao_medicacao); } .tipo-curativo { --tipo-cor: var(--et-curativo); }
+.tipo-emergencia { --tipo-cor: var(--et-emergencia); } .tipo-ambulatorial { --tipo-cor: var(--et-ambulatorial); }
+.tipo-exame { --tipo-cor: var(--et-exame); }
+
+.ag-cor { display: inline-block; width: 10px; height: 10px; background: var(--tipo-cor); flex-shrink: 0; }
+
+.ag-legenda i.ag-legenda-st { background: var(--st-cor); }
+.ag-legenda-status { margin: 0 0 10px; font-size: .82rem; color: var(--verde-escuro); }
+.ag-legenda-status i { width: 12px; height: 12px; }
+
+/* "Em atendimento": pulsando — sinal de que está acontecendo agora */
+@keyframes ag-pulso { 0% { box-shadow: 0 0 0 0 rgba(46, 158, 107, .55); } 70% { box-shadow: 0 0 0 7px rgba(46, 158, 107, 0); } 100% { box-shadow: 0 0 0 0 rgba(46, 158, 107, 0); } }
+@keyframes ag-pulso-borda { 0%, 100% { border-color: var(--st-em_atendimento); } 50% { border-color: rgba(46, 158, 107, .35); } }
+.ag-cartao.st-em_atendimento .ag-cartao-status::before,
+.ag-status.st-em_atendimento::before,
+.ag-legenda i.st-em_atendimento {
+  content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; vertical-align: middle;
+  background: var(--st-em_atendimento); animation: ag-pulso 1.6s ease-out infinite; }
+.ag-status.st-em_atendimento::before { background: #FFFFFF; }
+.ag-legenda i.st-em_atendimento { margin-right: 0; width: 10px; height: 10px; }
+.ag-cartao.st-em_atendimento { animation: ag-pulso-borda 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .ag-cartao.st-em_atendimento, .ag-cartao.st-em_atendimento .ag-cartao-status::before,
+  .ag-status.st-em_atendimento::before, .ag-legenda i.st-em_atendimento { animation: none; }
+}
+
+/* Quadradinho da cor do status antes do texto do status no cartão (igual à legenda) */
+.ag-cartao[class*="st-"] .ag-cartao-status::before {
+  content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; vertical-align: middle; background: var(--st-cor); }
+.ag-cartao-info .ag-cor { width: 8px; height: 8px; vertical-align: middle; background: var(--tipo-cor, var(--border-2)); }
+
+/* Horários com mais destaque (grade e cartões) */
+.ag-hora { font-size: .95rem !important; font-weight: 700; color: var(--verde-escuro) !important; padding-top: 4px !important; }
+.ag-cartao-hora { font-size: .92rem !important; font-weight: 800 !important; opacity: 1 !important; margin-right: 4px; }
+.ag-cartao-info { font-weight: 500; }
+
+/* Pulso mais forte no "Em atendimento" */
+@keyframes ag-pulso-forte { 0% { box-shadow: 0 0 0 0 rgba(46, 158, 107, .7); } 70% { box-shadow: 0 0 0 12px rgba(46, 158, 107, 0); } 100% { box-shadow: 0 0 0 0 rgba(46, 158, 107, 0); } }
+@keyframes ag-cartao-vivo {
+  0%, 100% { border-color: var(--st-em_atendimento); box-shadow: 0 0 0 0 rgba(46, 158, 107, .45); background: #FFFFFF; }
+  50% { border-color: rgba(46, 158, 107, .4); box-shadow: 0 0 0 6px rgba(46, 158, 107, .12); background: #EEF8F2; } }
+.ag-cartao.st-em_atendimento { animation: ag-cartao-vivo 1.4s ease-in-out infinite; z-index: 3; }
+.ag-cartao.st-em_atendimento .ag-cartao-status::before { width: 11px; height: 11px; animation: ag-pulso-forte 1.4s ease-out infinite; }
+.ag-legenda i.st-em_atendimento, .ag-status.st-em_atendimento::before { animation: ag-pulso-forte 1.4s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .ag-cartao.st-em_atendimento, .ag-cartao.st-em_atendimento .ag-cartao-status::before,
+  .ag-legenda i.st-em_atendimento, .ag-status.st-em_atendimento::before { animation: none; }
+}
+
+.ag-legendas { margin: 0 0 10px; display: flex; flex-direction: column; gap: 4px; }
+.ag-legendas .ag-legenda-status { margin: 0; }
+.ag-legendas strong { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); min-width: 92px; }
+.ag-legenda i.ag-cor { width: 12px; height: 12px; }
+
+/* Fundo de cada agendamento: tom claro da cor do status */
+.ag-cartao[class*="st-"], .ag-chip[class*="st-"], .ag-mes-item[class*="st-"] {
+  background: color-mix(in srgb, var(--st-cor) 16%, #FFFFFF); }
+@keyframes ag-cartao-vivo {
+  0%, 100% { border-color: var(--st-em_atendimento); box-shadow: 0 0 0 0 rgba(46, 158, 107, .45); background: color-mix(in srgb, var(--st-em_atendimento) 16%, #FFFFFF); }
+  50% { border-color: rgba(46, 158, 107, .4); box-shadow: 0 0 0 6px rgba(46, 158, 107, .12); background: color-mix(in srgb, var(--st-em_atendimento) 30%, #FFFFFF); } }
+
+/* Fundo colorido só em "Em atendimento" e "Cancelado"; os demais ficam brancos */
+.ag-cartao[class*="st-"], .ag-chip[class*="st-"], .ag-mes-item[class*="st-"] { background: #FFFFFF; }
+.ag-cartao.st-cancelado, .ag-chip.st-cancelado, .ag-mes-item.st-cancelado,
+.ag-cartao.st-em_atendimento, .ag-chip.st-em_atendimento, .ag-mes-item.st-em_atendimento {
+  background: color-mix(in srgb, var(--st-cor) 16%, #FFFFFF); }
+
+/* Sem a listra vertical grossa à esquerda: borda fina igual em volta */
+.ag-cartao[class*="st-"], .ag-chip[class*="st-"], .ag-mes-item[class*="st-"] { border-left-width: 1px !important; border-left-style: solid; }
+.ag-cancelar { border: 1px solid var(--st-cancelado); padding: 12px; max-width: 420px; }
+
+/* Atrasado: passou do horário sem chegar — laranja, pulsando */
+:root { --st-atrasado: #E07A1F; }
+.st-atrasado { --st-cor: var(--st-atrasado); }
+@keyframes ag-pulso-atraso { 0% { box-shadow: 0 0 0 0 rgba(224, 122, 31, .7); } 70% { box-shadow: 0 0 0 12px rgba(224, 122, 31, 0); } 100% { box-shadow: 0 0 0 0 rgba(224, 122, 31, 0); } }
+@keyframes ag-cartao-atraso {
+  0%, 100% { border-color: var(--st-atrasado); background: color-mix(in srgb, var(--st-atrasado) 12%, #FFFFFF); }
+  50% { border-color: rgba(224, 122, 31, .4); background: color-mix(in srgb, var(--st-atrasado) 26%, #FFFFFF); } }
+.ag-cartao.st-atrasado, .ag-chip.st-atrasado, .ag-mes-item.st-atrasado { animation: ag-cartao-atraso 1.4s ease-in-out infinite; }
+.ag-cartao.st-atrasado .ag-cartao-status { font-weight: 800; }
+.ag-cartao.st-atrasado .ag-cartao-status::before, .ag-legenda i.st-atrasado, .ag-status.st-atrasado::before {
+  animation: ag-pulso-atraso 1.4s ease-out infinite; }
+.ag-status.st-atrasado::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; vertical-align: middle; background: #FFFFFF; }
+@media (prefers-reduced-motion: reduce) {
+  .ag-cartao.st-atrasado, .ag-chip.st-atrasado, .ag-mes-item.st-atrasado, .ag-cartao.st-atrasado .ag-cartao-status::before,
+  .ag-legenda i.st-atrasado, .ag-status.st-atrasado::before { animation: none; }
+}
+
+/* Cancelados: num cantinho acima da grade (não ocupam horário) */
+.ag-cancelados { position: relative; display: flex; justify-content: flex-end; margin: -2px 0 6px; }
+.ag-cancelados-botao { font: inherit; font-size: .78rem; cursor: pointer; padding: 3px 10px; background: color-mix(in srgb, var(--st-cancelado) 10%, #FFFFFF);
+  color: var(--st-cancelado); border: 1px solid color-mix(in srgb, var(--st-cancelado) 45%, #FFFFFF); font-weight: 600; }
+.ag-cancelados-lista { position: absolute; top: 100%; right: 0; z-index: 20; min-width: 320px; max-width: 420px; margin-top: 4px;
+  background: #FFFFFF; border: 1px solid var(--border); box-shadow: 0 6px 18px rgba(0,0,0,.1); }
+.ag-cancelado-item { display: block; width: 100%; text-align: left; font: inherit; font-size: .84rem; padding: 8px 12px; cursor: pointer;
+  background: #FFFFFF; border: 0; border-bottom: 1px solid var(--border); color: var(--muted); }
+.ag-cancelado-item .riscado { text-decoration: line-through; }
+.ag-cancelado-item strong { color: var(--verde-escuro); }
+.ag-cancelado-item small { display: block; color: var(--st-cancelado); }
+.ag-cancelado-item:hover { background: var(--branco-gelo); }
+
+/* Arrastar bloco na grade */
+.ag-cartao[draggable="true"] { cursor: grab; }
+.ag-cartao[draggable="true"]:active { cursor: grabbing; }
+.ag-col.ag-col-alvo { background: color-mix(in srgb, var(--st-agendado) 7%, transparent); outline: 2px dashed color-mix(in srgb, var(--st-agendado) 45%, transparent); outline-offset: -2px; }
+
+/* Legenda parada (só os cartões pulsam) */
+.ag-legenda i { animation: none !important; box-shadow: none !important; }
+
+/* Botão "Locais": escolher quais consultórios/salas aparecem na agenda */
+.ag-locais { position: relative; }
+.ag-locais-lista { position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 240px; background: #FFFFFF;
+  border: 1px solid var(--border); box-shadow: 0 6px 18px rgba(0,0,0,.1); padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; }
+.ag-locais-lista label { display: flex; align-items: center; gap: 8px; margin: 0; font-size: .9rem; color: var(--verde-escuro); }
+.ag-locais-titulo { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.ag-locais-botoes { display: flex; gap: 8px; margin-top: 6px; }
+
+/* Cabeçalho da grade (nomes dos consultórios / dias) com cor suave */
+.ag-cabecalho, .ag-cabecalho .ag-horas-cab, .ag-cabecalho .ag-col-cab:not(.hoje) { background: color-mix(in srgb, var(--verde-oliva) 24%, #FFFFFF); }
+.ag-cabecalho .ag-col-cab { color: var(--verde-escuro); }
+
+/* Cancelado no próprio horário: quadradinho vermelho no canto (não ocupa o horário) */
+.ag-cancelado-mini { position: absolute; z-index: 4; padding: 1px 6px; font: inherit; font-size: .7rem; cursor: pointer; white-space: nowrap;
+  color: var(--st-cancelado); background: color-mix(in srgb, var(--st-cancelado) 10%, #FFFFFF); border: 1px solid color-mix(in srgb, var(--st-cancelado) 50%, #FFFFFF); }
+.ag-cancelado-mini span { font-weight: 700; text-transform: uppercase; font-size: .62rem; letter-spacing: .03em; }
+.ag-cancelado-mini:hover { background: color-mix(in srgb, var(--st-cancelado) 18%, #FFFFFF); }

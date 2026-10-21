@@ -1,0 +1,32 @@
+<form method="get" action="{% url 'documentos:emitir' %}" style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-bottom:18px;">
+  <input type="hidden" name="paciente" value="{{ paciente.pk }}">
+  <div style="flex:1; min-width:240px;">
+    <label>Novo documento</label>
+    <select name="modelo" required>
+      <option value="">Selecione o modelo</option>
+      {% for m in modelos %}<option value="{{ m.pk }}">{{ m.nome }}</option>{% endfor %}
+    </select>
+  </div>
+  <button type="submit" class="btn-primary btn">Preencher →</button>
+</form>
+
+<div class="section-title">Documentos emitidos</div>
+{% if documentos %}
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Data</th><th>Documento</th><th>Emitido por</th><th>Ações</th></tr></thead>
+    <tbody>
+      {% for d in documentos %}
+      <tr>
+        <td style="white-space:nowrap;">{{ d.criado_em|date:"d/m/Y H:i" }}</td>
+        <td><a href="{% url 'documentos:detalhe' d.pk %}">{{ d.titulo }}</a></td>
+        <td>{{ d.vet_nome }}</td>
+        <td><a href="{% url 'documentos:pdf' d.pk %}" target="_blank" class="btn-secondary btn">Imprimir</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty">Nenhum documento emitido para este paciente.</div>
+{% endif %}

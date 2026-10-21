@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Documentos — Vettro{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Documentos</h2>
+  <div class="section-title">Emitir documento</div>
+  <form method="get" action="{% url 'documentos:emitir' %}" class="form-grid">
+    <div><label>Paciente</label>
+      <select name="paciente" required>
+        <option value="">Selecione o paciente</option>
+        {% for p in pacientes %}<option value="{{ p.pk }}">{{ p.nome }}{% if p.tutor %} — {{ p.tutor.nome }}{% endif %}</option>{% endfor %}
+      </select>
+    </div>
+    <div><label>Modelo</label>
+      <select name="modelo" required>
+        <option value="">Selecione o modelo</option>
+        {% for m in modelos %}{% if m.ativo %}<option value="{{ m.pk }}">{{ m.nome }}</option>{% endif %}{% endfor %}
+      </select>
+    </div>
+    <div style="display:flex; align-items:flex-end;"><button type="submit" class="btn-primary btn">Preencher documento →</button></div>
+  </form>
+</div>
+
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <div class="section-title" style="margin:0;">Modelos da clínica</div>
+    <a href="{% url 'documentos:modelo_novo' %}" class="btn-secondary btn">+ Novo modelo</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Modelo</th><th>Situação</th><th>Ações</th></tr></thead>
+      <tbody>
+        {% for m in modelos %}
+        <tr>
+          <td>{{ m.nome }}</td>
+          <td>{% if m.ativo %}<span class="badge" style="background:var(--c-ok);">Ativo</span>{% else %}<span class="badge" style="background:var(--c-neutro);">Inativo</span>{% endif %}</td>
+          <td style="white-space:nowrap;">
+            <a href="{% url 'documentos:modelo_editar' m.pk %}" class="btn-secondary btn">Editar</a>
+            <form method="post" action="{% url 'documentos:modelo_excluir' m.pk %}" style="display:inline;">
+              {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir o modelo {{ m.nome }}? Documentos já emitidos são mantidos.">Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="3" class="empty">Nenhum modelo cadastrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">Últimos documentos emitidos</div>
+  {% if emitidos %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Data</th><th>Documento</th><th>Paciente</th><th>Emitido por</th><th>Ações</th></tr></thead>
+      <tbody>
+        {% for d in emitidos %}
+        <tr>
+          <td style="white-space:nowrap;">{{ d.criado_em|date:"d/m/Y H:i" }}</td>
+          <td><a href="{% url 'documentos:detalhe' d.pk %}">{{ d.titulo }}</a></td>
+          <td><a href="{% url 'pacientes:ficha' d.paciente_id %}">{{ d.pac_nome }}</a></td>
+          <td>{{ d.vet_nome }}</td>
+          <td style="white-space:nowrap;">
+            <a href="{% url 'documentos:pdf' d.pk %}" target="_blank" class="btn-secondary btn">Imprimir</a>
+            <form method="post" action="{% url 'documentos:excluir' d.pk %}" style="display:inline;">
+              {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir este documento emitido?">Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">Nenhum documento emitido ainda.</div>
+  {% endif %}
+</div>
+{% endblock %}
