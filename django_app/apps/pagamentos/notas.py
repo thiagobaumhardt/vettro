@@ -6,7 +6,11 @@ BACKEND trocável conversa com o emissor. Enquanto a clínica não tem conta
 Focus NFe, o padrão é o `NotaFiscalSimulacaoBackend`: valida os dados como o
 emissor real faria, gera número e chave FICTÍCIOS e um PDF marcado
 "SIMULAÇÃO — SEM VALOR FISCAL". Nada é enviado à prefeitura nem à SEFAZ.
-Trocar pela Focus = mudar a setting NOTA_FISCAL_BACKEND."""
+Trocar pela Focus = mudar a setting NOTA_FISCAL_BACKEND.
+
+Exceção: a NFS-e de uma clínica COM certificado A1 cadastrado vai direto pro
+Emissor Nacional (apps.pagamentos.nfse_nacional), no ambiente escolhido em
+Configurações da clínica (homologação = teste, produção = nota real)."""
 import random
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
@@ -91,7 +95,11 @@ def _xml_simulado(tipo, numero, chave, dados) -> str:
     return ET.tostring(raiz, encoding="unicode")
 
 
-def get_backend() -> NotaFiscalBackendBase:
+def get_backend(tipo: str = "nfce") -> NotaFiscalBackendBase:
+    if tipo == "nfse" and ConfiguracaoClinica.atual().tem_certificado:
+        from .nfse_nacional import NFSeNacionalBackend
+
+        return NFSeNacionalBackend()
     caminho = getattr(settings, "NOTA_FISCAL_BACKEND", "apps.pagamentos.notas.NotaFiscalSimulacaoBackend")
     return import_string(caminho)()
 
@@ -99,6 +107,7 @@ def get_backend() -> NotaFiscalBackendBase:
 def _prestador(config: ConfiguracaoClinica, clinica_nome: str) -> dict:
     return {
         "nome_fantasia": clinica_nome, "razao_social": config.razao_social, "cnpj": config.cnpj,
+        "inscricao_estadual": config.inscricao_estadual,
         "regime": config.get_regime_tributario_display(), "endereco": config.endereco_completo,
         "cidade": config.cidade, "uf": config.uf, "telefone": config.telefone, "email": config.email,
     }
@@ -123,6 +132,8 @@ def validar(dados: dict, tipo: str) -> list[str]:
                 erros.append(f"Serviço “{item['descricao']}” sem código de tributação nacional (6 dígitos, ex.: 050202 — "
                              "padrão em Clínica, exceção no catálogo de Serviços).")
     if tipo == "nfce":
+        if not prestador.get("inscricao_estadual"):
+            erros.append("Inscrição estadual da clínica não cadastrada (Configurações da clínica) — a NFC-e exige.")
         for item in dados.get("itens", []):
             if len(item.get("ncm") or "") != 8:
                 erros.append(f"Produto “{item['descricao']}” está sem NCM (cadastre no Estoque).")
@@ -283,7 +294,7 @@ def emitir(*, cobranca=None, venda=None, recebimento=None, clinica_nome: str, us
         dados = _dados_nfse_recebimento(recebimento, config, clinica_nome)
     else:
         dados = _dados_nfce(venda, config, clinica_nome)
-    backend = get_backend()
+    backend = get_backend(tipo)
     nota = NotaFiscalEmitida.objects.filter(**origem, status="erro").first() or NotaFiscalEmitida(**origem, tipo=tipo)
     nota.dados, nota.valor_total, nota.simulacao = dados, Decimal(dados["valor_total"]), backend.simulacao
     nota.save()
@@ -302,12 +313,51 @@ def emitir(*, cobranca=None, venda=None, recebimento=None, clinica_nome: str, us
 def cancelar_da_venda(venda) -> None:
     """Venda cancelada → nota cancelada junto, guardando o XML do evento.
     (Com a Focus, o cancelamento real tem prazo: 30 min na NFC-e do RS.)"""
-    backend = get_backend()
+    backend = get_backend("nfce")
     justificativa = f"Venda {venda.numero} cancelada no sistema"
     for nota in NotaFiscalEmitida.objects.filter(venda=venda, status="emitida"):
         nota.xml_cancelamento = backend.cancelar(nota, justificativa)
         nota.status, nota.cancelada_em = "cancelada", timezone.now()
         nota.save(update_fields=["status", "cancelada_em", "xml_cancelamento"])
+
+
+def _conferencia_fiscal(nota, d, e) -> list:
+    """Na simulação, mostra os campos que irão no XML para o contador conferir
+    (o DANFE/DANFSe real vem do emissor e não traz todos eles)."""
+    from reportlab.lib.units import cm
+    from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
+
+    from apps.core.pdf import _esc, brl, COR_LINHA_SUAVE, COR_TEXTO, FONTE_NEGRITO, FONTE_TEXTO
+
+    corpo = [Spacer(1, 0.5 * cm), Paragraph("<b>Dados fiscais para conferência</b> (campos que vão no XML)", e["normal"])]
+    if nota.tipo == "nfse":
+        p, iss = d.get("prestador", {}), d.get("iss", {})
+        codigos_municipais = sorted({i.get("codigo_municipal") for i in d.get("itens", []) if i.get("codigo_municipal")})
+        linhas = [
+            ["Município de incidência", f"{p.get('cidade') or ''}/{p.get('uf') or ''}".strip("/") or "—"],
+            ["Código de tributação nacional", ", ".join(sorted({i.get("codigo_nacional") or "—" for i in d.get("itens", [])}))],
+            ["Código municipal", ", ".join(codigos_municipais) or "não informado"],
+            ["ISS", "recolhido no DAS (Simples Nacional)" if iss.get("simples_nacional") else "apurado pela alíquota municipal"],
+            ["ISS retido pelo tomador", "Sim" if iss.get("retido") else "Não"],
+        ]
+        tabela = Table([[Paragraph(_esc(a), e["pequeno"]), Paragraph(_esc(b), e["pequeno"])] for a, b in linhas],
+                       colWidths=[6 * cm, 11 * cm])
+    else:
+        linhas = [["Cód.", "GTIN", "Origem", "CEST", "CST PIS/COFINS", "Unidade", "Valor unit."]] + [
+            [i.get("codigo") or "—", i.get("gtin") or "SEM GTIN", i.get("origem") or "0", i.get("cest") or "—",
+             i.get("cst_pis_cofins") or "—", i.get("unidade") or "—", brl(i.get("valor_unitario") or "0")]
+            for i in d.get("itens", [])]
+        pag = d.get("pagamento", {})
+        tabela = Table(linhas, colWidths=[1.3 * cm, 3.4 * cm, 1.5 * cm, 2 * cm, 3 * cm, 2 * cm, 3.8 * cm], repeatRows=1)
+        corpo_pag = (f"tpIntegra {pag.get('tp_integra', 2)} ({'integrado à maquininha' if pag.get('tp_integra') == 1 else 'não integrado'})"
+                     f" · parcelas {pag.get('parcelas', 1)}")
+    tabela.setStyle(TableStyle([("FONTNAME", (0, 0), (-1, -1), FONTE_TEXTO), ("TEXTCOLOR", (0, 0), (-1, -1), COR_TEXTO),
+                                ("FONTSIZE", (0, 0), (-1, -1), 8), ("LINEBELOW", (0, 0), (-1, -1), 0.3, COR_LINHA_SUAVE)]
+                               + ([] if nota.tipo == "nfse" else [("FONTNAME", (0, 0), (-1, 0), FONTE_NEGRITO)])))
+    corpo.append(tabela)
+    if nota.tipo != "nfse":
+        corpo.append(Paragraph(f"<b>Pagamento:</b> {_esc(corpo_pag)}", e["pequeno"]))
+    return corpo
 
 
 def pdf_nota(nota: NotaFiscalEmitida, *, clinica_nome: str) -> bytes:
@@ -320,10 +370,13 @@ def pdf_nota(nota: NotaFiscalEmitida, *, clinica_nome: str) -> bytes:
     e, d = ESTILOS, nota.dados
     titulo = "NFS-e — Nota Fiscal de Serviço Eletrônica" if nota.tipo == "nfse" else "NFC-e — Nota Fiscal de Consumidor Eletrônica"
     corpo = []
+    nacional = d.get("emissor", {}).get("nome") == "nfse_nacional"
     if nota.simulacao:
+        explicacao = ("Emitida no ambiente de homologação (teste) do Emissor Nacional da NFS-e." if nacional
+                      else "Gerada pelo emissor de teste do Vettro. Nada foi enviado à prefeitura nem à SEFAZ.")
         corpo.append(Paragraph(
-            "<font color='#A9442B' size='13'><b>SIMULAÇÃO — SEM VALOR FISCAL</b></font><br/>"
-            "<font size='9'>Gerada pelo emissor de teste do Vettro. Nada foi enviado à prefeitura nem à SEFAZ.</font>",
+            f"<font color='#A9442B' size='13'><b>{nota.aviso_sem_valor} — SEM VALOR FISCAL</b></font><br/>"
+            f"<font size='9'>{explicacao}</font>",
             e["aviso"],
         ))
         corpo.append(Spacer(1, 0.3 * cm))
@@ -331,8 +384,13 @@ def pdf_nota(nota: NotaFiscalEmitida, *, clinica_nome: str) -> bytes:
     situacao = {"emitida": f"Nº {nota.numero}", "cancelada": f"Nº {nota.numero} — CANCELADA", "erro": "NÃO AUTORIZADA"}.get(nota.status, nota.status)
     corpo.append(Paragraph(f"<b>{situacao}</b>" + (f" · emitida em {timezone.localtime(nota.emitida_em):%d/%m/%Y %H:%M}" if nota.emitida_em else ""), e["normal"]))
     if nota.chave_acesso:
-        chave = " ".join(nota.chave_acesso[i:i + 4] for i in range(0, 44, 4))
+        chave = " ".join(nota.chave_acesso[i:i + 4] for i in range(0, len(nota.chave_acesso), 4))
         corpo.append(Paragraph(f"<b>Chave de acesso:</b> {chave}", e["pequeno"]))
+        if nacional and not nota.simulacao:
+            from .nfse_nacional import CONSULTA_PUBLICA
+
+            corpo.append(Paragraph(f"Consulte a autenticidade em {CONSULTA_PUBLICA}{nota.chave_acesso} "
+                                   "(o DANFSe oficial também fica no Portal Nacional da NFS-e).", e["pequeno"]))
     if nota.status == "erro":
         corpo.append(Paragraph(f"<font color='#A9442B'><b>Motivo:</b> {_esc(nota.mensagem_erro)}</font>", e["normal"]))
     corpo.append(Spacer(1, 0.4 * cm))
@@ -340,7 +398,8 @@ def pdf_nota(nota: NotaFiscalEmitida, *, clinica_nome: str) -> bytes:
     p, t = d.get("prestador", {}), d.get("tomador", {})
     blocos = Table([
         [Paragraph("<b>PRESTADOR / EMITENTE</b>", e["pequeno"]), Paragraph("<b>TOMADOR / DESTINATÁRIO</b>", e["pequeno"])],
-        [Paragraph(_esc(p.get("razao_social") or "(razão social não cadastrada)") + f"<br/>CNPJ {_esc(p.get('cnpj') or '—')}<br/>"
+        [Paragraph(_esc(p.get("razao_social") or "(razão social não cadastrada)") + f"<br/>CNPJ {_esc(p.get('cnpj') or '—')}"
+                   + (f" · IE {_esc(p['inscricao_estadual'])}" if p.get("inscricao_estadual") else "") + "<br/>"
                    + _esc(p.get("endereco") or "") + f"<br/>Regime: {_esc(p.get('regime') or '')}", e["normal"]),
          Paragraph(_esc(t.get("nome") or "") + (f"<br/>CPF {_esc(t['cpf'])}" if t.get("cpf") else "")
                    + (f"<br/>{_esc(t['endereco'])}" if t.get("endereco") else "")
@@ -383,5 +442,7 @@ def pdf_nota(nota: NotaFiscalEmitida, *, clinica_nome: str) -> bytes:
         corpo.append(Paragraph(
             f"<b>Pagamento integrado:</b> {_esc(pag.get('bandeira', ''))} · Autorização {_esc(pag['autorizacao'])}"
             f" · NSU {_esc(pag.get('nsu', ''))} · Credenciadora CNPJ {_esc(pag.get('cnpj_credenciadora', ''))}", e["pequeno"]))
+    if nota.simulacao:
+        corpo += _conferencia_fiscal(nota, d, e)
     return gerar_pdf(titulo_documento=f"{nota.get_tipo_display()} {nota.numero or ''}".strip(), clinica_nome=clinica_nome,
                      config=ConfiguracaoClinica.atual(), flowables=corpo)

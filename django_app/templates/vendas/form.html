@@ -26,7 +26,7 @@
     </div>
     <div><label>CPF na nota? <small style="color:var(--muted);">(opcional — pergunte ao cliente)</small></label>
       <input type="text" name="cliente_cpf" x-model="cpf" @input="cpf = mascaraCpf(cpf); buscarCpf()" inputmode="numeric" maxlength="14" placeholder="000.000.000-00">
-      <small x-show="cpfStatus === 'tutor'" x-cloak style="color:var(--verde-escuro);">Tutor cadastrado: <strong x-text="tutorNome"></strong></small>
+      <small x-show="cpfStatus === 'tutor'" x-cloak style="color:var(--text);">Tutor cadastrado: <strong x-text="tutorNome"></strong></small>
       <small x-show="cpfStatus === 'novo'" x-cloak style="color:var(--muted);">CPF sem cadastro de tutor — a venda sai com esse CPF na nota.</small>
       <small x-show="cpfStatus === 'invalido'" x-cloak style="color:var(--perigo);">CPF inválido — confira os números.</small>
     </div>
@@ -50,7 +50,7 @@
               <small style="color:var(--muted);" x-text="produto(item.insumo).unidade"></small>
             </td>
             <td style="text-align:right;" x-text="'R$ ' + produto(item.insumo).valor"></td>
-            <td style="text-align:right;" x-text="'R$ ' + subtotalItem(item).toFixed(2)"></td>
+            <td style="text-align:right;" x-text="brl(subtotalItem(item))"></td>
             <td><button type="button" class="btn-danger btn" @click="itens.splice(i, 1)" >Remover</button></td>
           </tr>
         </template>
@@ -91,11 +91,11 @@
   </div>
 
   <div class="total-box" style="border:1.5px solid var(--primary); padding:12px 16px; margin-top:14px;">
-    <div style="display:flex; justify-content:space-between;"><span>Subtotal</span><span x-text="'R$ ' + subtotal().toFixed(2)"></span></div>
+    <div style="display:flex; justify-content:space-between;"><span>Subtotal</span><span x-text="brl(subtotal())"></span></div>
     <div style="display:flex; justify-content:space-between; color:var(--danger-hover);" x-show="valorDesconto() > 0">
-      <span>Desconto</span><span x-text="'− R$ ' + valorDesconto().toFixed(2)"></span>
+      <span>Desconto</span><span x-text="'− ' + brl(valorDesconto())"></span>
     </div>
-    <div style="display:flex; justify-content:space-between; font-size:1.15rem; margin-top:4px;"><strong>Total</strong><strong x-text="'R$ ' + (subtotal() - valorDesconto()).toFixed(2)"></strong></div>
+    <div style="display:flex; justify-content:space-between; font-size:1.15rem; margin-top:4px;"><strong>Total</strong><strong x-text="brl((subtotal() - valorDesconto()))"></strong></div>
   </div>
 
   <div style="margin-top:14px;"><button type="submit" class="btn-primary btn" :disabled="!itens.length || !forma"

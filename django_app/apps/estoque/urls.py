@@ -6,6 +6,11 @@ app_name = "estoque"
 
 urlpatterns = [
     path("", views.lista, name="lista"),
+    path("avisos/", views.avisos, name="avisos"),
+    path("ncm/busca/", views.ncm_busca, name="ncm_busca"),
+    path("ncm/info/", views.ncm_info, name="ncm_info"),
+    path("planilha-fiscal/", views.planilha_fiscal, name="planilha_fiscal"),
+    path("planilha-fiscal/produtos.csv", views.planilha_fiscal_csv, name="planilha_fiscal_csv"),
     path("novo/", views.form_view, name="novo"),
     path("<uuid:pk>/editar/", views.form_view, name="editar"),
     path("<uuid:pk>/excluir/", views.excluir, name="excluir"),

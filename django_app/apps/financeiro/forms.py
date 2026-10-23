@@ -52,3 +52,27 @@ class TipoExameForm(forms.ModelForm):
     class Meta:
         model = TipoExame
         fields = ["nome", "duracao_min", "valor", "ativo"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Valor obrigatório no cadastro (2026-10); o campo do banco segue nulo pros exames antigos.
+        self.fields["valor"].required = True
+        self.fields["valor"].min_value = 0
+
+
+class DespesaForm(forms.ModelForm):
+    class Meta:
+        from .models import Despesa
+
+        model = Despesa
+        fields = ["data", "descricao", "categoria", "valor", "forma", "observacao", "comprovante"]
+        widgets = {
+            "data": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "observacao": forms.Textarea(attrs={"rows": 2}),
+        }
+
+    def clean_valor(self):
+        valor = self.cleaned_data["valor"]
+        if valor is None or valor <= 0:
+            raise forms.ValidationError("O valor precisa ser maior que zero.")
+        return valor

@@ -1,13 +1,14 @@
 {% extends "base.html" %}
+{% load formatos %}
 {% block title %}Análise de estoque — Vettro{% endblock %}
 {% block content %}
 {% include "estoque/_subnav.html" %}
 <div class="ag-metricas">
-  <div class="card ag-metrica"><span>Capital em estoque</span><strong>R$ {{ totais.capital_total|floatformat:2 }}</strong><small>pelo último custo de compra</small></div>
-  <div class="card ag-metrica"><span>A repor</span><strong>R$ {{ totais.a_repor|floatformat:2 }}</strong><small>{{ repor|length }} produto{{ repor|length|pluralize }}</small></div>
-  <div class="card ag-metrica"><span>Excedente</span><strong>R$ {{ totais.excedente|floatformat:2 }}</strong><small>{{ excedentes|length }} acima do ideal</small></div>
-  <div class="card ag-metrica"><span>Capital parado</span><strong>R$ {{ totais.parado|floatformat:2 }}</strong><small>{{ parados|length }} sem saída há {{ janela }}+ dias</small></div>
-  <div class="card ag-metrica"><span>Novos produtos</span><strong>R$ {{ totais.novos|floatformat:2 }}</strong><small>{{ novos|length }} cadastrados em {{ janela }} dias</small></div>
+  <div class="card ag-metrica"><span>Capital em estoque</span><strong>{{ totais.capital_total|moeda }}</strong><small>pelo último custo de compra</small></div>
+  <div class="card ag-metrica"><span>A repor</span><strong>{{ totais.a_repor|moeda }}</strong><small>{{ repor|length }} produto{{ repor|length|pluralize }}</small></div>
+  <div class="card ag-metrica"><span>Excedente</span><strong>{{ totais.excedente|moeda }}</strong><small>{{ excedentes|length }} acima do ideal</small></div>
+  <div class="card ag-metrica"><span>Capital parado</span><strong>{{ totais.parado|moeda }}</strong><small>{{ parados|length }} sem saída há {{ janela }}+ dias</small></div>
+  <div class="card ag-metrica"><span>Novos produtos</span><strong>{{ totais.novos|moeda }}</strong><small>{{ novos|length }} cadastrados em {{ janela }} dias</small></div>
 </div>
 
 <div class="card">
@@ -23,7 +24,7 @@
 </div>
 
 {% if visao == "repor" %}
-  <div class="card"><p style="color:var(--muted); margin-top:0;">Comprar até o estoque ideal — R$ {{ totais.a_repor|floatformat:2 }} pelo último custo de compra.</p>
+  <div class="card"><p style="color:var(--muted); margin-top:0;">Comprar até o estoque ideal — {{ totais.a_repor|moeda }} pelo último custo de compra.</p>
     {% include "estoque/_analise_tabela.html" with linhas=repor modo="repor" %}</div>
 {% elif visao == "excedentes" %}
   <div class="card"><p style="color:var(--muted); margin-top:0;">Estoque acima de 2× o ideal. Considere promoções, kits ou suspender a compra.</p>

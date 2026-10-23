@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load formatos %}
 {% block title %}Orçamento #{{ orcamento.numero }} — Vettro{% endblock %}
 {% block content %}
 <div class="card">
@@ -20,10 +21,10 @@
       <thead><tr><th>Descrição</th><th style="text-align:right;">Qtd</th><th style="text-align:right;">Valor unit.</th></tr></thead>
       <tbody>
         {% for item in orcamento.itens %}
-        <tr><td>{{ item.descricao }}</td><td style="text-align:right;">{{ item.qtd|floatformat:"-3" }}</td><td style="text-align:right;">R$ {{ item.valor }}</td></tr>
+        <tr><td>{{ item.descricao }}</td><td style="text-align:right;">{{ item.qtd|floatformat:"-3" }}</td><td style="text-align:right;">{{ item.valor|moeda }}</td></tr>
         {% endfor %}
       </tbody>
-      <tfoot><tr><th colspan="2" style="text-align:right;">Total</th><th style="text-align:right;">R$ {{ orcamento.total }}</th></tr></tfoot>
+      <tfoot><tr><th colspan="2" style="text-align:right;">Total</th><th style="text-align:right;">{{ orcamento.total|moeda }}</th></tr></tfoot>
     </table>
   </div>
   {% if orcamento.obs %}<p style="margin-top:12px;"><strong>Observações:</strong> {{ orcamento.obs|linebreaksbr }}</p>{% endif %}

@@ -27,7 +27,7 @@ from apps.lembretes.models import MensagemWhatsApp
 from . import meta
 from .backends import get_backend
 from .meta import ErroWhatsApp
-from .modelos import MODELOS, limpar_parametro
+from .modelos import EXEMPLO_IMAGEM, MODELOS, limpar_parametro
 from .models import ConexaoWhatsApp
 
 
@@ -121,7 +121,10 @@ def sincronizar_modelos(conexao: ConexaoWhatsApp):
         atual = existentes.get(modelo.nome)
         if atual is None:
             try:
-                criado = meta.criar_modelo(conexao.waba_id, conexao.token, modelo)
+                handle = ""
+                if modelo.cabecalho == "IMAGE":
+                    handle = meta.subir_exemplo(conexao.token, EXEMPLO_IMAGEM.read_bytes(), "image/png", EXEMPLO_IMAGEM.name)
+                criado = meta.criar_modelo(conexao.waba_id, conexao.token, modelo, handle)
                 atual = {"status": criado.get("status", "PENDING"), "category": criado.get("category", modelo.categoria)}
             except meta.ErroMeta as exc:
                 atual = {"status": "ERRO", "category": modelo.categoria, "rejected_reason": str(exc)}
@@ -154,7 +157,13 @@ def desconectar(conexao: ConexaoWhatsApp):
 
 # --- Envio ------------------------------------------------------------------
 
-def enviar(clinica_id, *, telefone: str, modelo: str, parametros, tipo: str, tutor=None) -> MensagemWhatsApp:
+def subir_imagem(clinica_id, conteudo: bytes, tipo: str, nome: str) -> str:
+    """Manda a imagem de um aviso pra Meta uma vez e devolve o id (levanta
+    ErroWhatsApp se não der — o aviso então não é enviado)."""
+    return get_backend().subir_imagem(conexao_da_clinica(clinica_id), conteudo, tipo, nome)
+
+
+def enviar(clinica_id, *, telefone: str, modelo: str, parametros, tipo: str, tutor=None, imagem_id: str = "") -> MensagemWhatsApp:
     """Envia um template e registra em MensagemWhatsApp (no schema da clínica
     ativa — o chamador já está dentro dele). Nunca levanta exceção: falha
     fica registrada com o motivo."""
@@ -175,7 +184,7 @@ def enviar(clinica_id, *, telefone: str, modelo: str, parametros, tipo: str, tut
     elif backend.requer_conexao and not conexao.modelo_aprovado(modelo):
         mensagem.erro = "Modelo de mensagem ainda não aprovado pela Meta."
     else:
-        resultado = backend.enviar_modelo(conexao, numero, modelo_obj, parametros)
+        resultado = backend.enviar_modelo(conexao, numero, modelo_obj, parametros, imagem_id)
         mensagem.wamid = resultado.wamid
         mensagem.erro = resultado.erro
         if resultado.ok:

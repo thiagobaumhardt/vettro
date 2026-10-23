@@ -66,6 +66,10 @@ class EntradaManualForm(forms.Form):
     lote = forms.CharField(max_length=60, required=False)
     data_validade = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}))
     observacao = forms.CharField(max_length=300, required=False)
+    compra = forms.BooleanField(
+        label="Foi uma compra (entra como saída no Financeiro)", required=False, initial=True,
+        help_text="Desmarque para estoque inicial, doação ou brinde.",
+    )
 
 
 class AjusteForm(forms.Form):

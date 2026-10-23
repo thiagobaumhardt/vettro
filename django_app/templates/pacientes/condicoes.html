@@ -1,18 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Perfil clínico — Vettro{% endblock %}
 {% block content %}
-<div class="card">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-    <div class="section-title" style="margin:0;">Nova condição clínica</div>
-    <a href="{% url 'pacientes:lista' %}" class="btn-secondary btn">← Pacientes</a>
+<div class="card" x-data="{ aberto: {% if form.errors %}true{% else %}false{% endif %} }">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+    <div class="section-title" style="margin:0;">Condições clínicas</div>
+    <div style="display:flex; gap:8px;">
+      <a href="{% url 'pacientes:lista' %}" class="btn-secondary btn">← Pacientes</a>
+      <button type="button" class="btn-primary btn" x-show="!aberto" @click="aberto = true">Nova condição clínica</button>
+    </div>
   </div>
-  <form method="post" style="display:flex; gap:10px; align-items:flex-start;">
+  <form method="post" class="form-novo" x-show="aberto"{% if not form.errors %} x-cloak{% endif %} style="display:flex; gap:10px; align-items:flex-start;">
     {% csrf_token %}
     <div style="flex:1;">
       {{ form.nome }}
       {% if form.nome.errors %}<p style="color:var(--danger-hover); margin:4px 0 0;">{{ form.nome.errors|join:", " }}</p>{% endif %}
     </div>
     <button type="submit" class="btn-primary btn">Adicionar</button>
+    <button type="button" class="btn-secondary btn" @click="aberto = false">Cancelar</button>
   </form>
 </div>
 

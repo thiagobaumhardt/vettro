@@ -1,37 +1,45 @@
 {% extends "base.html" %}
-{% block title %}Clínica — Vettro
-<div class="card">
-  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-    <div>
-      <h2 style="margin:0;">WhatsApp</h2>
-      <p style="color:var(--muted); margin:4px 0 0;">Número da clínica para lembretes de agendamento, vacina e retorno.</p>
-    </div>
-    <a href="{% url 'whatsapp:conexao' %}" class="btn-secondary btn">Configurar WhatsApp</a>
-  </div>
-</div>
-{% endblock %}
+{% block title %}Clínica — Vettro{% endblock %}
 {% block content %}
-<div class="card">
+<div class="card" x-data="{ aba: '{{ aba_inicial }}' }">
   <h2>Dados da clínica</h2>
   <p style="color:var(--muted); margin-top:0;">Aparecem no cabeçalho dos PDFs (orçamentos, receitas, documentos, comprovantes). Nome fantasia: <strong>{{ clinica_nome_ativa }}</strong>.</p>
+  <nav class="subnav" aria-label="Configurações da clínica">
+    <a href="?aba=identificacao" @click.prevent="aba = 'identificacao'; history.replaceState(null, '', '?aba=identificacao')" :class="aba === 'identificacao' && 'ativa'">Identificação</a>
+    <a href="?aba=endereco" @click.prevent="aba = 'endereco'; history.replaceState(null, '', '?aba=endereco')" :class="aba === 'endereco' && 'ativa'">Endereço</a>
+    <a href="?aba=fiscal" @click.prevent="aba = 'fiscal'; history.replaceState(null, '', '?aba=fiscal')" :class="aba === 'fiscal' && 'ativa'">Fiscal</a>
+    <a href="?aba=certificado" @click.prevent="aba = 'certificado'; history.replaceState(null, '', '?aba=certificado')" :class="aba === 'certificado' && 'ativa'">Certificado e NFS-e</a>
+    <a href="?aba=maquininha" @click.prevent="aba = 'maquininha'; history.replaceState(null, '', '?aba=maquininha')" :class="aba === 'maquininha' && 'ativa'">Maquininha</a>
+    <a href="?aba=agenda" @click.prevent="aba = 'agenda'; history.replaceState(null, '', '?aba=agenda')" :class="aba === 'agenda' && 'ativa'">Agenda</a>
+    <a href="?aba=documentos" @click.prevent="aba = 'documentos'; history.replaceState(null, '', '?aba=documentos')" :class="aba === 'documentos' && 'ativa'">Documentos</a>
+    <a href="?aba=empresa" @click.prevent="aba = 'empresa'; history.replaceState(null, '', '?aba=empresa')" :class="aba === 'empresa' && 'ativa'">Documentos da empresa</a>
+    <a href="?aba=whatsapp" @click.prevent="aba = 'whatsapp'; history.replaceState(null, '', '?aba=whatsapp')" :class="aba === 'whatsapp' && 'ativa'">WhatsApp</a>
+  </nav>
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
+    <input type="hidden" name="aba" :value="aba" value="{{ aba_inicial }}">
     {% if form.errors %}<p style="color:var(--danger-hover);">{% for campo, erros in form.errors.items %}{{ erros|join:", " }} {% endfor %}</p>{% endif %}
 
+    <section x-show="aba === 'identificacao'"{% if aba_inicial != "identificacao" %} x-cloak{% endif %}>
     <div class="section-title">Identificação</div>
     <div class="form-grid">
       <div class="full"><label for="id_razao_social">Razão social</label>{{ form.razao_social }}</div>
       <div><label for="id_cnpj">CNPJ</label>{{ form.cnpj }}</div>
+      <div><label for="id_inscricao_estadual">Inscrição estadual</label>{{ form.inscricao_estadual }}</div>
+      <div><label for="id_inscricao_municipal">Inscrição municipal</label>{{ form.inscricao_municipal }}</div>
+      <div></div>
       <div><label for="id_telefone">Telefone</label>{{ form.telefone }}</div>
       <div><label for="id_email">E-mail</label>{{ form.email }}</div>
     </div>
+    </section>
 
-    <div class="section-title" style="margin-top:18px;">Endereço</div>
+    <section x-show="aba === 'endereco'"{% if aba_inicial != "endereco" %} x-cloak{% endif %}>
+    <div class="section-title">Endereço</div>
     <div class="form-grid">
       <div>
         <label for="id_cep">CEP</label>{{ form.cep }}
         {% if "tutores" in secoes_permitidas %}
-        <span hx-get="{% url 'tutores:cep_lookup' %}" hx-trigger="blur from:#id_cep" hx-include="#id_cep" hx-target="this" hx-swap="none"></span>
+        <span hx-get="{% url 'tutores:cep_lookup' %}?com_ibge=1" hx-trigger="blur from:#id_cep" hx-include="#id_cep" hx-target="this" hx-swap="none"></span>
         <small style="color:var(--muted);">Rua, bairro, cidade e UF são preenchidos pelo CEP.</small>
         {% endif %}
       </div>
@@ -42,9 +50,12 @@
       <div><label for="id_bairro">Bairro</label><span id="campo-bairro">{{ form.bairro }}</span></div>
       <div><label for="id_cidade">Cidade</label><span id="campo-cidade">{{ form.cidade }}</span></div>
       <div><label for="id_uf">UF</label><span id="campo-uf">{{ form.uf }}</span></div>
+      <div><label for="id_codigo_municipio_ibge">Código IBGE do município</label><span id="campo-ibge">{{ form.codigo_municipio_ibge }}</span></div>
     </div>
+    </section>
 
-    <div class="section-title" style="margin-top:18px;">Regra fiscal — venda de produtos no balcão</div>
+    <section x-show="aba === 'fiscal'"{% if aba_inicial != "fiscal" %} x-cloak{% endif %}>
+    <div class="section-title">Regra fiscal — venda de produtos no balcão</div>
     <p style="font-size:.85rem; color:var(--muted); margin-top:-4px;">
       Peça ao contador <strong>só estas linhas</strong> — não é preciso código fiscal produto por produto. Os valores já preenchidos são os mais comuns para o Simples Nacional vendendo dentro do estado; confirme com ele antes de emitir notas.
     </p>
@@ -66,28 +77,67 @@
       </div>
       <div>
         <label for="id_nfse_codigo_municipal">Código municipal</label>{{ form.nfse_codigo_municipal }}
-        <small style="color:var(--muted);">Só se a prefeitura exigir um código próprio.</small>
+        <small style="color:var(--muted);">Só se a prefeitura exigir um código próprio (3 dígitos no padrão nacional).</small>
+      </div>
+      <div>
+        <label for="id_nfse_aliquota_simples">Alíquota aproximada do Simples (%)</label>{{ form.nfse_aliquota_simples }}
+        <small style="color:var(--muted);">Percentual aproximado dos tributos que sai na nota. Muda com o faturamento: confirme com o contador todo mês.</small>
+      </div>
+    </div>
+    </section>
+
+    <section x-show="aba === 'certificado'"{% if aba_inicial != "certificado" %} x-cloak{% endif %}>
+    <div class="section-title">Emissor Nacional da NFS-e (gov.br)</div>
+    <p style="font-size:.85rem; color:var(--muted); margin-top:-4px;">
+      Com o certificado cadastrado, a nota de serviço vai direto para o Emissor Nacional. Sem certificado, o Vettro emite só notas de simulação.
+      Comece em <strong>Homologação</strong> (teste, sem valor fiscal) e passe para <strong>Produção</strong> depois de conferir as notas de teste.
+    </p>
+    <div class="form-grid">
+      <div><label for="id_nfse_ambiente">Ambiente</label>{{ form.nfse_ambiente }}</div>
+      <div>
+        <label for="id_nfse_serie">Série da DPS</label>{{ form.nfse_serie }}
+        <small style="color:var(--muted);">Última DPS enviada: {{ config.nfse_ultimo_dps|default:"nenhuma" }}.</small>
+      </div>
+      <div class="full">
+        <label>Certificado digital A1 (e-CNPJ)</label>
+        {% if config.tem_certificado %}
+        <p style="margin:0 0 6px;">Cadastrado: <strong>{{ config.certificado_titular }}</strong>, válido até {{ config.certificado_validade|date:"d/m/Y" }}.</p>
+        {% endif %}
+        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+          <input type="file" name="certificado" accept=".pfx,.p12,application/x-pkcs12">
+          <span><label for="id_certificado_senha" style="display:inline;">Senha</label> {{ form.certificado_senha }}</span>
+          {% if config.tem_certificado %}<label style="display:flex; align-items:center; gap:6px; margin:0;">{{ form.remover_certificado }} Remover</label>{% endif %}
+        </div>
+        <small style="color:var(--muted);">Arquivo .pfx do certificado A1 da clínica. Fica guardado cifrado; ninguém consegue baixá-lo pelo sistema.</small>
       </div>
     </div>
     <p style="font-size:.82rem; color:var(--muted); margin:6px 0 0;">
       Notas do mês para o contador (XMLs e relatório de serviços e vendas): <a href="{% url 'notas:contabilidade' %}">Contabilidade</a>.
     </p>
+    </section>
 
-    <div class="section-title" style="margin-top:18px;">Agenda</div>
+    <section x-show="aba === 'maquininha'"{% if aba_inicial != "maquininha" %} x-cloak{% endif %}>
+    <div class="section-title">Maquininha integrada (cartão e Pix nas vendas)</div>
+    <div class="form-grid">
+      <div>
+        <label for="id_tef_terminal_token">Token da maquininha</label>{{ form.tef_terminal_token }}
+        <small style="color:var(--muted);">Aparece ao abrir o app Vero Cliente PDV na maquininha. Ao salvar, o Vettro vincula a maquininha ao CNPJ acima.</small>
+      </div>
+    </div>
+    </section>
+
+    <section x-show="aba === 'agenda'"{% if aba_inicial != "agenda" %} x-cloak{% endif %}>
+    <div class="section-title">Agenda</div>
     <div class="form-grid">
       <div><label for="id_agenda_hora_inicio">Agenda abre às</label>{{ form.agenda_hora_inicio }}</div>
       <div><label for="id_agenda_hora_fim">Agenda fecha às</label>{{ form.agenda_hora_fim }}</div>
       <div><label for="id_agenda_intervalo_min">Intervalo da grade</label>{{ form.agenda_intervalo_min }}</div>
     </div>
     <p style="font-size:.82rem; color:var(--muted); margin:6px 0 0;">Define a faixa de horários das visões Dia/Semana e os horários livres oferecidos ao agendar.</p>
+    </section>
 
-    <div class="section-title" style="margin-top:18px;">Estoque</div>
-    <div class="form-grid">
-      <div><label for="id_estoque_frequencia_compra_dias">Frequência de compras (dias)</label>{{ form.estoque_frequencia_compra_dias }}</div>
-    </div>
-    <p style="font-size:.82rem; color:var(--muted); margin:6px 0 0;">A análise de estoque sugere comprar o suficiente para esse período.</p>
-
-    <div class="section-title" style="margin-top:18px;">Documentos</div>
+    <section x-show="aba === 'documentos'"{% if aba_inicial != "documentos" %} x-cloak{% endif %}>
+    <div class="section-title">Documentos</div>
     <div class="form-grid">
       <div><label for="id_validade_orcamento_dias">Validade padrão do orçamento (dias)</label>{{ form.validade_orcamento_dias }}</div>
       <div class="full">
@@ -100,17 +150,68 @@
         <small style="color:var(--muted);">PNG com fundo transparente, até 2MB. Sem imagem, o PDF usa o nome da clínica como marca d'água.</small>
       </div>
     </div>
-    <div style="margin-top:14px;"><button type="submit" class="btn-primary btn">Salvar</button></div>
-  </form>
-</div>
+    </section>
 
-<div class="card">
-  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-    <div>
-      <h2 style="margin:0;">WhatsApp</h2>
-      <p style="color:var(--muted); margin:4px 0 0;">Número da clínica para lembretes de agendamento, vacina e retorno.</p>
-    </div>
+    <section x-show="aba === 'whatsapp'"{% if aba_inicial != "whatsapp" %} x-cloak{% endif %}>
+    <div class="section-title">WhatsApp</div>
+    <p style="color:var(--muted); margin:0 0 10px;">Número da clínica para lembretes de agendamento, vacina e retorno.</p>
     <a href="{% url 'whatsapp:conexao' %}" class="btn-secondary btn">Configurar WhatsApp</a>
-  </div>
+    </section>
+
+    <div x-show="aba !== 'whatsapp' && aba !== 'empresa'" style="margin-top:14px;"><button type="submit" class="btn-primary btn">Salvar</button></div>
+  </form>
+
+  <section x-show="aba === 'empresa'"{% if aba_inicial != "empresa" %} x-cloak{% endif %}>
+    <div class="section-title">Documentos da empresa</div>
+    <p style="font-size:.85rem; color:var(--muted); margin-top:-4px;">
+      Contrato social, cartão CNPJ e inscrição estadual da clínica. Só o administrador abre estes arquivos.
+    </p>
+    <form method="post" action="{% url 'core:documento_empresa_enviar' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div>
+          <label for="doc_tipo">Tipo</label>
+          <select id="doc_tipo" name="tipo" required>
+            {% for valor, rotulo in tipos_documento %}<option value="{{ valor }}">{{ rotulo }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label for="doc_descricao">Descrição (opcional)</label><input id="doc_descricao" type="text" name="descricao" maxlength="150" placeholder="Ex.: versão registrada em 04/09/2026"></div>
+        <div class="full">
+          <label for="doc_arquivo">Arquivo</label>
+          <input id="doc_arquivo" type="file" name="arquivo" accept="application/pdf,image/png,image/jpeg" required>
+          <small style="color:var(--muted);">PDF, PNG ou JPG, até 10 MB.</small>
+        </div>
+      </div>
+      <div style="margin-top:10px;"><button type="submit" class="btn-primary btn">Anexar documento</button></div>
+    </form>
+
+    {% if documentos_empresa %}
+    <div class="table-wrap" style="margin-top:16px;">
+      <table>
+        <thead><tr><th>Tipo</th><th>Descrição</th><th>Arquivo</th><th>Enviado</th><th>Tamanho</th><th></th></tr></thead>
+        <tbody>
+          {% for d in documentos_empresa %}
+          <tr>
+            <td>{{ d.get_tipo_display }}</td>
+            <td>{{ d.descricao|default:"—" }}</td>
+            <td>{{ d.nome_arquivo }}</td>
+            <td>{{ d.criado_em|date:"d/m/Y" }}{% if d.enviado_por_nome %} por {{ d.enviado_por_nome }}{% endif %}</td>
+            <td>{{ d.tamanho_mb }}</td>
+            <td style="text-align:right; white-space:nowrap;">
+              <a href="{% url 'core:documento_empresa' d.pk %}" target="_blank" class="btn-secondary btn">Abrir</a>
+              <form method="post" action="{% url 'core:documento_empresa_excluir' d.pk %}" style="display:inline;">
+                {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir {{ d.get_tipo_display|lower }}?">Excluir</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty" style="margin-top:16px;">Nenhum documento anexado ainda.</div>
+    {% endif %}
+  </section>
 </div>
 {% endblock %}
+

@@ -1,19 +1,58 @@
-{% comment %} Toast global — views que mutam dados podem devolver um OOB swap desta
-   div (id="toast-region") pra disparar uma mensagem, ver §7 do plano.
-   Também exibe as mensagens do django.contrib.messages da requisição. {% endcomment %}
-<div id="toast-region"
-     x-data="{ show:false, msg:'', ok:true, timer:null }"
-     x-init="window.addEventListener('toast', e => { msg = e.detail.msg; ok = e.detail.ok ?? true; show = true; clearTimeout(timer); timer = setTimeout(() => show = false, ok ? 2800 : 6000) })">
-  <div id="toast" :class="ok ? 'ok' : 'erro'" x-show="show" x-transition style="display:none;" x-text="msg"></div>
+{% comment %} Avisos globais (canto superior direito, um cartão por mensagem).
+   Mostra as mensagens do django.contrib.messages da requisição e qualquer
+   `window.dispatchEvent(new CustomEvent("toast", {detail: {msg, ok, tipo}}))`
+   (tipo: ok | info | aviso | erro; sem tipo, `ok:false` = erro).
+   Sucesso e informação somem sozinhos (pausa com o mouse em cima); aviso e
+   erro ficam até clicar em Fechar. {% endcomment %}
+<div id="toast-region" aria-live="polite"
+     x-data="{
+       itens: [], seq: 0,
+       titulos: { ok: 'Salvo', info: 'Informação', aviso: 'Atenção', erro: 'Não foi possível' },
+       abrir(d) {
+         const tipo = d.tipo || (d.ok === false ? 'erro' : 'ok');
+         const item = { id: ++this.seq, tipo, msg: d.msg, visivel: true, pausado: false,
+                        duracao: tipo === 'ok' ? 4000 : tipo === 'info' ? 6000 : 0, restante: 0 };
+         item.restante = item.duracao;
+         this.itens.push(item);
+         // o objeto reativo é o que está no array (mexer no original não atualiza a tela)
+         const reativo = this.itens[this.itens.length - 1];
+         if (reativo.duracao) this.contar(reativo);
+       },
+       contar(item) {
+         const passo = 100;
+         const t = setInterval(() => {
+           if (!item.visivel) return clearInterval(t);
+           if (item.pausado) return;
+           item.restante -= passo;
+           if (item.restante <= 0) { clearInterval(t); this.fechar(item); }
+         }, passo);
+       },
+       fechar(item) {
+         item.visivel = false;
+         setTimeout(() => this.itens = this.itens.filter(i => i.id !== item.id), 250);
+       },
+     }"
+     x-init="window.addEventListener('toast', e => abrir(e.detail))">
+  <template x-for="item in itens" :key="item.id">
+    <div class="toast" :class="'toast-' + item.tipo" x-show="item.visivel"
+         x-transition:enter="toast-entra" x-transition:enter-start="toast-fora" x-transition:leave="toast-sai" x-transition:leave-end="toast-fora"
+         :role="item.tipo === 'erro' || item.tipo === 'aviso' ? 'alert' : 'status'"
+         @mouseenter="item.pausado = true" @mouseleave="item.pausado = false">
+      <div class="toast-corpo">
+        <strong class="toast-titulo" x-text="titulos[item.tipo]"></strong>
+        <span class="toast-msg" x-text="item.msg"></span>
+      </div>
+      <button type="button" class="toast-fechar" @click="fechar(item)">Fechar</button>
+      <div class="toast-tempo" x-show="item.duracao" :style="'width:' + (item.restante / item.duracao * 100) + '%'"></div>
+    </div>
+  </template>
 </div>
 {% if messages %}
 <script>
   document.addEventListener("alpine:initialized", () => {
-    const mensagens = [{% for m in messages %}{ msg: "{{ m.message|escapejs }}", ok: {% if m.level >= 30 %}false{% else %}true{% endif %} },{% endfor %}];
-    window.dispatchEvent(new CustomEvent("toast", { detail: {
-      msg: mensagens.map(m => m.msg).join(" · "),
-      ok: mensagens.every(m => m.ok),
-    } }));
+    const tipos = { debug: "info", info: "info", success: "ok", warning: "aviso", error: "erro" };
+    {% for m in messages %}window.dispatchEvent(new CustomEvent("toast", { detail: { msg: "{{ m.message|escapejs }}", tipo: tipos["{{ m.level_tag }}"] || "info" } }));
+    {% endfor %}
   });
 </script>
 {% endif %}

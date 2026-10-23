@@ -1,23 +1,29 @@
+{% comment %} Barra do topo: clínica ativa à esquerda; à direita o menu da conta (padrão de mercado:
+   iniciais + nome + papel; ao clicar abre os dados da conta, perfil, senha, troca de clínica e Sair). {% endcomment %}
+{% with nome=request.user.nome|default:request.user.email %}
 <header class="topbar">
   <button type="button" class="hamburger" @click="sidebarAberta = !sidebarAberta" aria-label="Abrir menu">Menu</button>
   <strong>{{ clinica_nome_ativa }}</strong>
   <div class="spacer"></div>
-  <div class="user-menu">
-    <div class="perfil-menu" x-data="{ aberto: false }" @click.outside="aberto = false" @keydown.escape.window="aberto = false">
-      <button type="button" class="perfil-menu-botao" @click="aberto = !aberto" :aria-expanded="aberto">{{ request.user.nome }}</button>
-      <div class="perfil-menu-itens" x-show="aberto" x-cloak>
-        <span class="perfil-menu-titulo">Configurações do perfil</span>
-        <a href="{% url 'core:meu_perfil' %}">Meu perfil profissional</a>
-        <a href="{% url 'contas:trocar_senha' %}">Alterar senha</a>
-        {% if request.user.vinculos.count > 1 %}<a href="{% url 'contas:escolher_clinica' %}">Trocar de clínica</a>{% endif %}
+  <div class="conta-menu" x-data="{ aberto: false }" @click.outside="aberto = false" @keydown.escape.window="aberto = false">
+    <button type="button" class="conta-botao" @click="aberto = !aberto" :aria-expanded="aberto" aria-haspopup="menu">
+      <span class="conta-iniciais" aria-hidden="true">{% for parte in nome.split|slice:":2" %}{{ parte|first|upper }}{% endfor %}</span>
+      <span class="conta-identidade">
+        <span class="conta-nome">{{ nome }}</span>
+        <span class="conta-papel">{% if papel_ativo == "admin" %}Administrador{% elif papel_ativo == "vet" %}Veterinária/o{% elif papel_ativo == "atendente" %}Recepção{% endif %}</span>
+      </span>
+    </button>
+    <div class="conta-painel" x-show="aberto" x-cloak x-transition.opacity role="menu">
+      <div class="conta-cabecalho">
+        <strong>{{ nome }}</strong>
+        <span>{{ request.user.email }}</span>
+        <span>{{ clinica_nome_ativa }}{% if papel_ativo %} · {% if papel_ativo == "admin" %}Administrador{% elif papel_ativo == "vet" %}Veterinária/o{% else %}Recepção{% endif %}{% endif %}</span>
       </div>
+      <a href="{% url 'core:meu_perfil' %}" role="menuitem">Meu perfil profissional</a>
+      <a href="{% url 'contas:trocar_senha' %}" role="menuitem">Alterar senha</a>
+      {% if request.user.vinculos.count > 1 %}<a href="{% url 'contas:escolher_clinica' %}" role="menuitem">Trocar de clínica</a>{% endif %}
+      <a href="{% url 'contas:logout' %}" class="conta-sair" role="menuitem">Sair</a>
     </div>
-    <span class="badge {% if papel_ativo == 'admin' %}badge-admin{% else %}badge-vet{% endif %}">
-      {% if papel_ativo == "admin" %}Admin
-      {% elif papel_ativo == "vet" %}Veterinária/o
-      {% elif papel_ativo == "atendente" %}Recepção
-      {% endif %}
-    </span>
-    <a href="{% url 'contas:logout' %}" class="btn-secondary btn">Sair</a>
   </div>
 </header>
+{% endwith %}

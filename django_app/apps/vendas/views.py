@@ -35,14 +35,10 @@ def lista(request):
             filtro |= Q(numero=int(termo.lstrip("#")))
         vendas = vendas.filter(filtro)
 
-    validas = vendas.filter(cancelada_em__isnull=True, pagamento_status="pago")
-    resumo = validas.aggregate(qtd=Count("id"), total=Sum("total"), descontos=Sum("desconto_valor"))
-    lucros = [v.lucro for v in validas]
-    lucro = {"valor": sum((l for l in lucros if l is not None), 0), "sem_custo": sum(1 for l in lucros if l is None)}
     hoje = Venda.objects.filter(cancelada_em__isnull=True, pagamento_status="pago", criado_em__date=date.today()).aggregate(qtd=Count("id"), total=Sum("total"))
     return render(request, "vendas/lista.html", {
         "pagina": Paginator(vendas, 50).get_page(request.GET.get("pagina")),
-        "filtros": request.GET, "resumo": resumo, "hoje": hoje, "lucro": lucro,
+        "filtros": request.GET, "hoje": hoje,
     })
 
 
@@ -83,7 +79,7 @@ def nova(request):
     if venda.aguardando_pagamento:
         _cobrar_na_maquininha(request, venda)
         return redirect("vendas:pagamento", pk=venda.pk)
-    messages.success(request, f"Venda #{venda.numero} registrada — R$ {venda.total}. Estoque atualizado.")
+    messages.success(request, f"Venda {venda.numero} registrada — R$ {venda.total}. Estoque atualizado.")
     _emitir_nota(request, venda)
     return redirect("vendas:detalhe", pk=venda.pk)
 
@@ -128,7 +124,7 @@ def pagamento_status(request, pk):
     venda = services.atualizar_pagamento(get_object_or_404(Venda, pk=pk))
     if not venda.aguardando_pagamento:
         if venda.pagamento_status == "pago":
-            messages.success(request, f"Pagamento aprovado — venda #{venda.numero}, R$ {venda.total}.")
+            messages.success(request, f"Pagamento aprovado — venda {venda.numero}, R$ {venda.total}.")
             _emitir_nota(request, venda)
         resposta = HttpResponse()
         resposta["HX-Redirect"] = reverse("vendas:detalhe", args=[venda.pk])
@@ -173,7 +169,7 @@ def pagamento_trocar(request, pk):
     if venda.aguardando_pagamento:
         _cobrar_na_maquininha(request, venda)
         return redirect("vendas:pagamento", pk=venda.pk)
-    messages.success(request, f"Venda #{venda.numero} paga em {venda.get_forma_pagamento_display().lower()}.")
+    messages.success(request, f"Venda {venda.numero} paga em {venda.get_forma_pagamento_display().lower()}.")
     _emitir_nota(request, venda)
     return redirect("vendas:detalhe", pk=venda.pk)
 
@@ -218,7 +214,9 @@ def cancelar(request, pk):
             raise PermissionDenied("Só o admin cancela venda já paga.")
         try:
             services.cancelar_venda(venda, usuario=request.user)
-            messages.success(request, f"Venda #{venda.numero} cancelada. Produtos devolvidos ao estoque.")
+            messages.success(request, f"Venda {venda.numero} cancelada. Produtos devolvidos ao estoque.")
+            if venda.transacoes_tef.exclude(id_estorno="").exists():
+                messages.warning(request, "O estorno abriu na maquininha: conclua por lá para devolver o valor ao cliente.")
         except services.VendaInvalidaError as exc:
             messages.error(request, str(exc))
     return redirect("vendas:lista")

@@ -16,6 +16,10 @@
   </div>
   <button type="button" class="btn-secondary btn" :class="filtrosAbertos && 'ativo'" @click="filtrosAbertos = !filtrosAbertos"
                 :aria-expanded="filtrosAbertos">Filtrar{% if n_filtros %} ({{ n_filtros }}){% endif %}</button>
+        {% if papel_ativo == "admin" %}
+        <a href="{% url 'agenda:consultorios' %}?novo=1" class="btn-secondary btn">Novo local/consultório</a>
+        <a href="{% url 'agenda:consultorios' %}?fechar={{ data_ref|date:'Y-m-d' }}#fechar-agenda" class="btn-secondary btn">Fechar agenda</a>
+        {% endif %}
         {% if visao == "fila" %}
         <a href="{% url 'agenda:novo' %}?chegou=1&data={{ data_ref|date:'Y-m-d' }}{% if filtros.consultorio and filtros.consultorio != 'sem' %}&consultorio={{ filtros.consultorio }}{% endif %}&voltar={{ voltar|urlencode }}" class="btn-secondary btn">+ Chegada sem agendamento</a>
         {% endif %}

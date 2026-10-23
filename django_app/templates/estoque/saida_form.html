@@ -2,12 +2,13 @@
 {% block title %}Registrar saída — Vettro{% endblock %}
 {% block content %}
 {% include "estoque/_subnav.html" %}
-<div class="card" x-data="{ tipo: 'consumo_interno', insumosSel: [], qtyTick: 0 }">
+<div class="card" x-data="{ tipo: '{{ tipo_inicial|default:"consumo_interno" }}', insumosSel: [], qtyTick: 0 }">
   <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
     <h2 style="margin:0;">Registrar saída de estoque</h2>
     <a href="{% url 'estoque:saidas' %}" class="btn-secondary btn">← Saídas</a>
   </div>
   <form method="post">
+    {% if request.GET.voltar == "avisos" or request.POST.voltar == "avisos" %}<input type="hidden" name="voltar" value="avisos">{% endif %}
     {% csrf_token %}
     <div class="form-grid">
       <div><label>Tipo</label>
@@ -22,7 +23,7 @@
       <div x-show="tipo === 'doacao'" x-cloak><label>Beneficiário (quem recebeu a doação)</label><input type="text" name="beneficiario" maxlength="150"></div>
       <div class="full"><label x-text="tipo === 'avaria' ? 'O que aconteceu (avaria)' : 'Detalhes'">Detalhes</label><input type="text" name="detalhe" maxlength="300"></div>
       <div class="full">
-        {% include "components/_insumos_busca.html" with rotulo="Produtos" %}
+        {% include "components/_insumos_busca.html" with rotulo="Produtos" preselecionar=preselecionar %}
       </div>
     </div>
     <div style="margin-top:16px;"><button class="btn-primary btn" :disabled="!insumosSel.length">Registrar saída</button></div>

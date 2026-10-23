@@ -88,6 +88,11 @@ class ConsultorioForm(forms.ModelForm):
         fields = ["nome", "endereco", "ativo"]
 
 
+def _hora(h) -> str:
+    """time(9, 0) -> "9h"; time(12, 30) -> "12h30"."""
+    return f"{h.hour}h" + (f"{h.minute:02d}" if h.minute else "")
+
+
 class BloqueioForm(forms.ModelForm):
     consultorio = forms.ModelChoiceField(
         queryset=Consultorio.objects.filter(ativo=True), required=False,
@@ -106,8 +111,20 @@ class BloqueioForm(forms.ModelForm):
         }
 
     def __init__(self, *args, clinica_id=None, **kwargs):
+        from apps.core.models import ConfiguracaoClinica
+
         super().__init__(*args, **kwargs)
         self.clinica_id = clinica_id
+        # Turnos e horários dentro do expediente da clínica (Clínica → Agenda).
+        config = ConfiguracaoClinica.atual()
+        self.abre, self.fecha = config.agenda_hora_inicio, config.agenda_hora_fim
+        rotulos = {
+            BloqueioAgenda.TURNO_MANHA: f"Manhã ({_hora(self.abre)}–12h)",
+            BloqueioAgenda.TURNO_TARDE: f"Tarde (12h–{_hora(self.fecha)})",
+        }
+        self.fields["turno"].choices = [(v, rotulos.get(v, r)) for v, r in BloqueioAgenda.TURNO_CHOICES]
+        for campo in ("hora_inicio", "hora_fim"):
+            self.fields[campo].widget.attrs.update({"min": self.abre.strftime("%H:%M"), "max": self.fecha.strftime("%H:%M"), "step": 300})
 
     def clean(self):
         dados = super().clean()
@@ -130,6 +147,10 @@ class BloqueioForm(forms.ModelForm):
                 raise forms.ValidationError("Informe o horário de início e de fim do bloqueio.")
             if h_fim <= h_ini:
                 raise forms.ValidationError("O horário final do bloqueio precisa ser depois do inicial.")
+            if h_ini < self.abre or h_fim > self.fecha:
+                raise forms.ValidationError(
+                    f"O horário precisa estar dentro do funcionamento da clínica ({_hora(self.abre)} às {_hora(self.fecha)})."
+                )
         return dados
 
     def save(self, commit=True):

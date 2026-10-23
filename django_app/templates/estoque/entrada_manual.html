@@ -9,6 +9,7 @@
   <p style="color:var(--muted);">Registra uma movimentação SD1 (entrada) sem vincular a uma NF-e — use pra compras informais ou saldo inicial.</p>
   <form method="post">
     {% csrf_token %}
+    {% if request.GET.voltar == "avisos" or request.POST.voltar == "avisos" %}<input type="hidden" name="voltar" value="avisos">{% endif %}
     {% if form.errors %}<p style="color:var(--danger-hover);">{% for campo, erros in form.errors.items %}{{ erros|join:", " }} {% endfor %}</p>{% endif %}
     <div class="form-grid">
       <div class="full"><label>Insumo</label>{{ form.insumo }}</div>
@@ -23,6 +24,10 @@
       <div><label>Lote (opcional)</label>{{ form.lote }}</div>
       <div><label>Validade (opcional)</label>{{ form.data_validade }}</div>
       <div class="full"><label>Observação</label>{{ form.observacao }}</div>
+      <div class="full">
+        <label style="display:flex; align-items:center; gap:8px; margin:0;">{{ form.compra }} {{ form.compra.label }}</label>
+        <small style="color:var(--muted);">{{ form.compra.help_text }}</small>
+      </div>
     </div>
     <div style="margin-top:18px; display:flex; gap:10px;">
       <button type="submit" class="btn-primary btn">Registrar entrada</button>

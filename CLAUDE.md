@@ -12,8 +12,13 @@ amarelo `#EFC15A`, terroso `#C17D46`, texto/títulos verde escuro `#545936`. Tok
 Interface (2026-10): menu lateral **preto** (`--sidebar-bg`), botões primários **verde mais claro**
 (`--primary` #7A8240, texto branco), visual reto (`border-radius: 0` global) — única exceção: botões
 do hub de novo atendimento (`.hub-tipo`, 8px).
-Tipografia: **Roca Two** (títulos, paga — arquivos em `static/fonts/`, woff2 p/ web e ttf p/ PDF;
-sem eles cai na Fraunces SOFT) + **Livvic** (textos, OFL, já em `static/fonts/` e no PDF).
+Tipografia da interface (2026-10, pedido do usuário): **Roboto** em tudo (títulos e textos),
+local em `static/fonts/Roboto-*.woff2` (variável, OFL) — sem Google Fonts. **Letras nunca verdes**:
+texto em chumbo quase preto (`--texto` #232323, `--texto-2`, `--texto-3`; `--text`/`--muted` apontam
+pra eles); o verde fica só em botões, abas ativas, faixas e fundos. PDFs ainda usam Livvic/Roca Two
+(`apps/core/pdf.py`, TTF em `static/fonts/`).
+**Dinheiro sempre "R$ 1.425,45"**: filtro `|moeda` (`core/templatetags/formatos.py`) nos templates e
+`brl()` (`static/js/formatos.js`) nos totais calculados no navegador — nunca `R$ {{ x }}`/`toFixed(2)`.
 
 ## Tecnologia
 - **Backend/Frontend:** Django 5 + django-tenants (schema-per-tenant) + HTMX + Alpine.js +
@@ -51,6 +56,17 @@ Depois, em `/plataforma/`, provisione a primeira clínica.
 - Cadastrar/editar/excluir **insumos** e **tipos de cirurgia** (CirurgiaCategoria), e importar
   XML de NF-e (cria insumos): **só admin** (`admin_required`). Vet ainda faz entrada manual/ajuste.
 - **Sem ícones/emojis na interface** (pedido do usuário, 2026-10) — rótulos só em texto.
+- **Formulário de cadastro nunca fica aberto** (padrão do sistema, 2026-10): a tela mostra a lista e o
+  form só abre no botão "Novo ..." (Alpine `x-show` + `x-cloak`, classe `.form-novo`, com Cancelar); já
+  vem aberto só ao editar ou com erro. Telas com muitos assuntos viram abas (`.subnav`): ⚙️ Clínica
+  (Identificação, Endereço, Fiscal, Certificado e NFS-e, Maquininha, Agenda, Documentos, Documentos da
+  empresa, WhatsApp) e Serviços (Serviços, Procedimentos cirúrgicos, Exames) — `?aba=` abre a aba.
+- **Avisos** (`components/_toast.html`): cartões no canto superior direito, um por mensagem; sucesso
+  some em 4s, aviso/erro ficam até "Fechar".
+- **Documentos da empresa** (⚙️ Clínica, `core.DocumentoEmpresa`: contrato social, cartão CNPJ, IE):
+  só admin, servidos por view protegida (`core:documento_empresa`), nunca por link de /media/.
+- Uploads: `core/storage.py:TenantFileSystemStorage` grava em `media/<schema>/...` (o prefixo é só em
+  `path`/`url`; antes gravava `media/<schema>/<schema>/` — corrigido em 2026-10).
 - (Perfil `motorista` removido em 2026-10 — quem tinha virou Recepção.)
 
 Uma mesma pessoa (identidade global, `plataforma.Usuario`) pode ter papéis diferentes em
@@ -84,7 +100,13 @@ clínicas diferentes via `UsuarioClinica`. Cadastro de acesso novo é sempre por
    (`embalagem` + `unidades_por_pacote` = conteúdo). Entrada manual e XML convertem embalagem →
    unidade de uso. Estoque baixo: `estoque_minimo` do produto ou, sem ele, < 3. Serviço pode ser
    cobrado por quantidade (`Servico.unidade_cobranca`, ex. oxigenoterapia por hora).
-   Gestão estilo SimplesVet (2026-10, abas em `estoque/_subnav.html`). **Sem fornecedores e sem
+   Gestão estilo SimplesVet (2026-10, abas em `estoque/_subnav.html`).
+   Aba **Avisos** (`estoque:avisos`, número de pendências no rótulo): estoque baixo/zerado, validade,
+   sem NCM, ST sem CEST — na aba Produtos fica só uma linha-resumo com link (sem cartões grandes).
+   Cada aviso leva à ação que resolve (nome do produto e botões): baixo/zerado → **Repor** (entrada
+   manual com o produto), vencido → **Dar baixa** (saída "Perda de validade" com produto e qtd em
+   estoque pré-preenchidos), vencendo → Dar baixa / Atualizar validade, fiscal → Corrigir cadastro
+   (admin); `?voltar=avisos` devolve pra aba Avisos. Contador também no menu lateral ("Estoque 4"). **Sem fornecedores e sem
    pedidos de compra** (decisão da clínica, 2026-10: compras avulsas — entram por Entrada manual
    ou XML da NF-e; o emitente fica só na observação do movimento; não reintroduzir).
    **Saídas** (consumo interno, perda de validade, avaria, doação, devolução de compra + motivos
@@ -124,7 +146,10 @@ clínicas diferentes via `UsuarioClinica`. Cadastro de acesso novo é sempre por
    medicação, Curativo, Exame), encaixe (permite conflito). Conflito de horário = mesmo consultório.
    **Sem recorrência, sem comunicados e sem campo Status no formulário** (nasce "agendado";
    status muda só pelas ações do detalhe). **Sem painel de horários livres** (removido a pedido, 2026-10). Bloqueios (admin only) da clínica ou
-   de um consultório, por dia, turno ou horário exato (almoço). Faixa da grade em ⚙️ Clínica
+   de um consultório, por dia, turno ou horário exato (almoço). Turnos seguem o expediente da clínica:
+   Manhã = abertura–12h, Tarde = 12h–fechamento (sem "Noite"); horário exato só dentro do expediente.
+   Lume: 9h–19h. Botões **Novo local/consultório** e **Fechar agenda** (admin) na barra da Agenda —
+   Consultórios não é mais item do menu lateral (2026-10); a tela `agenda:consultorios` abre por eles. Faixa da grade em ⚙️ Clínica
    (`agenda_hora_inicio/fim/intervalo_min`). Lembrete de WhatsApp 24h antes.
    Qualquer papel agenda e mexe nos agendamentos; **fechar a agenda (bloqueios) e Consultórios: só admin**.
    Agendamento: seção **Serviços** (só `Servico.na_agenda=True`) + seção **Exames** (tabela própria
@@ -155,10 +180,21 @@ clínicas diferentes via `UsuarioClinica`. Cadastro de acesso novo é sempre por
   (vem do tutor, editável) e emitir NFS-e → `Recebimento` + `PagamentoRecebimento`, desconto rateado
   nas cobranças, **uma NFS-e por recebimento**. Maquininha não integrada (confirmação manual).
   Aparece na aba **Cobranças** da tela do Tutor (`?aba=cobrancas`) e em "Recebidos hoje".
+- **Financeiro** (menu próprio, admin only — `apps/financeiro/{caixa,views_caixa,urls_caixa}.py`, URL
+  `/financeiro/`): abas Resumo (entradas × saídas × saldo do período, entradas por forma, saídas por
+  categoria), **Entradas** (automáticas: Recebimento da recepção, baixa manual de Cobrança sem
+  recebimento, Venda paga não cancelada — sem lançamento manual) e **Saídas** (`financeiro.Despesa`,
+  lançadas à mão: data, descrição, categoria, valor, forma, comprovante protegido) + **Reposição de
+  estoque automática** (entrada SD1 por XML de NF-e = 1 linha por nota, com o fornecedor; entrada manual
+  = 1 linha; valor = custo lançado × qtd). Entrada que não foi compra (estoque inicial, doação) fica fora:
+  `MovimentoEstoque.fora_do_financeiro` — checkbox "Foi uma compra" na entrada manual ou botão "Não é
+  compra" no Financeiro. A categoria de despesa "Compras fora do estoque" é só pro que não passa pelo
+  estoque (não lançar a nota de compra de novo). Período por mês ou de/até.
 7. **Cobranças** (admin only) — manual ou automática (Anamnese/Cirurgia/Atendimento com itens
    faturáveis). Baixa manual com desconto opcional (R$ ou %) e motivo obrigatório; `total` é o
    valor cheio, `valor_pago` = total − desconto.
-14. **Vendas** (admin/vet/atendente; módulo estoque) — **simples por decisão da clínica (2026-10)**:
+14. **Vendas** (admin/vet/atendente; módulo estoque) — número da venda exibido **sem "#"**; lista sem o resumo
+   "No filtro: ... lucro" (removido a pedido, 2026-10) — **simples por decisão da clínica (2026-10)**:
    vende produto do estoque e gera a nota (NFC-e) e pronto. Cliente opcional: no balcão pergunta o
    **CPF na nota** — se for de um Tutor cadastrado liga a venda a ele (`Venda.tutor`), senão a venda
    guarda só o CPF (`Venda.cliente_cpf`, vai pra NFC-e). Venda de balcão sem paciente, nasce
@@ -171,6 +207,10 @@ clínicas diferentes via `UsuarioClinica`. Cadastro de acesso novo é sempre por
    trocar a forma (dinheiro fecha na hora) ou desistir (qualquer papel, só se não paga). Cancelar venda
    paga estorna na maquininha. Backend trocável (`TEF_BACKEND`, `apps/pagamentos/tef.py`); padrão é
    sandbox (aprova em ~4s, valor terminado em ,99 é negado). Dinheiro continua nascendo paga.
+   **Real: Vero Cliente PDV** (`VeroClientePDVBackend`, API na nuvem, sem USB; débito aceita
+   Banricompras): token da integração em `VERO_PDV_TOKEN` (um pro SaaS), token da maquininha em
+   ⚙️ Clínica (vincula ao salvar). Consulta no máx. a cada 5s; estorno de venda paga abre na
+   maquininha e o operador conclui lá. Passo a passo em `docs/maquininha-vero.md`.
    (PDV completo com caixa/comissão/kits/pacotes foi feito e removido a pedido — não reintroduzir.)
 - **Notas fiscais** (`apps/pagamentos/notas.py`): NFS-e sai ao receber uma Cobrança, NFC-e ao
   finalizar uma Venda (automático; botão "tentar de novo" se recusada). Backend trocável
@@ -178,7 +218,17 @@ clínicas diferentes via `UsuarioClinica`. Cadastro de acesso novo é sempre por
   (CNPJ/razão social/cidade da clínica, NCM dos produtos), gera número/chave fictícios (chave
   começa com 99) e PDF "SIMULAÇÃO — SEM VALOR FISCAL". Focus NFe entra trocando o backend.
   NFS-e: código de tributação nacional **050202** (subitem 5.02) e código municipal = padrão em
-  ⚙️ Clínica, exceção por serviço no catálogo. XML autorizado e de cancelamento guardados na nota
+  ⚙️ Clínica, exceção por serviço no catálogo.
+  **NFS-e real = direto no Emissor Nacional** (`apps/pagamentos/nfse_nacional.py`, sem Focus — decisão
+  2026-10; Lume = Simples, Cachoeira do Sul/RS): liga sozinha quando a clínica cadastra o certificado A1
+  (.pfx cifrado) em ⚙️ Clínica; ambiente homologação/produção lá também. DPS 1.01 assinada (C14N
+  isolado — o libxml2 erra o C14N dentro da DPS), série/número da DPS do Vettro, retry consulta
+  `GET /dps/{id}` antes de reenviar. Teste: `manage.py testar_nfse_nacional --schema=...`.
+  XSD oficial (leiaute 20/10/2026, `finNFSe`) em `apps/pagamentos/xsd_nfse/`, validado antes do envio.
+  Lume: certificado OK em homologação; DPS recusada com E0037 (Cachoeira do Sul ainda fora do convênio
+  nacional — previsto 01/11/2026). Responsável técnico da NFC-e = Data Dexter (`RESPONSAVEL_TECNICO`).
+  Passo a passo em `docs/nfse-nacional.md`. NFC-e segue na simulação (exige `inscricao_estadual`
+  da clínica, em ⚙️ Clínica — Lume: IE 015/0197055). XML autorizado e de cancelamento guardados na nota
   (`xml`/`xml_cancelamento`); **Contabilidade** (`notas:contabilidade`, admin, link em ⚙️ Clínica):
   ZIP do mês com XMLs por pasta + `relatorio_itens.csv` separando serviços × vendas
   (`apps/pagamentos/contabilidade.py`).
@@ -228,8 +278,13 @@ clínicas diferentes via `UsuarioClinica`. Cadastro de acesso novo é sempre por
    se a pessoa já tiver conta em outra clínica.
 10. **Lembretes** (admin/vet/atendente; exige módulo `modulo_whatsapp_lembrete` da clínica) —
    texto livre por WhatsApp para tutores selecionados, só com `consentimento_whatsapp` (LGPD).
+   Editor **Quill 2.0.3** (vendorizado em `static/vendor/quill`, barra padrão negrito/itálico/tachado/
+   imagem/limpar — única tela com ícones, pedido do usuário 2026-10; `static/js/editor_whatsapp.js`
+   converte pra formatação do WhatsApp `*` `_` `~`), prévia, e **imagem opcional** (botão de imagem do editor;
+   (template `vettro_aviso_imagem` com cabeçalho IMAGE — exemplo em `apps/whatsapp/exemplo_aviso.png`,
+   imagem sobe uma vez por aviso via `meta.subir_midia`).
    Usa `Tutor.tel` (WhatsApp); `Tutor.tel2` é o outro telefone.
-9. **Auditoria** (admin only) — login, criar/atualizar/excluir/exportar de Tutor/Paciente.
+9. **Auditoria do sistema** (menu, admin only) — login, criar/atualizar/excluir/exportar de Tutor/Paciente.
 
 ## Regras de negócio fixas (não mudar sem avisar)
 - Plantão: **+50%** só sobre serviços, nunca sobre insumos (Anamnese/Atendimento; removido da
@@ -242,5 +297,5 @@ clínicas diferentes via `UsuarioClinica`. Cadastro de acesso novo é sempre por
 ## Fora de escopo por ora
 - **Provedor real de TEF e Focus NFe** e **Configurações fiscais da clínica**: bloqueados
   por decisões externas (contrato com a maquininha integrada, conta Focus NFe, CNPJ/inscrições/
-  certificado digital reais). Fluxo da venda com maquininha já pronto em sandbox; falta o backend real.
+  certificado digital reais). Backend da Vero pronto (falta o `pdvToken` e a homologação); Focus NFe pendente.
 - **Migração de dados**: não há nenhuma clínica rodando em produção ainda — não é necessária.

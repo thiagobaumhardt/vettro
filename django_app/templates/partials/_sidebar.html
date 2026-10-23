@@ -9,13 +9,10 @@
     <a href="{% url 'tutores:lista' %}" class="{% if request.resolver_match.app_name == 'tutores' %}active{% endif %}">Tutores</a>
     {% endif %}
     {% if "agenda" in secoes_permitidas %}
-    <a href="{% url 'agenda:calendario' %}" class="{% if request.resolver_match.app_name == 'agenda' and request.resolver_match.url_name == 'calendario' %}active{% endif %}">Agenda</a>
-    {% endif %}
-    {% if papel_ativo == "admin" %}
-    <a href="{% url 'agenda:consultorios' %}" class="{% if request.resolver_match.url_name == 'consultorios' %}active{% endif %}">Consultórios</a>
+    <a href="{% url 'agenda:calendario' %}" class="{% if request.resolver_match.app_name == 'agenda' %}active{% endif %}">Agenda</a>
     {% endif %}
     {% if "lembretes" in secoes_permitidas %}
-    <a href="{% url 'lembretes:lista' %}" class="{% if request.resolver_match.app_name == 'lembretes' %}active{% endif %}">Lembretes</a>
+    <a href="{% url 'lembretes:lista' %}" class="{% if request.resolver_match.app_name == 'lembretes' %}active{% endif %}">Lembretes para Tutores</a>
     {% endif %}
     {% if "atendimentos" in secoes_permitidas %}
     <a href="{% url 'atendimentos:lista' %}" class="{% if request.resolver_match.app_name == 'atendimentos' %}active{% endif %}">Atendimentos</a>
@@ -29,15 +26,19 @@
     {% if "orcamentos" in secoes_permitidas %}
     <a href="{% url 'orcamentos:lista' %}" class="{% if request.resolver_match.app_name == 'orcamentos' %}active{% endif %}">Orçamentos</a>
     {% endif %}
+    {% if papel_ativo == "admin" %}
+    <a href="{% url 'caixa:painel' %}" class="{% if request.resolver_match.app_name == 'caixa' %}active{% endif %}">Financeiro</a>
+    {% endif %}
     {% if "financeiro" in secoes_permitidas %}
     <a href="{% url 'financeiro:catalogo' %}" class="{% if request.resolver_match.app_name == 'financeiro' %}active{% endif %}">Serviços</a>
     {% endif %}
     {% if "estoque" in secoes_permitidas %}
-    <a href="{% url 'estoque:lista' %}" class="{% if request.resolver_match.app_name == 'estoque' %}active{% endif %}">Estoque</a>
+    {% load estoque_avisos %}{% total_avisos_estoque as n_avisos_estoque %}
+    <a href="{% url 'estoque:lista' %}" class="{% if request.resolver_match.app_name == 'estoque' %}active{% endif %}">Estoque{% if n_avisos_estoque %} <span class="sidebar-contador" title="{{ n_avisos_estoque }} aviso{{ n_avisos_estoque|pluralize }} no estoque">{{ n_avisos_estoque }}</span>{% endif %}</a>
     {% endif %}
     {% if papel_ativo == "admin" %}
     <a href="{% url 'usuarios_clinica:lista' %}" class="{% if request.resolver_match.app_name == 'usuarios_clinica' %}active{% endif %}">Usuários</a>
-    <a href="{% url 'auditoria:lista' %}" class="{% if request.resolver_match.app_name == 'auditoria' %}active{% endif %}">Auditoria</a>
+    <a href="{% url 'auditoria:lista' %}" class="{% if request.resolver_match.app_name == 'auditoria' %}active{% endif %}">Auditoria do sistema</a>
     <a href="{% url 'core:configuracao' %}" class="{% if request.resolver_match.app_name == 'core' %}active{% endif %}">Clínica</a>
     {% endif %}
   </nav>

@@ -79,10 +79,16 @@ def saida_nova(request):
                 solicitante=request.POST.get("solicitante", ""),
             )
             messages.success(request, f"{saida.get_tipo_display()} registrada — baixa de {len(itens)} produto(s) no estoque.")
-            return redirect("estoque:saidas")
+            return redirect("estoque:avisos" if request.POST.get("voltar") == "avisos" else "estoque:saidas")
         except (ValueError, EstoqueInsuficienteError) as exc:
             messages.error(request, str(exc))
+    # Vindo de um aviso (?insumo=...&tipo=perda_validade): produto e quantidade em estoque já escolhidos.
+    tipos_validos = dict(SaidaEstoque.TIPO_CHOICES)
+    tipo_inicial = request.GET.get("tipo") if request.GET.get("tipo") in tipos_validos else "consumo_interno"
+    pre = Insumo.objects.filter(pk=request.GET.get("insumo")).first() if request.GET.get("insumo") else None
+    preselecionar = json.dumps([{"id": str(pre.pk), "qtd": float(pre.qtd)}]) if pre and pre.qtd > 0 else ""
     return render(request, "estoque/saida_form.html", {
+        "tipo_inicial": tipo_inicial, "preselecionar": preselecionar,
         "tipos": SaidaEstoque.TIPO_CHOICES, "motivos": MotivoSaida.objects.all(), "aba": "saidas",
         "hoje": timezone.localdate(),
         "insumos_json": json.dumps(insumos_para_busca(Insumo.objects.all())),

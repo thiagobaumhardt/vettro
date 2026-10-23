@@ -5,22 +5,36 @@
   Proximidade" e página de tipografia), aplicadas sobre as mesmas classes que
   os templates já usam (.card, .btn-*, .badge...).
 
-  Tipografia: Roca Two (títulos e destaques) + Livvic (textos e apoio).
-  Roca Two é PAGA e não está no Google Fonts: o @font-face abaixo usa os
-  arquivos de static/fonts/ (RocaTwo-Regular.woff2 / RocaTwo-Bold.woff2) ou a
-  fonte instalada no computador, se houver. Sem nenhum dos dois, cai na
-  Fraunces "SOFT" (Google Fonts, arredondada), a substituta mais próxima.
+  Tipografia (2026-10, pedido do usuário): Roboto em tudo — títulos e textos.
+  Arquivos locais em static/fonts/ (Roboto variável, latin + latin-ext,
+  OFL-Roboto.txt), sem depender do Google Fonts.
+  Cor do texto: chumbo quase preto (--texto*), não verde — o verde fica nos
+  botões, faixas e fundos.
 */
 
 @font-face {
-  font-family: "Roca Two";
-  src: local("Roca Two"), local("RocaTwo-Regular"), url("../fonts/RocaTwo-Regular.woff2") format("woff2");
-  font-weight: 400; font-style: normal; font-display: swap;
+  font-family: "Roboto";
+  src: url("../fonts/Roboto-latin-normal.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
-  font-family: "Roca Two";
-  src: local("Roca Two Bold"), local("RocaTwo-Bold"), url("../fonts/RocaTwo-Bold.woff2") format("woff2");
-  font-weight: 600 700; font-style: normal; font-display: swap;
+  font-family: "Roboto";
+  src: url("../fonts/Roboto-latin-ext-normal.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("../fonts/Roboto-latin-italic.woff2") format("woff2");
+  font-weight: 100 900; font-style: italic; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("../fonts/Roboto-latin-ext-italic.woff2") format("woff2");
+  font-weight: 100 900; font-style: italic; font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
 :root {
@@ -45,9 +59,15 @@
   --perigo-hover: #8C3520;
   --perigo-suave: #F4D6C8;
 
+  /* Texto: chumbo quase preto (2026-10) — não usar verde em letra. */
+  --texto: #232323;
+  --texto-hover: #000000;
+  --texto-2: #4A4A4A;   /* rótulos, cabeçalho de tabela */
+  --texto-3: #6B6B6B;   /* textos de apoio */
+
   /* Aliases usados nos templates */
   --bg: var(--branco-gelo);
-  --text: var(--verde-escuro);
+  --text: var(--texto);
   --primary: #7A8240;                     /* botões: verde mais claro (2026-10), texto branco */
   --primary-hover: #687036;
   --sidebar-bg: #111111;                  /* menu lateral preto (2026-10) */
@@ -56,8 +76,8 @@
   --surface: #FFFFFF;                     /* campos e áreas internas dos cartões */
   --border: #E3E5DB;
   --border-2: #CDD0C0;
-  --muted: #7C7D5A;
-  --muted-2: #62653F;
+  --muted: var(--texto-3);
+  --muted-2: var(--texto-2);
   --btn-secondary-bg: var(--verde-claro);
   --btn-secondary-hover: var(--verde-oliva-suave);
   --danger: var(--perigo);
@@ -76,8 +96,8 @@
   --c-alerta-texto: var(--perigo-hover);
   --c-atencao-texto: var(--terroso-escuro);
 
-  --font-heading: "Roca Two", "Fraunces", Georgia, serif;
-  --font-body: "Livvic", "Segoe UI", system-ui, sans-serif;
+  --font-heading: "Roboto", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Roboto", "Segoe UI", system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -90,12 +110,12 @@ body {
   line-height: 1.5;
 }
 
-a { color: var(--verde-escuro); text-decoration-color: var(--verde-oliva); }
-a:hover { color: var(--verde-escuro-hover); }
+a { color: var(--text); text-decoration-color: var(--verde-oliva); }
+a:hover { color: var(--texto-hover); }
 
 h1, h2, h3, .brand, .login-card h1 {
-  font-family: var(--font-heading); font-weight: 600; color: var(--verde-escuro);
-  font-variation-settings: "SOFT" 100, "WONK" 0; letter-spacing: -.005em;
+  font-family: var(--font-heading); font-weight: 600; color: var(--text);
+  letter-spacing: -.005em;
 }
 
 .app-shell { display: flex; min-height: 100vh; }
@@ -128,14 +148,22 @@ h1, h2, h3, .brand, .login-card h1 {
 }
 .topbar strong { font-family: var(--font-heading); font-size: 1.1rem; font-weight: 600; }
 .topbar .spacer { flex: 1; }
-.topbar .user-menu { display: flex; align-items: center; gap: 10px; font-size: .88rem; }
-.perfil-menu { position: relative; }
-.perfil-menu-botao { background: transparent; border: 1px solid transparent; color: var(--verde-escuro); font: inherit; font-weight: 600; padding: 6px 8px; cursor: pointer; }
-.perfil-menu-botao:hover, .perfil-menu-botao[aria-expanded="true"] { border-color: var(--border); background: var(--surface); }
-.perfil-menu-itens { position: absolute; right: 0; top: calc(100% + 4px); min-width: 220px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 6px 18px rgba(0,0,0,.08); z-index: 60; display: flex; flex-direction: column; }
-.perfil-menu-titulo { padding: 9px 14px 6px; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
-.perfil-menu-itens a { padding: 9px 14px; color: var(--verde-escuro); text-decoration: none; border-top: 1px solid var(--border); }
-.perfil-menu-itens a:hover { background: var(--branco-gelo); }
+/* Menu da conta (topo, à direita) */
+.conta-menu { position: relative; }
+.conta-botao { display: flex; align-items: center; gap: 10px; background: transparent; border: 1px solid transparent; padding: 5px 8px; font: inherit; cursor: pointer; color: var(--text); text-align: left; }
+.conta-botao:hover, .conta-botao[aria-expanded="true"] { border-color: var(--border); background: var(--branco-gelo); }
+.conta-iniciais { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: var(--sidebar-bg); color: #FFFFFF; font-weight: 700; font-size: .82rem; letter-spacing: .03em; flex-shrink: 0; }
+.conta-identidade { display: flex; flex-direction: column; line-height: 1.2; }
+.conta-nome { font-weight: 600; font-size: .9rem; }
+.conta-papel { font-size: .76rem; color: var(--muted); }
+.conta-painel { position: absolute; right: 0; top: calc(100% + 6px); min-width: 260px; background: var(--surface); border: 1px solid var(--border-2); box-shadow: 0 10px 28px rgba(0,0,0,.12); z-index: 60; display: flex; flex-direction: column; }
+.conta-cabecalho { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; background: var(--branco-gelo); border-bottom: 1px solid var(--border); }
+.conta-cabecalho strong { font-size: .92rem; }
+.conta-cabecalho span { font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; }
+.conta-painel a { padding: 10px 14px; color: var(--text); text-decoration: none; font-size: .9rem; }
+.conta-painel a:hover { background: var(--branco-gelo); }
+.conta-painel .conta-sair { border-top: 1px solid var(--border); color: var(--perigo-hover); font-weight: 600; }
+@media (max-width: 640px) { .conta-identidade { display: none; } }
 .hamburger { display: none; background: none; border: 1px solid var(--border-2); padding: 6px 12px; font-family: inherit; font-weight: 600; font-size: .85rem; cursor: pointer; color: var(--text); }
 
 /* --- Cards / forms --- */
@@ -151,7 +179,7 @@ h1, h2, h3, .brand, .login-card h1 {
   letter-spacing: .07em; color: var(--muted-2);
   border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 14px;
 }
-h2 { color: var(--verde-escuro); }
+h2 { color: var(--text); }
 
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .form-grid .full { grid-column: 1 / -1; }
@@ -182,8 +210,8 @@ tbody tr:hover { background: rgba(229, 232, 197, .45); }
 .btn-primary { background: var(--primary); color: #FFFFFF; }
 .btn-primary:hover { background: var(--primary-hover); color: #FFFFFF; }
 .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
-.btn-secondary { background: #FFFFFF; color: var(--verde-escuro); border: 1px solid var(--border-2); }
-.btn-secondary:hover { background: var(--btn-secondary-hover); color: var(--verde-escuro); }
+.btn-secondary { background: #FFFFFF; color: var(--text); border: 1px solid var(--border-2); }
+.btn-secondary:hover { background: var(--btn-secondary-hover); color: var(--text); }
 .btn-danger { background: var(--danger); color: var(--marfim); }
 .btn-danger:hover { background: var(--danger-hover); color: var(--marfim); }
 /* Acento terroso — chamadas pontuais, como as pílulas da identidade */
@@ -193,9 +221,9 @@ tbody tr:hover { background: rgba(229, 232, 197, .45); }
 /* --- Badges --- */
 .badge {
   display: inline-block; padding: 2px 10px; border-radius: 0;
-  font-size: .75rem; font-weight: 600; background: var(--c-neutro); color: var(--verde-escuro);
+  font-size: .75rem; font-weight: 600; background: var(--c-neutro); color: var(--text);
 }
-.badge-admin { background: var(--amarelo); color: var(--verde-escuro); }
+.badge-admin { background: var(--amarelo); color: var(--text); }
 .badge-vet { background: var(--verde-oliva); color: var(--marfim); }
 
 /* --- Empty state --- */
@@ -229,13 +257,34 @@ tbody tr:hover { background: rgba(229, 232, 197, .45); }
 .clinica-opcao:hover { border-color: var(--verde-oliva); background: var(--verde-claro); }
 
 /* --- Toast / Confirm --- */
-#toast-region { position: fixed; bottom: 20px; right: 20px; z-index: 100; }
-#toast {
-  padding: 12px 18px; border-radius: 0; color: var(--marfim); font-size: .9rem;
-  box-shadow: 0 6px 20px rgba(40, 44, 20, .25); max-width: 420px;
+/* Avisos (components/_toast.html): cartão claro, faixa de cor por tipo, empilhados no topo. */
+#toast-region {
+  position: fixed; top: 16px; right: 16px; z-index: 300;
+  display: flex; flex-direction: column; gap: 10px; width: min(400px, calc(100vw - 32px));
 }
-#toast.ok { background: var(--verde-escuro); }
-#toast.erro { background: var(--perigo); }
+.toast {
+  position: relative; display: flex; align-items: flex-start; gap: 12px; overflow: hidden;
+  background: var(--surface); color: var(--text); border: 1px solid var(--border-2);
+  border-left: 5px solid var(--toast-cor); padding: 12px 12px 14px 14px;
+  box-shadow: 0 8px 24px rgba(40, 44, 20, .18); font-size: .9rem;
+}
+.toast-ok { --toast-cor: var(--primary); }
+.toast-info { --toast-cor: var(--verde-oliva-suave); }
+.toast-aviso { --toast-cor: var(--amarelo); }
+.toast-erro { --toast-cor: var(--perigo); }
+.toast-corpo { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.toast-titulo { font-family: var(--font-heading); font-size: .95rem; color: var(--text); }
+.toast-erro .toast-titulo { color: var(--perigo-hover); }
+.toast-aviso .toast-titulo { color: var(--terroso-escuro); }
+.toast-msg { color: var(--muted-2); line-height: 1.35; overflow-wrap: anywhere; }
+.toast-fechar {
+  background: none; border: 0; padding: 2px 4px; cursor: pointer; font: inherit; font-size: .8rem;
+  font-weight: 600; color: var(--muted); text-decoration: underline;
+}
+.toast-fechar:hover { color: var(--text); }
+.toast-tempo { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--toast-cor); opacity: .55; transition: width .1s linear; }
+.toast-entra, .toast-sai { transition: opacity .2s ease, transform .2s ease; }
+.toast-fora { opacity: 0; transform: translateX(16px); }
 
 .modal-backdrop {
   position: fixed; inset: 0; background: rgba(40, 44, 20, .45);
@@ -245,6 +294,76 @@ tbody tr:hover { background: rgba(229, 232, 197, .45); }
 .modal-card .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
 
 [x-cloak] { display: none !important; }
+
+/* Formulário de cadastro aberto pelo botão "Novo..." (padrão do sistema) */
+.form-novo { border: 1px solid var(--border-2); background: var(--surface); padding: 14px; margin-bottom: 16px; }
+
+.linha-clicavel { cursor: pointer; }
+.linha-clicavel:hover td { background: var(--c-info); }
+
+/* Estoque: busca de NCM e sugestão de CEST no cadastro do produto */
+.ncm-resultados, .ncm-cests { border: 1px solid var(--border-2); background: var(--surface); margin-top: 4px; max-height: 280px; overflow-y: auto; }
+.ncm-cests { padding: 8px 10px 4px; max-height: none; }
+.ncm-cests > span { display: block; font-size: .82rem; color: var(--muted); margin-bottom: 4px; }
+.ncm-opcao { display: block; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--border); padding: 7px 10px; font: inherit; font-size: .88rem; cursor: pointer; color: var(--text); }
+.ncm-opcao:hover { background: var(--c-info); }
+.ncm-opcao strong { font-variant-numeric: tabular-nums; margin-right: 6px; }
+.ncm-opcao span { color: var(--muted-2); }
+.ncm-descricao { font-size: .85rem; color: var(--muted-2); margin: 0 0 6px; }
+.ncm-descricao.aviso { color: var(--c-atencao-texto); }
+.ncm-vazio { font-size: .85rem; color: var(--muted); margin: 4px 0 0; }
+
+.planilha-passos { padding-left: 20px; }
+.planilha-passos li { margin-bottom: 14px; }
+
+/* Estoque: linha de avisos na aba Produtos e a aba Avisos */
+.sidebar-contador { display: inline-block; min-width: 20px; padding: 0 6px; margin-left: 6px; background: var(--perigo); color: #fff; font-size: .75rem; line-height: 1.5; text-align: center; vertical-align: middle; }
+.subnav-contador { display: inline-block; min-width: 20px; padding: 0 6px; margin-left: 4px; background: var(--perigo); color: #fff; font-size: .75rem; text-align: center; }
+.estoque-avisos-linha {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; padding: 10px 14px;
+  background: var(--c-aviso); border-left: 4px solid var(--amarelo); color: var(--text); text-decoration: none; font-size: .9rem;
+}
+.estoque-avisos-linha span { color: var(--muted-2); }
+.estoque-avisos-linha .estoque-avisos-ver { margin-left: auto; font-weight: 600; text-decoration: underline; color: var(--text); }
+.aviso-grupo { border: 1px solid var(--border-2); border-left: 4px solid var(--border-2); margin-bottom: 12px; background: var(--surface); }
+.aviso-grupo.aviso-alerta { border-left-color: var(--amarelo); }
+.aviso-grupo.aviso-info { border-left-color: var(--verde-oliva-suave); }
+.aviso-grupo summary { cursor: pointer; padding: 10px 14px; font-weight: 600; color: var(--text); }
+.aviso-grupo summary span { color: var(--muted); font-weight: 400; margin-left: 6px; }
+.aviso-grupo table { margin: 0; }
+.aviso-grupo td { padding: 6px 14px; }
+.aviso-situacao { text-align: right; color: var(--c-atencao-texto); white-space: nowrap; }
+.aviso-situacao.perigo { color: var(--perigo-hover); font-weight: 600; }
+.aviso-acoes { text-align: right; white-space: nowrap; width: 1%; }
+.aviso-acoes .btn { padding: 4px 10px; font-size: .82rem; margin-left: 4px; }
+.aviso-explica { margin: 0 14px 8px; font-size: .85rem; color: var(--muted); }
+
+/* Financeiro (menu Financeiro) */
+.caixa-periodo { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.caixa-periodo label { font-size: .8rem; }
+.caixa-totais { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.caixa-total { border: 1px solid var(--border-2); border-left: 5px solid var(--border-2); padding: 12px 14px; background: var(--surface); }
+.caixa-total span { display: block; color: var(--muted); font-size: .85rem; }
+.caixa-total strong { font-family: var(--font-heading); font-size: 1.5rem; color: var(--text); font-variant-numeric: tabular-nums; }
+.caixa-total.entrada { border-left-color: var(--primary); }
+.caixa-total.saida { border-left-color: var(--terroso); }
+.caixa-total.saldo { border-left-color: var(--verde-escuro); }
+.caixa-total.negativo { border-left-color: var(--perigo); }
+.caixa-total.negativo strong { color: var(--perigo-hover); }
+.caixa-colunas { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+
+/* Lembretes: barra de formatação e prévia no estilo do balão do WhatsApp */
+/* Editor Quill (static/vendor/quill) no visual reto do Vettro */
+.lembrete-editor .ql-toolbar.ql-snow, .lembrete-editor .ql-container.ql-snow { border-color: var(--border-2); border-radius: 0; }
+.lembrete-editor .ql-toolbar.ql-snow { background: var(--c-info); }
+.lembrete-editor .ql-container.ql-snow { background: var(--surface); font-family: var(--font-body); font-size: .95rem; }
+.lembrete-editor .ql-editor { min-height: 130px; color: var(--text); }
+.lembrete-editor .ql-editor.ql-blank::before { color: var(--muted); font-style: normal; }
+.lembrete-editor .ql-snow .ql-stroke { stroke: var(--verde-escuro); }
+.lembrete-editor .ql-snow .ql-fill { fill: var(--verde-escuro); }
+.lembrete-editor .ql-snow button:hover .ql-stroke, .lembrete-editor .ql-snow button.ql-active .ql-stroke { stroke: var(--primary); }
+.lembrete-editor .ql-snow button:hover .ql-fill, .lembrete-editor .ql-snow button.ql-active .ql-fill { fill: var(--primary); }
+.lembrete-editor.excedeu .ql-container.ql-snow { border-color: var(--perigo); }
 
 /* --- Responsivo / mobile --- */
 @media (max-width: 640px) {
@@ -284,7 +403,7 @@ tbody tr:hover { background: rgba(229, 232, 197, .45); }
 .ib-opcao.ativo { background: var(--verde-claro); }
 .ib-nome { font-weight: 600; }
 .ib-meta { font-size: .8rem; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.ib-chip { padding: 1px 8px; border-radius: 0; background: var(--c-ok); color: var(--verde-escuro); font-size: .75rem; }
+.ib-chip { padding: 1px 8px; border-radius: 0; background: var(--c-ok); color: var(--text); font-size: .75rem; }
 .ib-chip.baixo { background: var(--perigo-suave); color: var(--perigo); }
 .ib-vazio { margin: 0; padding: 10px 12px; color: var(--muted); }
 .ib-lista { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
@@ -294,7 +413,7 @@ tbody tr:hover { background: rgba(229, 232, 197, .45); }
 }
 .ib-item .ib-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .ib-qtd { display: inline-flex; align-items: center; border: 1.5px solid var(--border-2); border-radius: 0; overflow: hidden; }
-.ib-qtd button { width: 30px; height: 32px; border: 0; background: var(--btn-secondary-bg); color: var(--verde-escuro); font-size: 1rem; cursor: pointer; }
+.ib-qtd button { width: 30px; height: 32px; border: 0; background: var(--btn-secondary-bg); color: var(--text); font-size: 1rem; cursor: pointer; }
 .ib-qtd button:hover { background: var(--btn-secondary-hover); }
 .ib-qtd input { width: 64px; height: 32px; border: 0; border-radius: 0; text-align: center; padding: 0 4px; -moz-appearance: textfield; }
 .ib-qtd input::-webkit-outer-spin-button, .ib-qtd input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -320,7 +439,7 @@ tbody tr:hover { background: rgba(229, 232, 197, .45); }
 .tl-link { display: block; padding: 8px 10px; margin-left: -10px; color: inherit; text-decoration: none; }
 a.tl-link:hover { background: var(--bg); color: inherit; }
 a.tl-link:hover .tl-ver { text-decoration: underline; }
-.tl-ver { margin-left: 8px; color: var(--verde-escuro); font-weight: 600; font-size: .85rem; }
+.tl-ver { margin-left: 8px; color: var(--text); font-weight: 600; font-size: .85rem; }
 
 /* Aba Receitas: os 3 tipos como botões grandes, sempre visíveis. */
 .receita-opcao {
@@ -350,7 +469,7 @@ a.tl-link:hover .tl-ver { text-decoration: underline; }
 .ag-topo { padding: 14px 18px; }
 .ag-linha-topo { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .ag-visoes { display: inline-flex; border: 1px solid var(--border-2); }
-.ag-visoes a { padding: 8px 14px; text-decoration: none; color: var(--verde-escuro); font-weight: 600; font-size: .88rem; }
+.ag-visoes a { padding: 8px 14px; text-decoration: none; color: var(--text); font-weight: 600; font-size: .88rem; }
 .ag-visoes a + a { border-left: 1px solid var(--border-2); }
 .ag-visoes a.ativa { background: var(--primary); color: var(--marfim); }
 .ag-nav { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 260px; }
@@ -395,7 +514,7 @@ a.tl-link:hover .tl-ver { text-decoration: underline; }
 .ag-agora { position: absolute; left: 0; right: 0; height: 2px; background: var(--perigo); z-index: 2; pointer-events: none; }
 .ag-cartao { position: absolute; z-index: 2; display: flex; flex-direction: column; gap: 1px; overflow: hidden;
   padding: 4px 6px; text-align: left; font: inherit; cursor: pointer;
-  background: var(--c-ok); color: var(--verde-escuro); border: 1px solid var(--verde-oliva); border-left-width: 4px; }
+  background: var(--c-ok); color: var(--text); border: 1px solid var(--verde-oliva); border-left-width: 4px; }
 .ag-cartao:hover { filter: brightness(.97); box-shadow: 0 2px 8px rgba(84, 89, 54, .2); }
 .ag-cartao > span { flex-shrink: 0; }
 .ag-cartao-hora { font-weight: 600; font-size: .75rem; opacity: .85; margin-right: 2px; }
@@ -423,14 +542,14 @@ a.tl-link:hover .tl-ver { text-decoration: underline; }
 .st-em_atendimento { --st-cor: var(--st-em_atendimento); } .st-realizado { --st-cor: var(--st-realizado); }
 .st-cancelado { --st-cor: var(--st-cancelado); }
 .ag-cartao[class*="st-"], .ag-chip[class*="st-"], .ag-mes-item[class*="st-"] {
-  background: #FFFFFF; color: var(--verde-escuro); border-color: var(--st-cor); border-left: 5px solid var(--st-cor); }
+  background: #FFFFFF; color: var(--text); border-color: var(--st-cor); border-left: 5px solid var(--st-cor); }
 .ag-cartao[class*="st-"] .ag-cartao-status { color: var(--st-cor); opacity: 1; font-weight: 700; }
 .ag-cartao.st-cancelado .ag-cartao-nome, .ag-chip.st-cancelado, .ag-mes-item.st-cancelado { text-decoration: line-through; }
 .ag-cartao.st-realizado, .ag-cartao.st-cancelado { opacity: .8; }
 .ag-status[class*="st-"] { background: var(--st-cor); color: #FFFFFF; border-color: transparent; }
 .ag-sem-horario { padding: 12px 16px; }
 .ag-chip { display: inline-block; margin: 0 6px 6px 0; padding: 5px 10px; font: inherit; font-size: .85rem; cursor: pointer;
-  border: 1px solid var(--verde-oliva); border-left-width: 4px; background: var(--c-ok); color: var(--verde-escuro); }
+  border: 1px solid var(--verde-oliva); border-left-width: 4px; background: var(--c-ok); color: var(--text); }
 .ag-status, .ag-etiqueta { display: inline-block; padding: 2px 8px; font-size: .72rem; font-weight: 700; border: 1px solid var(--border-2); }
 .ag-etiqueta[class*="et-"] { color: #FFFFFF; border-color: transparent; }
 
@@ -459,16 +578,16 @@ a.tl-link:hover .tl-ver { text-decoration: underline; }
 .ag-fila-pos { min-width: 48px; font-weight: 700; font-family: var(--font-heading); }
 .ag-fila-info { flex: 1; min-width: 200px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .ag-fila-info small { flex-basis: 100%; color: var(--muted); }
-.ag-fila-tempo { font-weight: 700; font-size: .88rem; color: var(--verde-escuro); }
+.ag-fila-tempo { font-weight: 700; font-size: .88rem; color: var(--text); }
 .ag-fila-tempo.alto { color: var(--perigo); }
-.ag-link-nome { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: var(--verde-escuro); cursor: pointer; text-align: left; }
+.ag-link-nome { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: var(--text); cursor: pointer; text-align: left; }
 .ag-link-nome:hover { text-decoration: underline; }
 
 /* Lateral: horários livres e comunicados */
 .ag-livres-vet { margin-top: 10px; }
 .ag-livres-vet strong { font-size: .88rem; }
 .ag-livres-horas { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
-.ag-livres-horas a { padding: 3px 8px; font-size: .8rem; border: 1px solid var(--border-2); text-decoration: none; color: var(--verde-escuro); background: var(--surface); }
+.ag-livres-horas a { padding: 3px 8px; font-size: .8rem; border: 1px solid var(--border-2); text-decoration: none; color: var(--text); background: var(--surface); }
 .ag-livres-horas a:hover { background: var(--primary); color: var(--marfim); border-color: var(--primary); }
 .ag-link-acao { background: none; border: 0; padding: 0; font: inherit; font-size: .78rem; color: var(--perigo); cursor: pointer; }
 
@@ -491,7 +610,7 @@ a.tl-link:hover .tl-ver { text-decoration: underline; }
 
 /* ===================== Estoque (estilo SimplesVet) ===================== */
 .subnav { display: flex; flex-wrap: wrap; border: 1px solid var(--border-2); background: var(--surface); margin-bottom: 18px; }
-.subnav a { padding: 10px 16px; text-decoration: none; color: var(--verde-escuro); font-weight: 600; font-size: .88rem; border-right: 1px solid var(--border); }
+.subnav a { padding: 10px 16px; text-decoration: none; color: var(--text); font-weight: 600; font-size: .88rem; border-right: 1px solid var(--border); }
 .subnav a:hover { background: var(--c-info); }
 .subnav a.ativa { background: var(--primary); color: var(--marfim); }
 .resumo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
@@ -522,11 +641,11 @@ a.tl-link:hover .tl-ver { text-decoration: underline; }
 .rec-forma { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
 .rec-forma select, .rec-forma input { width: auto; min-width: 140px; }
 .rec-aviso { color: var(--perigo); font-weight: 600; }
-.rec-ok { color: var(--verde-escuro); font-weight: 600; }
+.rec-ok { color: var(--text); font-weight: 600; }
 
 /* Ficha: peso */
 .peso-cabecalho { margin: 2px 0 0; color: var(--muted); }
-.peso-cabecalho strong { color: var(--verde-escuro); font-size: 1.05rem; }
+.peso-cabecalho strong { color: var(--text); font-size: 1.05rem; }
 .peso-grafico { border: 1px solid var(--border); background: var(--surface); padding: 12px; margin-bottom: 8px; }
 .peso-grafico svg { width: 100%; height: auto; display: block; }
 .peso-eixo { font-size: 11px; fill: var(--muted); }
@@ -544,7 +663,7 @@ a.tl-link:hover .tl-ver { text-decoration: underline; }
 /* Agenda: data/período logo acima da grade (perto dos títulos dos consultórios) */
 .ag-periodo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 6px; }
 .ag-seta { padding: 4px 12px; font-size: 1.1rem; line-height: 1; }
-.ag-periodo strong { font-family: var(--font-heading); font-size: 1.3rem; color: var(--verde-escuro); }
+.ag-periodo strong { font-family: var(--font-heading); font-size: 1.3rem; color: var(--text); }
 .ag-periodo span { color: var(--muted); font-size: .85rem; }
 
 .ag-painel-filtros { }
@@ -553,7 +672,7 @@ a.tl-link:hover .tl-ver { text-decoration: underline; }
 /* Campo travado (ex.: dados vindos do cadastro do paciente) */
 input[readonly] { background: var(--branco-gelo); color: var(--muted); }
 
-.ag-duracao { margin: 0; padding: 10px 0; font-weight: 600; color: var(--verde-escuro); }
+.ag-duracao { margin: 0; padding: 10px 0; font-weight: 600; color: var(--text); }
 
 .ag-periodo .ag-acoes { margin-left: auto; }
 .ag-periodo { margin-bottom: 8px; }
@@ -568,7 +687,7 @@ input[readonly] { background: var(--branco-gelo); color: var(--muted); }
 .ag-cor { display: inline-block; width: 10px; height: 10px; background: var(--tipo-cor); flex-shrink: 0; }
 
 .ag-legenda i.ag-legenda-st { background: var(--st-cor); }
-.ag-legenda-status { margin: 0 0 10px; font-size: .82rem; color: var(--verde-escuro); }
+.ag-legenda-status { margin: 0 0 10px; font-size: .82rem; color: var(--text); }
 .ag-legenda-status i { width: 12px; height: 12px; }
 
 /* "Em atendimento": pulsando — sinal de que está acontecendo agora */
@@ -593,7 +712,7 @@ input[readonly] { background: var(--branco-gelo); color: var(--muted); }
 .ag-cartao-info .ag-cor { width: 8px; height: 8px; vertical-align: middle; background: var(--tipo-cor, var(--border-2)); }
 
 /* Horários com mais destaque (grade e cartões) */
-.ag-hora { font-size: .95rem !important; font-weight: 700; color: var(--verde-escuro) !important; padding-top: 4px !important; }
+.ag-hora { font-size: .95rem !important; font-weight: 700; color: var(--text) !important; padding-top: 4px !important; }
 .ag-cartao-hora { font-size: .92rem !important; font-weight: 800 !important; opacity: 1 !important; margin-right: 4px; }
 .ag-cartao-info { font-weight: 500; }
 
@@ -658,7 +777,7 @@ input[readonly] { background: var(--branco-gelo); color: var(--muted); }
 .ag-cancelado-item { display: block; width: 100%; text-align: left; font: inherit; font-size: .84rem; padding: 8px 12px; cursor: pointer;
   background: #FFFFFF; border: 0; border-bottom: 1px solid var(--border); color: var(--muted); }
 .ag-cancelado-item .riscado { text-decoration: line-through; }
-.ag-cancelado-item strong { color: var(--verde-escuro); }
+.ag-cancelado-item strong { color: var(--text); }
 .ag-cancelado-item small { display: block; color: var(--st-cancelado); }
 .ag-cancelado-item:hover { background: var(--branco-gelo); }
 
@@ -674,13 +793,13 @@ input[readonly] { background: var(--branco-gelo); color: var(--muted); }
 .ag-locais { position: relative; }
 .ag-locais-lista { position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 240px; background: #FFFFFF;
   border: 1px solid var(--border); box-shadow: 0 6px 18px rgba(0,0,0,.1); padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; }
-.ag-locais-lista label { display: flex; align-items: center; gap: 8px; margin: 0; font-size: .9rem; color: var(--verde-escuro); }
+.ag-locais-lista label { display: flex; align-items: center; gap: 8px; margin: 0; font-size: .9rem; color: var(--text); }
 .ag-locais-titulo { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .ag-locais-botoes { display: flex; gap: 8px; margin-top: 6px; }
 
 /* Cabeçalho da grade (nomes dos consultórios / dias) com cor suave */
 .ag-cabecalho, .ag-cabecalho .ag-horas-cab, .ag-cabecalho .ag-col-cab:not(.hoje) { background: color-mix(in srgb, var(--verde-oliva) 24%, #FFFFFF); }
-.ag-cabecalho .ag-col-cab { color: var(--verde-escuro); }
+.ag-cabecalho .ag-col-cab { color: var(--text); }
 
 /* Cancelado no próprio horário: quadradinho vermelho no canto (não ocupa o horário) */
 .ag-cancelado-mini { position: absolute; z-index: 4; padding: 1px 6px; font: inherit; font-size: .7rem; cursor: pointer; white-space: nowrap;

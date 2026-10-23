@@ -117,7 +117,7 @@ def estornar_consumo(*, origem_tipo: str, origem_id, usuario) -> int:
 
 
 def entrada_manual(*, insumo: Insumo, quantidade: int, valor_unitario: Decimal,
-                    usuario, observacao: str = "", lote: str = "", data_validade=None) -> MovimentoEstoque:
+                    usuario, observacao: str = "", lote: str = "", data_validade=None, compra: bool = True) -> MovimentoEstoque:
     """SD1 — entrada sem nota fiscal (cadastro novo ou reposição de item
     existente), conforme pedido explicitamente pelo usuário."""
     campos_alterados = []
@@ -130,11 +130,15 @@ def entrada_manual(*, insumo: Insumo, quantidade: int, valor_unitario: Decimal,
     if campos_alterados:
         insumo.save(update_fields=campos_alterados)
 
-    return registrar_movimento(
+    movimento = registrar_movimento(
         insumo=insumo, tipo=MovimentoEstoque.SD1_ENTRADA, subtipo="manual_sem_nota",
         quantidade=quantidade, valor_unitario=valor_unitario,
         observacao=observacao or "Entrada manual sem nota fiscal", usuario=usuario,
     )
+    if not compra:
+        movimento.fora_do_financeiro = True
+        movimento.save(update_fields=["fora_do_financeiro"])
+    return movimento
 
 
 def ajustar_estoque(*, insumo: Insumo, quantidade: int, positivo: bool, motivo: str, usuario) -> MovimentoEstoque:
@@ -238,6 +242,18 @@ def importar_nfe(conteudo_xml: bytes, usuario) -> dict:
 UNIDADES_COMERCIAIS_AVULSAS = {"UN", "UND", "UNID", "UNIDADE", "PC", "PCA", "PECA", ""}
 
 
+def resumo_avisos(alertas: dict | None = None) -> dict:
+    """Contagens dos avisos (aba Avisos do Estoque e a linha da aba Produtos)."""
+    alertas = alertas or alertas_estoque()
+    resumo = {
+        "estoque": alertas["zerados"].count() + alertas["baixos"].count(),
+        "validade": alertas["vencidos"].count() + alertas["vencendo"].count(),
+        "fiscal": alertas["sem_ncm"].count() + alertas["st_sem_cest"].count(),
+    }
+    resumo["total"] = sum(resumo.values())
+    return resumo
+
+
 def alertas_estoque() -> dict:
     """Porte de dashboard.py:/estoque-alerta — limiar de estoque baixo (<3) e
     janela de validade (60 dias) vêm de settings (constantes do plano, §9)."""
@@ -246,11 +262,13 @@ def alertas_estoque() -> dict:
     from django.conf import settings
 
     hoje = date.today()
+    # NCM/CEST só importam pra quem vai na nota de venda — produto só de uso interno não sai em NFC-e.
+    vendidos = Insumo.objects.exclude(finalidade="uso_interno")
     return {
         # Sem NCM não dá pra emitir NFC-e do produto na venda de balcão.
-        "sem_ncm": Insumo.objects.filter(ncm=""),
+        "sem_ncm": vendidos.filter(ncm=""),
         # Produto com ICMS-ST precisa de CEST na nota.
-        "st_sem_cest": Insumo.objects.filter(tem_st=True, cest=""),
+        "st_sem_cest": vendidos.filter(tem_st=True, cest=""),
         "zerados": Insumo.objects.filter(qtd__lte=0),
         # Estoque mínimo do produto; sem ele, a regra geral (< 3 unidades de uso).
         "baixos": Insumo.objects.filter(qtd__gt=0).filter(

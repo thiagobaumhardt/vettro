@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load formatos %}
 {% block title %}Orçamentos — Vettro{% endblock %}
 {% block content %}
 <div class="card">
@@ -20,7 +21,7 @@
           <td>{{ o.criado_em|date:"d/m/Y" }}</td>
           <td>{{ o.tutor_nome }}</td>
           <td>{{ o.pac_nome|default:"—" }}</td>
-          <td style="text-align:right; white-space:nowrap;">R$ {{ o.total }}</td>
+          <td style="text-align:right; white-space:nowrap;">{{ o.total|moeda }}</td>
           <td>{% if o.vencido %}<span class="badge" style="background:var(--c-alerta);">Vencido {{ o.valido_ate|date:"d/m" }}</span>{% else %}{{ o.valido_ate|date:"d/m/Y" }}{% endif %}</td>
           <td style="white-space:nowrap;">
             <a href="{% url 'orcamentos:pdf' o.pk %}" target="_blank" class="btn-secondary btn">Imprimir</a>

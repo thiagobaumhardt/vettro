@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load formatos %}
 {% block title %}Contabilidade — Vettro{% endblock %}
 {% block content %}
 <div class="card">
@@ -16,14 +17,14 @@
 <div class="card">
   <div class="section-title">Resumo de {{ mes_rotulo }}</div>
   {% if resumo.simulacao %}
-  <p style="background:var(--c-alerta); padding:8px 10px; font-size:.88rem;">Há notas de simulação neste mês (sem valor fiscal). O emissor real ainda não está ligado.</p>
+  <p style="background:var(--c-alerta); padding:8px 10px; font-size:.88rem;">Há notas de simulação ou de homologação (teste) neste mês, sem valor fiscal.</p>
   {% endif %}
   <div class="table-wrap">
     <table>
       <thead><tr><th>Receita</th><th>Documento</th><th>Notas</th><th>Canceladas</th><th>Total</th></tr></thead>
       <tbody>
-        <tr><td>Serviços</td><td>NFS-e</td><td>{{ resumo.servicos.qtd }}</td><td>{{ resumo.servicos.canceladas }}</td><td>R$ {{ resumo.servicos.total|floatformat:2 }}</td></tr>
-        <tr><td>Venda de produtos</td><td>NFC-e</td><td>{{ resumo.vendas.qtd }}</td><td>{{ resumo.vendas.canceladas }}</td><td>R$ {{ resumo.vendas.total|floatformat:2 }}</td></tr>
+        <tr><td>Serviços</td><td>NFS-e</td><td>{{ resumo.servicos.qtd }}</td><td>{{ resumo.servicos.canceladas }}</td><td>{{ resumo.servicos.total|moeda }}</td></tr>
+        <tr><td>Venda de produtos</td><td>NFC-e</td><td>{{ resumo.vendas.qtd }}</td><td>{{ resumo.vendas.canceladas }}</td><td>{{ resumo.vendas.total|moeda }}</td></tr>
       </tbody>
     </table>
   </div>
@@ -49,7 +50,7 @@
           <td>{{ n.numero }}</td>
           <td style="white-space:nowrap;">{{ n.emitida_em|date:"d/m/Y H:i" }}</td>
           <td>{{ n.get_status_display }}{% if n.simulacao %} (simulação){% endif %}</td>
-          <td>R$ {{ n.valor_total|floatformat:2 }}</td>
+          <td>{{ n.valor_total|moeda }}</td>
           <td><a href="{% url 'notas:pdf' n.pk %}" target="_blank" rel="noopener">PDF</a></td>
         </tr>
         {% endfor %}

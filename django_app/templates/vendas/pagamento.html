@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% load formatos %}
 {% block title %}Pagamento da venda {{ venda.numero }} — Vettro{% endblock %}
 {% block content %}
 <div class="card" style="max-width:720px;">
   <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
-    <h2 style="margin:0;">Venda #{{ venda.numero }} — R$ {{ venda.total }}</h2>
+    <h2 style="margin:0;">Venda {{ venda.numero }} — {{ venda.total|moeda }}</h2>
     <a href="{% url 'vendas:lista' %}" class="btn-secondary btn">← Vendas</a>
   </div>
   <p style="margin:0 0 14px; color:var(--muted);">
@@ -15,7 +16,7 @@
 
   <form method="post" action="{% url 'vendas:cancelar' venda.pk %}" style="margin-top:18px;">
     {% csrf_token %}
-    <button type="submit" class="btn-danger btn" data-confirm="Desistir da venda #{{ venda.numero }}? Os produtos voltam ao estoque e a cobrança sai da maquininha.">Desistir da venda</button>
+    <button type="submit" class="btn-danger btn" data-confirm="Desistir da venda {{ venda.numero }}? Os produtos voltam ao estoque e a cobrança sai da maquininha.">Desistir da venda</button>
   </form>
 </div>
 {% endblock %}

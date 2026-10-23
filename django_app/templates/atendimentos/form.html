@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load formatos %}
 {% block title %}Novo Atendimento — Vettro{% endblock %}
 {% block content %}
 
@@ -125,7 +126,7 @@
           <div style="padding:4px 0;">
             <label style="display:flex; justify-content:space-between;">
               <span><input type="checkbox" name="servico_ids" value="{{ s.id }}" x-model="servicosSel" x-bind:disabled="tipo === 'vacinacao'"> {{ s.nome }}</span>
-              <span>R$ {{ s.valor }}{% if s.unidade_cobranca %}/{{ s.unidade_cobranca }}{% endif %}</span>
+              <span>{{ s.valor|moeda }}{% if s.unidade_cobranca %}/{{ s.unidade_cobranca }}{% endif %}</span>
             </label>
             {% if s.unidade_cobranca %}<template x-if="servicosSel.includes('{{ s.id }}')">
               <span style="display:inline-flex; align-items:center; gap:6px; margin-top:4px;"><input type="number" name="qtd_servico_{{ s.id }}" min="0.001" step="any" value="1" style="width:90px;" x-on:input="qtyTick++"><small style="color:var(--muted);">{{ s.unidade_cobranca }}(s)</small></span>
@@ -144,7 +145,7 @@
 
     <div class="total-box" style="border:1.5px solid var(--primary); padding:12px 16px; margin-top:14px; display:flex; justify-content:space-between; align-items:center;">
       <span>Total estimado</span>
-      <strong x-text="'R$ ' + total().toFixed(2)"></strong>
+      <strong x-text="brl(total())"></strong>
     </div>
 
     <div style="margin-top:14px;"><button type="submit" class="btn-primary btn">Finalizar atendimento</button></div>

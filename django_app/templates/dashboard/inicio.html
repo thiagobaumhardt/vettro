@@ -1,11 +1,12 @@
 {% extends "base.html" %}
+{% load formatos %}
 {% block title %}Início — Vettro{% endblock %}
 {% block content %}
 {% if fila is not None %}
 <div class="card">
   <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
     <h2 style="margin:0;">Aguardando pagamento</h2>
-    <span style="color:var(--muted);">{{ fila|length }} tutor{{ fila|length|pluralize:"es" }} · R$ {{ total_fila|floatformat:2 }}</span>
+    <span style="color:var(--muted);">{{ fila|length }} tutor{{ fila|length|pluralize:"es" }} · {{ total_fila|moeda }}</span>
   </div>
   {% if fila %}
   <div class="table-wrap">
@@ -18,7 +19,7 @@
           <td>{{ g.pacientes|join:", " }}</td>
           <td>{% for c in g.cobrancas %}{{ c.obs|default:"Cobrança manual"|truncatechars:40 }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
           <td style="white-space:nowrap;">{{ g.desde|date:"d/m H:i" }}</td>
-          <td style="text-align:right; white-space:nowrap;"><strong>R$ {{ g.total }}</strong></td>
+          <td style="text-align:right; white-space:nowrap;"><strong>{{ g.total|moeda }}</strong></td>
           <td style="text-align:right;">
             {% if g.tutor %}<a href="{% url 'recepcao:receber_tutor' g.tutor.pk %}" class="btn-primary btn">Receber pagamento</a>
             {% else %}<a href="{% url 'recepcao:receber_cobranca' g.cobranca_unica.pk %}" class="btn-primary btn">Receber pagamento</a>{% endif %}
@@ -33,7 +34,7 @@
 
 {% if recebidos_hoje %}
 <div class="card">
-  <div class="section-title">Recebidos hoje — R$ {{ total_hoje|floatformat:2 }}</div>
+  <div class="section-title">Recebidos hoje — {{ total_hoje|moeda }}</div>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Hora</th><th>Tutor</th><th>Formas</th><th style="text-align:right;">Valor</th><th></th></tr></thead>
@@ -41,7 +42,7 @@
         {% for r in recebidos_hoje %}
         <tr>
           <td>{{ r.criado_em|date:"H:i" }}</td><td>{{ r.tutor_nome }}</td><td>{{ r.formas_texto }}</td>
-          <td style="text-align:right;">R$ {{ r.total }}</td>
+          <td style="text-align:right;">{{ r.total|moeda }}</td>
           <td style="text-align:right;"><a href="{% url 'recepcao:recibo' r.pk %}" class="btn-secondary btn">Ver</a></td>
         </tr>
         {% endfor %}

@@ -1,9 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Venda #{{ venda.numero }} — Vettro{% endblock %}
+{% load formatos %}
+{% block title %}Venda {{ venda.numero }} — Vettro{% endblock %}
 {% block content %}
 <div class="card">
   <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
-    <h2 style="margin:0;">Venda #{{ venda.numero }} — R$ {{ venda.total }}
+    <h2 style="margin:0;">Venda {{ venda.numero }} — {{ venda.total|moeda }}
       {% if venda.cancelada_em %}<span class="badge" style="background:var(--c-alerta);">Cancelada</span>{% endif %}
     </h2>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -18,7 +19,7 @@
     {% if venda.cliente_cpf %} · CPF {{ venda.cliente_cpf }}{% endif %}
   </p>
   <p style="margin:0 0 12px;">
-    {% if venda.lucro is not None %}Valor de compra dos itens: R$ {{ venda.custo_total }} · <strong style="color:{% if venda.lucro < 0 %}var(--perigo){% else %}var(--verde-escuro){% endif %};">Lucro: R$ {{ venda.lucro }}</strong>
+    {% if venda.lucro is not None %}Valor de compra dos itens: {{ venda.custo_total|moeda }} · <strong style="color:{% if venda.lucro < 0 %}var(--perigo){% else %}var(--verde-escuro){% endif %};">Lucro: {{ venda.lucro|moeda }}</strong>
     {% else %}<span style="color:var(--muted);">Lucro indisponível: algum produto não tinha valor de compra cadastrado na hora da venda.</span>{% endif %}
   </p>
   {% include "pagamentos/_nota_status.html" %}

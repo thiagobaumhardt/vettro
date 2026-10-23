@@ -19,21 +19,16 @@ class TenantFileSystemStorage(FileSystemStorage):
     def path(self, name):
         return super().path(self._caminho_tenant(name))
 
-    def exists(self, name):
-        return super().exists(self._caminho_tenant(name))
+    # `path` põe o prefixo, e o FileSystemStorage usa self.path() pra gravar,
+    # abrir, checar, medir e apagar — por isso exists/delete/size não são
+    # sobrescritos (prefixavam duas vezes: media/<schema>/<schema>/...).
 
     def _save(self, name, content):
-        nome_completo = self._caminho_tenant(name)
-        salvo = super()._save(nome_completo, content)
-        schema = getattr(connection, "schema_name", "public")
-        prefixo = schema + os.sep
+        # O super devolve o caminho relativo ao MEDIA_ROOT, já com o schema e
+        # sempre com "/" (inclusive no Windows) — o campo guarda sem o schema.
+        salvo = super()._save(name, content)
+        prefixo = getattr(connection, "schema_name", "public") + "/"
         return salvo[len(prefixo):] if salvo.startswith(prefixo) else salvo
 
     def url(self, name):
         return super().url(self._caminho_tenant(name))
-
-    def delete(self, name):
-        return super().delete(self._caminho_tenant(name))
-
-    def size(self, name):
-        return super().size(self._caminho_tenant(name))

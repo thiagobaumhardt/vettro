@@ -9,6 +9,13 @@ document.addEventListener("alpine:init", () => {
   Alpine.data("buscaInsumos", (catalogo) => ({
     catalogo, busca: "", destaque: 0, qtds: {},
 
+    init() {
+      for (const p of JSON.parse(this.$root.dataset.preselecionar || "[]")) {
+        if (!this.insumosSel.includes(p.id)) { this.qtds[p.id] = p.qtd; this.insumosSel.push(p.id); }
+      }
+      this.qtyTick++;
+    },
+
     resultados() {
       const bruto = this.busca.trim();
       const termo = normalizar(bruto);

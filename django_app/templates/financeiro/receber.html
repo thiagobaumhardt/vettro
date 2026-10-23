@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load formatos %}
 {% block title %}Receber pagamento — Vettro{% endblock %}
 {% block content %}
 <form method="post" x-data="receberPagamento()" @submit="if (!podeConfirmar()) $event.preventDefault()">
@@ -27,7 +28,7 @@
               {% for item in c.servicos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }}</span>{% endfor %}
               {% for item in c.insumos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }} ×{{ item.qtd|floatformat:"-3" }}</span>{% endfor %}
             </td>
-            <td style="text-align:right; white-space:nowrap;">R$ {{ c.total }}</td>
+            <td style="text-align:right; white-space:nowrap;">{{ c.total|moeda }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -100,7 +101,7 @@
     return {
       selecionadas: Object.keys(totais), descontoTipo: "valor", desconto: "",
       formas: [{ forma: "pix", valor: "", parcelas: 1 }], cpf: "{{ cpf_inicial|escapejs }}",
-      dinheiro(v) { return "R$ " + v.toFixed(2).replace(".", ","); },
+      dinheiro(v) { return brl(v); },
       subtotal() { return this.selecionadas.reduce((s, id) => s + (totais[id] || 0), 0); },
       valorDesconto() {
         const d = num(this.desconto), sub = this.subtotal();

@@ -1,6 +1,11 @@
+import os
 import uuid
 
+from django.core.validators import FileExtensionValidator
 from django.db import models
+
+from apps.core.storage import TenantFileSystemStorage
+from apps.core.validators import TamanhoArquivoValidator
 
 
 # Tipos de atendimento com cor própria (mesmas do hub de novo atendimento e da agenda:
@@ -196,3 +201,55 @@ class PagamentoRecebimento(models.Model):
     def descricao(self) -> str:
         parcelas = f" em {self.parcelas}x" if self.forma == "credito" and self.parcelas > 1 else ""
         return f"{self.get_forma_display()}{parcelas} R$ {self.valor}"
+
+
+def _caminho_comprovante(instancia, nome):
+    # Nome aleatório: comprovante só abre pela view protegida (caixa:comprovante).
+    return f"financeiro/comprovantes/{uuid.uuid4().hex}{os.path.splitext(nome)[1].lower()}"
+
+
+class Despesa(models.Model):
+    """Saída de dinheiro da clínica, lançada à mão em Financeiro → Saídas
+    (aluguel, fornecedor, DAS...). As entradas não têm modelo próprio: vêm dos
+    recebimentos, vendas e baixas de cobrança (apps.financeiro.caixa)."""
+
+    CATEGORIA_CHOICES = [
+        # Reposição de estoque já entra sozinha (caixa.reposicoes) — aqui só o que não passa pelo estoque.
+        ("compras", "Compras fora do estoque"),
+        ("aluguel", "Aluguel e condomínio"),
+        ("pessoal", "Salários e pró-labore"),
+        ("impostos", "Impostos e taxas"),
+        ("contas", "Água, luz, telefone e internet"),
+        ("servicos", "Serviços de terceiros"),
+        ("manutencao", "Manutenção e equipamentos"),
+        ("marketing", "Marketing"),
+        ("tarifas", "Tarifas bancárias e maquininha"),
+        ("outros", "Outros"),
+    ]
+    FORMA_CHOICES = [
+        ("pix", "Pix"), ("boleto", "Boleto"), ("transferencia", "Transferência"), ("dinheiro", "Dinheiro"),
+        ("debito", "Cartão de débito"), ("credito", "Cartão de crédito"), ("debito_automatico", "Débito automático"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    data = models.DateField("Data do pagamento")
+    descricao = models.CharField("Descrição", max_length=200)
+    categoria = models.CharField(max_length=20, choices=CATEGORIA_CHOICES)
+    valor = models.DecimalField(max_digits=10, decimal_places=2)
+    forma = models.CharField("Forma de pagamento", max_length=20, choices=FORMA_CHOICES)
+    observacao = models.TextField("Observação", blank=True)
+    comprovante = models.FileField(
+        upload_to=_caminho_comprovante, storage=TenantFileSystemStorage(), null=True, blank=True,
+        validators=[TamanhoArquivoValidator(10 * 1024 * 1024, "Comprovante"),
+                    FileExtensionValidator(["pdf", "png", "jpg", "jpeg"])],
+    )
+    comprovante_nome = models.CharField(max_length=200, blank=True)
+    usuario_nome = models.CharField(max_length=150, blank=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-data", "-criado_em"]
+        verbose_name = "Despesa"
+
+    def __str__(self):
+        return f"{self.descricao} · R$ {self.valor}"

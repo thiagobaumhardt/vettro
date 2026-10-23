@@ -1,0 +1,5 @@
+{# Nome do produto no aviso: leva à ação que resolve (acao: repor | baixa | cadastro). #}
+{% if acao == "repor" %}<a href="{% url 'estoque:entrada_manual' %}?insumo={{ i.pk }}&amp;voltar=avisos">{{ i.nome }}</a>
+{% elif acao == "baixa" and i.qtd > 0 %}<a href="{% url 'estoque:saida_nova' %}?insumo={{ i.pk }}&amp;tipo=perda_validade&amp;voltar=avisos">{{ i.nome }}</a>
+{% elif papel_ativo == "admin" %}<a href="{% url 'estoque:editar' i.pk %}">{{ i.nome }}</a>
+{% else %}{{ i.nome }}{% endif %}

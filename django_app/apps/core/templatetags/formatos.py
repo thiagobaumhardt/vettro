@@ -18,3 +18,16 @@ def texto_duracao(minutos) -> str:
 @register.filter
 def duracao(minutos) -> str:
     return texto_duracao(minutos)
+
+
+@register.filter
+def moeda(valor) -> str:
+    """1234.5 -> "R$ 1.234,50"."""
+    from decimal import Decimal, InvalidOperation
+
+    try:
+        valor = Decimal(str(valor or 0)).quantize(Decimal("0.01"))
+    except InvalidOperation:
+        return ""
+    texto = f"{abs(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    return f"{'- ' if valor < 0 else ''}R$ {texto}"

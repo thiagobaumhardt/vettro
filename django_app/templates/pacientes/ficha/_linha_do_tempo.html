@@ -1,4 +1,4 @@
-{# Linha do tempo do paciente — usada na aba Ficha (recentes) e na aba Histórico (completa, com filtro). #}
+{% load formatos %}{# Linha do tempo do paciente — usada na aba Ficha (recentes) e na aba Histórico (completa, com filtro). #}
 {% if linha_do_tempo %}
 <div style="border-left:2px solid var(--border); margin-left:8px; padding-left:18px;">
   {% for e in linha_do_tempo %}
@@ -13,7 +13,7 @@
         {% if e.plantao %}<span class="badge" style="background:var(--c-aviso);">Plantão</span>{% endif %}
       </span>
       <span>
-        {% if e.total is not None %}R$ {{ e.total }}{% endif %}
+        {% if e.total is not None %}{{ e.total|moeda }}{% endif %}
         {% if e.url %}<span class="tl-ver">ver →</span>{% endif %}
       </span>
     </div>

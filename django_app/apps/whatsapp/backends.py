@@ -26,16 +26,24 @@ class WhatsAppBackendBase:
     # True = só envia com a clínica conectada (ConexaoWhatsApp ativa e template aprovado).
     requer_conexao = False
 
-    def enviar_modelo(self, conexao, numero: str, modelo, parametros) -> ResultadoEnvio:
+    def enviar_modelo(self, conexao, numero: str, modelo, parametros, imagem_id: str = "") -> ResultadoEnvio:
+        raise NotImplementedError
+
+    def subir_imagem(self, conexao, conteudo: bytes, tipo: str, nome: str) -> str:
+        """Id da imagem na Meta, pra ir no cabeçalho dos avisos."""
         raise NotImplementedError
 
 
 class WhatsAppConsoleBackend(WhatsAppBackendBase):
     """Padrão em dev — não envia de verdade, só loga o texto que sairia."""
 
-    def enviar_modelo(self, conexao, numero, modelo, parametros):
-        logger.info("WHATSAPP (console, não enviado) para %s [%s]: %s", numero, modelo.nome, modelo.renderizar(parametros))
+    def enviar_modelo(self, conexao, numero, modelo, parametros, imagem_id=""):
+        logger.info("WHATSAPP (console, não enviado) para %s [%s]%s: %s", numero, modelo.nome,
+                    f" com imagem {imagem_id}" if imagem_id else "", modelo.renderizar(parametros))
         return ResultadoEnvio(ok=True, wamid=f"console.{uuid.uuid4().hex}")
+
+    def subir_imagem(self, conexao, conteudo, tipo, nome):
+        return f"console-imagem.{uuid.uuid4().hex[:8]}"
 
 
 class WhatsAppMetaCloudBackend(WhatsAppBackendBase):
@@ -43,13 +51,16 @@ class WhatsAppMetaCloudBackend(WhatsAppBackendBase):
 
     requer_conexao = True
 
-    def enviar_modelo(self, conexao, numero, modelo, parametros):
+    def enviar_modelo(self, conexao, numero, modelo, parametros, imagem_id=""):
         try:
-            wamid = meta.enviar_modelo(conexao.phone_number_id, conexao.token, numero, modelo, parametros)
+            wamid = meta.enviar_modelo(conexao.phone_number_id, conexao.token, numero, modelo, parametros, imagem_id)
         except meta.ErroMeta as exc:
             logger.error("WhatsApp: erro da Meta ao enviar %s para %s: %s", modelo.nome, numero, exc)
             return ResultadoEnvio(ok=False, erro=str(exc))
         return ResultadoEnvio(ok=True, wamid=wamid)
+
+    def subir_imagem(self, conexao, conteudo, tipo, nome):
+        return meta.subir_midia(conexao.phone_number_id, conexao.token, conteudo, tipo, nome)
 
 
 def get_backend() -> WhatsAppBackendBase:

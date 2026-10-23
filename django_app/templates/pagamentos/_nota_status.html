@@ -8,7 +8,7 @@
     {% elif nota.status == "erro" %}<span style="color:var(--c-alerta-texto);">não autorizada: {{ nota.mensagem_erro }}</span>
     {% else %}{{ nota.get_status_display }}{% endif %}
   </span>
-  {% if nota.simulacao %}<span class="badge" style="background:var(--c-alerta); color:var(--c-alerta-texto);">SIMULAÇÃO — sem valor fiscal</span>{% endif %}
+  {% if nota.simulacao %}<span class="badge" style="background:var(--c-alerta); color:var(--c-alerta-texto);">{{ nota.aviso_sem_valor }} — sem valor fiscal</span>{% endif %}
   {% if nota.status != "erro" %}<a href="{% url 'notas:pdf' nota.pk %}" target="_blank" class="btn-secondary btn">Ver nota (PDF)</a>{% endif %}
 </div>
 {% endif %}

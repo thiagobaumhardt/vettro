@@ -18,7 +18,7 @@ from .models import NotaFiscalEmitida
 
 def _avisar(request, nota):
     if nota.status == "emitida":
-        sufixo = " (simulação, sem valor fiscal)" if nota.simulacao else ""
+        sufixo = f" ({nota.aviso_sem_valor.lower()}, sem valor fiscal)" if nota.simulacao else ""
         messages.success(request, f"{nota.get_tipo_display()} nº {nota.numero} emitida{sufixo}.")
     else:
         messages.error(request, f"Nota não autorizada: {nota.mensagem_erro}")

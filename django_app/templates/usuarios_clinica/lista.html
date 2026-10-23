@@ -2,8 +2,13 @@
 {% block title %}Usuários — Vettro{% endblock %}
 {% block content %}
 
-<div class="card">
-  <div class="section-title">Adicionar usuário à clínica</div>
+<div class="card" x-data="{ aberto: {% if form.errors %}true{% else %}false{% endif %} }">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+    <div class="section-title" style="margin:0;">Usuários</div>
+    <button type="button" class="btn-primary btn" x-show="!aberto" @click="aberto = true">Adicionar usuário</button>
+  </div>
+  <div class="form-novo" x-show="aberto"{% if not form.errors %} x-cloak{% endif %}>
+  <div class="section-title" style="margin-top:0;">Adicionar usuário à clínica</div>
   <p style="color:var(--muted);">Se o e-mail já tem conta no Vettro (ex: atende em outra clínica também), só vincula — não duplica a conta.</p>
   <form method="post" action="{% url 'usuarios_clinica:adicionar' %}">
     {% csrf_token %}
@@ -13,8 +18,12 @@
       <div><label>Nome (se conta nova)</label>{{ form.nome }}</div>
       <div><label>Senha inicial (se conta nova)</label>{{ form.senha }}</div>
     </div>
-    <div style="margin-top:12px;"><button type="submit" class="btn-primary btn">Adicionar</button></div>
+    <div style="margin-top:12px; display:flex; gap:10px;">
+      <button type="submit" class="btn-primary btn">Adicionar</button>
+      <button type="button" class="btn-secondary btn" @click="aberto = false">Cancelar</button>
+    </div>
   </form>
+  </div>
 </div>
 
 <div class="card">

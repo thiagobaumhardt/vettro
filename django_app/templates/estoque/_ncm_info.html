@@ -1,0 +1,11 @@
+{# Descrição do NCM escolhido + CEST possíveis (Convênio ICMS 142/18). #}
+{% if descricao %}<p class="ncm-descricao">{{ descricao }}</p>
+{% elif ncm|length == 8 %}<p class="ncm-descricao aviso">NCM não encontrado na tabela oficial vigente. Confira o número.</p>{% endif %}
+{% if cests %}
+<div class="ncm-cests">
+  <span>CEST para este NCM (use se o produto tiver substituição tributária):</span>
+  {% for c in cests %}
+  <button type="button" class="ncm-opcao" onclick="escolherCest('{{ c.cest }}')"><strong>{{ c.formatado }}</strong> <span>{{ c.descricao }}</span></button>
+  {% endfor %}
+</div>
+{% elif ncm|length == 8 and descricao %}<p class="ncm-descricao">Este NCM não tem CEST no Convênio ICMS 142/18: normalmente sem substituição tributária. Deixe o CEST em branco.</p>{% endif %}

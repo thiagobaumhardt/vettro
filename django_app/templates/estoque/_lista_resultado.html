@@ -1,4 +1,4 @@
-{% if insumos %}
+{% load formatos %}{% if insumos %}
 <div class="table-wrap">
   <table>
     <thead><tr><th>Cód.</th><th>Nome</th><th>Categoria</th><th style="text-align:right;">Compra</th><th style="text-align:right;">Venda</th><th style="text-align:right;">Lucro</th><th>Estoque</th><th>Ações</th></tr></thead>
@@ -13,9 +13,9 @@
           <br><small style="color:var(--muted);">{% if i.ncm %}NCM {{ i.ncm }}{% else %}<span style="color:var(--danger-hover);">sem NCM</span>{% endif %}{% if i.tem_st %} · ICMS-ST{% endif %}{% if i.pis_cofins_monofasico %} · monofásico{% endif %}</small>
         </td>
         <td>{{ i.categoria|default:"—" }}</td>
-        <td style="text-align:right; white-space:nowrap;">{% if i.custo is not None %}R$ {{ i.custo|floatformat:2 }}{% else %}<span style="color:var(--muted);">—</span>{% endif %}</td>
-        <td style="text-align:right; white-space:nowrap;">R$ {{ i.valor }} <small style="color:var(--muted);">/ {{ i.unidade_rotulo }}</small></td>
-        <td style="text-align:right; white-space:nowrap;">{% if i.lucro_unitario is not None %}<strong style="color:{% if i.lucro_unitario < 0 %}var(--perigo){% else %}var(--verde-escuro){% endif %};">R$ {{ i.lucro_unitario }}</strong><br><small style="color:var(--muted);">{{ i.margem }}%</small>{% else %}<small style="color:var(--muted);">sem valor<br>de compra</small>{% endif %}</td>
+        <td style="text-align:right; white-space:nowrap;">{% if i.custo is not None %}{{ i.custo|moeda }}{% else %}<span style="color:var(--muted);">—</span>{% endif %}</td>
+        <td style="text-align:right; white-space:nowrap;">{{ i.valor|moeda }} <small style="color:var(--muted);">/ {{ i.unidade_rotulo }}</small></td>
+        <td style="text-align:right; white-space:nowrap;">{% if i.lucro_unitario is not None %}<strong style="color:{% if i.lucro_unitario < 0 %}var(--perigo){% else %}var(--verde-escuro){% endif %};">{{ i.lucro_unitario|moeda }}</strong><br><small style="color:var(--muted);">{{ i.margem }}%</small>{% else %}<small style="color:var(--muted);">sem valor<br>de compra</small>{% endif %}</td>
         <td>
           {% if i.status_estoque == "zerado" %}<span class="badge" style="background:var(--c-alerta); color:var(--c-alerta-texto);">Sem estoque</span>
           {% elif i.status_estoque == "baixo" %}<span class="badge" style="background:var(--c-aviso); color:var(--c-atencao-texto);">{{ i.qtd|floatformat:"-3" }} {{ i.unidade_rotulo }}</span>

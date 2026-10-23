@@ -1,9 +1,10 @@
 {% comment %}
   Busca de insumos com "adicionar" — usar DENTRO do x-data do formulário (que tem
   insumosSel e qtyTick). Envia insumo_ids + qtd_<id>, igual à lista antiga.
-  Parâmetros: insumos_json, rotulo (opcional). Estilo: .ib-* em static/dist/styles.css.
+  Parâmetros: insumos_json, rotulo (opcional), preselecionar (opcional: JSON [{"id", "qtd"}] já
+  adicionados ao abrir — ex.: baixa de produto vencido vinda dos Avisos). Estilo: .ib-* em static/dist/styles.css.
 {% endcomment %}
-<div class="ib" x-data="buscaInsumos({{ insumos_json|default:'[]' }})" @click.outside="busca = ''">
+<div class="ib" x-data="buscaInsumos({{ insumos_json|default:'[]' }})" @click.outside="busca = ''"{% if preselecionar %} data-preselecionar="{{ preselecionar }}"{% endif %}>
   <label>{{ rotulo|default:"Insumos utilizados" }}</label>
   <div class="ib-campo">
     <input type="search" x-model="busca" @input="destaque = 0" autocomplete="off"

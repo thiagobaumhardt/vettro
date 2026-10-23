@@ -50,7 +50,7 @@ class Venda(models.Model):
         ordering = ["-criado_em"]
 
     def __str__(self):
-        return f"Venda #{self.numero}"
+        return f"Venda {self.numero}"
 
     @property
     def aguardando_pagamento(self) -> bool:

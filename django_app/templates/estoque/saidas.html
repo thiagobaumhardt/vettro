@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load formatos %}
 {% block title %}Saídas de estoque — Vettro{% endblock %}
 {% block content %}
 {% include "estoque/_subnav.html" %}
@@ -25,7 +26,7 @@
 
 {% if visao == "resumo" %}
 <div class="ag-metricas">
-  <div class="card ag-metrica"><span>Custo total das saídas</span><strong>R$ {{ resumo.total|floatformat:2 }}</strong><small>{{ desde|date:"d/m" }} a {{ ate|date:"d/m/Y" }}</small></div>
+  <div class="card ag-metrica"><span>Custo total das saídas</span><strong>{{ resumo.total|moeda }}</strong><small>{{ desde|date:"d/m" }} a {{ ate|date:"d/m/Y" }}</small></div>
 </div>
 <div class="resumo-grid">
   {% include "estoque/_resumo_bloco.html" with titulo="Por tipo" linhas=resumo.grupos.tipo %}
@@ -46,7 +47,7 @@
           <td>{{ s.motivo.nome|default:"" }}{% if s.beneficiario %} · para {{ s.beneficiario }}{% endif %}{% if s.detalhe %}<br><small style="color:var(--muted);">{{ s.detalhe }}</small>{% endif %}</td>
           <td>{% for i in s.itens.all %}{{ i.quantidade|floatformat:"-3" }} {{ i.insumo.unidade_rotulo }} {{ i.insumo.nome }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
           <td>{{ s.solicitante|default:"—" }}<br><small style="color:var(--muted);">por {{ s.usuario_nome }}</small></td>
-          <td style="text-align:right;">R$ {{ s.total_custo }}</td>
+          <td style="text-align:right;">{{ s.total_custo|moeda }}</td>
         </tr>
         {% empty %}<tr><td colspan="6" class="empty">Nenhuma saída no período.</td></tr>{% endfor %}
       </tbody>

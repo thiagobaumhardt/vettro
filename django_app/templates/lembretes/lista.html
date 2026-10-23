@@ -1,45 +1,37 @@
 {% extends "base.html" %}
-{% block title %}Lembretes — Vettro
-<div class="card">
-  <div class="section-title">Respostas recebidas</div>
-  <p style="color:var(--muted); font-size:.85rem; margin-top:-4px;">Respostas dos tutores às mensagens da clínica. Quem responde SAIR deixa de receber mensagens automaticamente.</p>
-  {% if respostas %}
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Data</th><th>Tutor</th><th>Mensagem</th></tr></thead>
-      <tbody>
-        {% for r in respostas %}
-        <tr>
-          <td style="white-space:nowrap;">{{ r.criado_em|date:"d/m/Y H:i" }}</td>
-          <td>{% if r.tutor %}<a href="{% url 'tutores:detalhe' r.tutor.pk %}">{{ r.tutor.nome }}</a>{% else %}{{ r.telefone|default:"—" }}{% endif %}</td>
-          <td>{{ r.texto }}{% if r.descadastrou %} <span class="badge" style="background:var(--c-alerta);">Pediu para sair</span>{% endif %}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <div class="empty">Nenhuma resposta recebida.</div>
-  {% endif %}
-</div>
-{% endblock %}
+{% load static estaticos %}
+{% block title %}Lembretes para Tutores — Vettro{% endblock %}
 {% block content %}
-<form method="post" x-data="{ texto: '{{ texto|escapejs }}', busca: '', selecionados: [{% for s in selecionados %}'{{ s|escapejs }}',{% endfor %}] }">
+<link rel="stylesheet" href="{% static 'vendor/quill/quill.snow.css' %}">
+<script src="{% static 'vendor/quill/quill.js' %}"></script>
+<script src="{% static_v 'js/editor_whatsapp.js' %}"></script>
+<form method="post" enctype="multipart/form-data"
+      x-data="lembreteForm({ texto: '{{ texto|escapejs }}', limite: {{ limite_texto }}, selecionados: [{% for s in selecionados %}'{{ s|escapejs }}',{% endfor %}],
+                             placeholder: 'Ex: Olá, {{ variavel_nome|escapejs }}! A campanha de vacinação antirrábica começa segunda-feira.' })">
   {% csrf_token %}
   <div class="card">
-    <h2>Lembretes por WhatsApp</h2>
+    <h2>Lembretes para Tutores</h2>
+    <p style="color:var(--muted); margin-top:-6px;">Mensagens por WhatsApp para os tutores selecionados.</p>
     {% if not conectado %}
     <p style="background:var(--verde-claro); padding:8px 10px; font-size:.88rem;">
       O WhatsApp da clínica não está conectado.{% if papel_ativo == "admin" %} Conecte em <a href="{% url 'whatsapp:conexao' %}">Clínica &gt; WhatsApp</a>.{% else %} Peça a um administrador para conectar.{% endif %}
     </p>
     {% endif %}
     <label>Mensagem</label>
-    <textarea name="texto" rows="5" maxlength="{{ limite_texto }}" x-model="texto"
-              placeholder="Ex: Olá, {{ variavel_nome }}! A campanha de vacinação antirrábica começa segunda-feira. Agende pelo nosso WhatsApp."></textarea>
-    <div style="display:flex; justify-content:space-between; color:var(--muted); font-size:.85rem; margin-top:4px;">
-      <span>Use <code>{{ variavel_nome }}</code> para inserir o primeiro nome do tutor. Quebras de linha viram espaço (regra do WhatsApp). A mensagem sai como "Olá, Nome! A {{ clinica_nome_ativa }} enviou uma mensagem para você: ..." e é cobrada pela Meta como marketing.</span>
-      <span x-text="texto.length + '/{{ limite_texto }}'"></span>
+    <div class="lembrete-editor" x-ref="editorWrap" :class="texto.length > limite && 'excedeu'">
+      <div x-ref="editor"></div>
     </div>
+    <textarea name="texto" x-model="texto" hidden></textarea>
+    <input type="file" name="imagem" accept="image/jpeg,image/png" x-ref="arquivo" @change="escolherImagem($event)" hidden>
+    <div style="display:flex; justify-content:space-between; gap:12px; color:var(--muted); font-size:.85rem; margin-top:4px;">
+      <span>Use <code>{{ variavel_nome }}</code> para inserir o primeiro nome do tutor. O botão de imagem coloca uma foto (JPG ou PNG, até 5 MB) no topo da mensagem. Quebras de linha viram espaço (regra do WhatsApp). Cobrada pela Meta como marketing.</span>
+      <span style="white-space:nowrap;" :style="texto.length > limite && 'color:var(--perigo-hover); font-weight:600;'" x-text="texto.length + '/' + limite"></span>
+    </div>
+    <div x-show="nomeImagem" x-cloak style="margin-top:8px; font-size:.88rem;">
+      Imagem: <strong x-text="nomeImagem"></strong>
+      <button type="button" class="toast-fechar" @click="tirarImagem()">Remover imagem</button>
+    </div>
+
   </div>
 
   <div class="card">
@@ -74,7 +66,7 @@
       </table>
     </div>
     <div style="margin-top:14px;">
-      <button type="submit" class="btn-primary btn" :disabled="!texto.trim() || !selecionados.length"
+      <button type="submit" class="btn-primary btn" :disabled="!texto.trim() || !selecionados.length || texto.length > limite"
               :data-confirm="'Enviar este lembrete por WhatsApp para ' + selecionados.length + ' tutor(es)?'">Enviar</button>
     </div>
   </div>
@@ -90,7 +82,7 @@
         {% for l in historico %}
         <tr>
           <td style="white-space:nowrap;">{{ l.criado_em|date:"d/m/Y H:i" }}</td>
-          <td>{{ l.texto|truncatechars:90 }}</td>
+          <td>{{ l.texto|truncatechars:90 }}{% if l.imagem %} <span class="badge" style="background:var(--c-info);">com imagem</span>{% endif %}</td>
           <td>{{ l.usuario_nome|default:"—" }}</td>
           <td>
             {{ l.enviados }}/{{ l.total }} enviado{{ l.total|pluralize }}{% if l.lidos %} · {{ l.lidos }} lido{{ l.lidos|pluralize }}{% endif %}
@@ -108,26 +100,4 @@
   {% endif %}
 </div>
 
-<div class="card">
-  <div class="section-title">Respostas recebidas</div>
-  <p style="color:var(--muted); font-size:.85rem; margin-top:-4px;">Respostas dos tutores às mensagens da clínica. Quem responde SAIR deixa de receber mensagens automaticamente.</p>
-  {% if respostas %}
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Data</th><th>Tutor</th><th>Mensagem</th></tr></thead>
-      <tbody>
-        {% for r in respostas %}
-        <tr>
-          <td style="white-space:nowrap;">{{ r.criado_em|date:"d/m/Y H:i" }}</td>
-          <td>{% if r.tutor %}<a href="{% url 'tutores:detalhe' r.tutor.pk %}">{{ r.tutor.nome }}</a>{% else %}{{ r.telefone|default:"—" }}{% endif %}</td>
-          <td>{{ r.texto }}{% if r.descadastrou %} <span class="badge" style="background:var(--c-alerta);">Pediu para sair</span>{% endif %}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <div class="empty">Nenhuma resposta recebida.</div>
-  {% endif %}
-</div>
 {% endblock %}

@@ -199,8 +199,30 @@ DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Vettro <nao-responda@
 SITE_URL = os.environ.get("SITE_URL", "http://localhost:8000")
 
 # TEF (maquininha integrada) — exigida na NFC-e do RS pra cartão/Pix (Decreto
-# 56.670). Provedor ainda não contratado. "Console" é sandbox: aprova ~4s
-# depois de enviar (valor terminado em ,99 é negado), não fala com maquininha
-# nenhuma. Trocar via TEF_BACKEND quando o provedor for definido e homologado
-# (ver apps/pagamentos/tef.py: iniciar/consultar/cancelar).
+# 56.670). "Console" é sandbox: aprova ~4s depois de enviar (valor terminado
+# em ,99 é negado), não fala com maquininha nenhuma. Real: Vero Cliente PDV
+# (apps/pagamentos/tef.py:VeroClientePDVBackend), ligado depois da homologação.
 TEF_BACKEND = os.environ.get("TEF_BACKEND", "apps.pagamentos.tef.TEFConsoleBackend")
+# Vero (TEF_BACKEND=apps.pagamentos.tef.VeroClientePDVBackend) — ver docs/maquininha-vero.md.
+# Token da integração Vettro (um só pro SaaS); cada clínica informa o token da maquininha em Clínica.
+VERO_URL = os.environ.get("VERO_URL", "https://pdv.verostore.com.br")
+VERO_PDV_TOKEN = os.environ.get("VERO_PDV_TOKEN", "")
+VERO_PDV_VERSION = os.environ.get("VERO_PDV_VERSION", "1.00.00")
+# Vai na NFC-e (grupo de cartão). Banrisul Cartões S.A. — CONFIRMAR com a Vero/contador antes de produção.
+VERO_CNPJ_CREDENCIADORA = os.environ.get("VERO_CNPJ_CREDENCIADORA", "92.934.215/0001-06")
+VERO_IMPRIMIR_COMPROVANTE = os.environ.get("VERO_IMPRIMIR_COMPROVANTE", "True") == "True"
+
+# NFS-e no Emissor Nacional (apps/pagamentos/nfse_nacional.py): liga sozinha
+# quando a clínica cadastra o certificado A1 em Clínica — nada a configurar
+# aqui. Só se o servidor não reconhecer a cadeia TLS do gov.br: arquivo .pem
+# de autoridades extras. Ver docs/nfse-nacional.md.
+NFSE_NACIONAL_CA_BUNDLE = os.environ.get("NFSE_NACIONAL_CA_BUNDLE", "")
+
+# Responsável técnico do sistema emissor (grupo infRespTec da NF-e/NFC-e): é
+# quem desenvolve o Vettro — um só pro SaaS inteiro, não por clínica.
+RESPONSAVEL_TECNICO = {
+    "cnpj": os.environ.get("RESP_TECNICO_CNPJ", "54894646000199"),  # Data Dexter Ltda
+    "contato": os.environ.get("RESP_TECNICO_CONTATO", "Thiago Baumhardt"),
+    "email": os.environ.get("RESP_TECNICO_EMAIL", "adm.datadexter@gmail.com"),
+    "fone": os.environ.get("RESP_TECNICO_FONE", "51980361084"),
+}

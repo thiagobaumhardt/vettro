@@ -81,19 +81,27 @@
 
     <div class="section-title" style="margin-top:18px;">Dados fiscais — venda no balcão</div>
     <p style="font-size:.85rem; color:var(--muted); margin-top:-4px;">
-      Quando o produto entra pelo <strong>XML da nota de compra</strong>, estes dados vêm sozinhos. Só preencha à mão se o produto foi cadastrado sem nota.
+      Sem nota de compra, procure o NCM pelo nome do produto: o sistema mostra a descrição oficial e o CEST, quando houver.
+      O contador confere tudo depois pela <a href="{% url 'estoque:planilha_fiscal' %}">planilha fiscal</a>.
     </p>
     <div class="form-grid">
+      <div class="full">
+        <label for="ncm_busca">Procurar NCM pelo nome</label>
+        <input type="search" id="ncm_busca" name="ncm_busca" placeholder="Ex.: ração, vermífugo, shampoo, coleira, seringa..." autocomplete="off"
+               hx-get="{% url 'estoque:ncm_busca' %}" hx-trigger="input changed delay:300ms, search" hx-target="#ncm-resultados">
+        <div id="ncm-resultados"></div>
+      </div>
       <div>
-        <label>NCM</label>{{ form.ncm }}
+        <label for="id_ncm">NCM</label>{{ form.ncm }}
         {% if form.ncm.errors %}<p style="color:var(--danger-hover); font-size:.82rem;">{{ form.ncm.errors|join:", " }}</p>{% endif %}
-        <small style="color:var(--muted);">8 dígitos — está na nota de compra.</small>
+        <small style="color:var(--muted);">8 dígitos. Tabela oficial {{ ncm_vigencia|lower }}.</small>
       </div>
       <div>
-        <label>CEST</label>{{ form.cest }}
+        <label for="id_cest">CEST</label>{{ form.cest }}
         {% if form.cest.errors %}<p style="color:var(--danger-hover); font-size:.82rem;">{{ form.cest.errors|join:", " }}</p>{% endif %}
-        <small style="color:var(--muted);">7 dígitos — obrigatório se tiver substituição tributária. Está na nota de compra, ao lado do NCM.</small>
+        <small style="color:var(--muted);">7 dígitos, só com substituição tributária.</small>
       </div>
+      <div class="full" id="ncm-info" hx-get="{% url 'estoque:ncm_info' %}" hx-trigger="load, change from:#id_ncm, ncm-escolhido from:body" hx-include="#id_ncm"></div>
       <div><label>Origem da mercadoria</label>{{ form.origem }}</div>
       <div>
         <label for="id_unidade_venda">Unidade na nota de venda</label>{{ form.unidade_venda }}
@@ -134,4 +142,14 @@
     </div>
   </form>
 </div>
+<script>
+  // Busca de NCM: clicar num resultado preenche o NCM e atualiza descrição/CEST.
+  function escolherNcm(codigo) {
+    document.getElementById("id_ncm").value = codigo;
+    document.getElementById("ncm-resultados").innerHTML = "";
+    document.getElementById("ncm_busca").value = "";
+    htmx.trigger(document.body, "ncm-escolhido");
+  }
+  function escolherCest(codigo) { document.getElementById("id_cest").value = codigo; }
+</script>
 {% endblock %}

@@ -5,11 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Vettro{% endblock %}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400..700,100&family=Livvic:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static_v 'dist/styles.css' %}">
   <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+  <script src="{% static_v 'js/formatos.js' %}"></script>
   <script src="{% static_v 'js/insumos_busca.js' %}" defer></script>
   <script src="{% static_v 'js/mascaras.js' %}" defer></script>
   <script src="{% static 'vendor/alpine.min.js' %}" defer></script>

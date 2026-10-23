@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% load formatos %}
 {% block title %}Pagamento recebido — Vettro{% endblock %}
 {% block content %}
 <div class="card">
   <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
-    <h2 style="margin:0;">Pagamento recebido — R$ {{ rec.total }}</h2>
+    <h2 style="margin:0;">Pagamento recebido — {{ rec.total|moeda }}</h2>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
       {% if rec.tutor_id %}<a href="{% url 'tutores:detalhe' rec.tutor_id %}?aba=financeiro" class="btn-secondary btn">Cobranças do tutor</a>{% endif %}
       <a href="{% url 'dashboard:inicio' %}" class="btn-primary btn">Voltar à recepção</a>
@@ -14,8 +15,8 @@
     <div><label>Recebido em</label>{{ rec.criado_em|date:"d/m/Y H:i" }} por {{ rec.usuario_nome|default:"—" }}</div>
     <div><label>Formas de pagamento</label>{% for p in rec.pagamentos.all %}{{ p.descricao }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</div>
     <div><label>CPF na nota</label>{{ rec.cpf_nota|default:"Sem CPF" }}</div>
-    {% if rec.desconto_valor %}<div><label>Desconto</label>R$ {{ rec.desconto_valor }} — {{ rec.desconto_motivo }}</div>{% endif %}
-    {% if rec.troco %}<div><label>Troco</label>R$ {{ rec.troco }}</div>{% endif %}
+    {% if rec.desconto_valor %}<div><label>Desconto</label>{{ rec.desconto_valor|moeda }} — {{ rec.desconto_motivo }}</div>{% endif %}
+    {% if rec.troco %}<div><label>Troco</label>{{ rec.troco|moeda }}</div>{% endif %}
   </div>
 </div>
 
@@ -38,7 +39,7 @@
         {% for c in cobrancas %}
         <tr>
           <td>{{ c.criado_em|date:"d/m/Y H:i" }}</td><td>{{ c.paciente.nome }}</td><td>{{ c.obs|default:"Cobrança manual" }}</td>
-          <td style="text-align:right;">R$ {{ c.total }}</td><td style="text-align:right;">R$ {{ c.valor_pago }}</td>
+          <td style="text-align:right;">{{ c.total|moeda }}</td><td style="text-align:right;">{{ c.valor_pago|moeda }}</td>
         </tr>
         {% endfor %}
       </tbody>

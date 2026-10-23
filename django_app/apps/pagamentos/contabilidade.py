@@ -86,6 +86,6 @@ def gerar_zip(ano: int, mes: int, clinica_nome: str) -> bytes:
             "relatorio_itens.csv: uma linha por item, separando serviços e vendas.",
         ]
         if dados["simulacao"]:
-            linhas += ["", "ATENÇÃO: há notas de SIMULAÇÃO (sem valor fiscal) neste pacote — emissor real ainda não ligado."]
+            linhas += ["", "ATENÇÃO: há notas de SIMULAÇÃO/HOMOLOGAÇÃO (sem valor fiscal) neste pacote."]
         zf.writestr("LEIA-ME.txt", "\r\n".join(linhas))
     return buffer.getvalue()

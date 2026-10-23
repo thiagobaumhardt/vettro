@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Avisos do estoque — Vettro{% endblock %}
+{% block content %}
+{% include "estoque/_subnav.html" with aba="avisos" %}
+
+<div class="card">
+  <h2 style="margin-top:0;">Avisos do estoque</h2>
+  {% if not avisos.total %}
+  <div class="empty">Nenhum aviso. Estoque, validades e dados fiscais em dia.</div>
+  {% endif %}
+
+  {% if alertas.zerados or alertas.baixos %}
+  <details class="aviso-grupo aviso-alerta" open>
+    <summary>Estoque baixo ou zerado <span>{{ avisos.estoque }}</span></summary>
+    <table><tbody>
+      {% for i in alertas.zerados %}<tr><td>{% include "estoque/_aviso_produto.html" with acao="repor" %}</td><td class="aviso-situacao perigo">Zerado</td><td class="aviso-acoes">{% include "estoque/_aviso_acoes.html" with acoes="repor" %}</td></tr>{% endfor %}
+      {% for i in alertas.baixos %}<tr><td>{% include "estoque/_aviso_produto.html" with acao="repor" %}</td><td class="aviso-situacao">{{ i.qtd|floatformat:"-3" }} {{ i.unidade_rotulo }}{% if i.estoque_minimo %} (mínimo {{ i.estoque_minimo|floatformat:"-3" }}){% endif %}</td><td class="aviso-acoes">{% include "estoque/_aviso_acoes.html" with acoes="repor" %}</td></tr>{% endfor %}
+    </tbody></table>
+  </details>
+  {% endif %}
+
+  {% if alertas.vencidos or alertas.vencendo %}
+  <details class="aviso-grupo aviso-alerta" open>
+    <summary>Validade <span>{{ avisos.validade }}</span></summary>
+    <table><tbody>
+      {% for i in alertas.vencidos %}<tr><td>{% include "estoque/_aviso_produto.html" with acao="baixa" %}</td><td class="aviso-situacao perigo">Vencido em {{ i.data_validade|date:"d/m/Y" }}</td><td class="aviso-acoes">{% include "estoque/_aviso_acoes.html" with acoes="baixa repor" %}</td></tr>{% endfor %}
+      {% for i in alertas.vencendo %}<tr><td>{% include "estoque/_aviso_produto.html" with acao="baixa" %}</td><td class="aviso-situacao">Vence em {{ i.data_validade|date:"d/m/Y" }}</td><td class="aviso-acoes">{% include "estoque/_aviso_acoes.html" with acoes="baixa validade" %}</td></tr>{% endfor %}
+    </tbody></table>
+  </details>
+  {% endif %}
+
+  {% if alertas.sem_ncm %}
+  <details class="aviso-grupo aviso-info">
+    <summary>Produtos sem NCM <span>{{ alertas.sem_ncm|length }}</span></summary>
+    <p class="aviso-explica">Sem NCM não dá para emitir a nota fiscal da venda no balcão. Produtos que entram pelo XML da nota de compra já vêm com NCM; estes foram cadastrados à mão.{% if papel_ativo == "admin" %} Para corrigir vários de uma vez com o contador, use a <a href="{% url 'estoque:planilha_fiscal' %}">planilha fiscal</a>.{% endif %}</p>
+    <table><tbody>
+      {% for i in alertas.sem_ncm %}<tr><td>{% include "estoque/_aviso_produto.html" with acao="cadastro" %}</td><td class="aviso-situacao">Falta o NCM</td><td class="aviso-acoes">{% include "estoque/_aviso_acoes.html" with acoes="cadastro" %}</td></tr>{% endfor %}
+    </tbody></table>
+  </details>
+  {% endif %}
+
+  {% if alertas.st_sem_cest %}
+  <details class="aviso-grupo aviso-info">
+    <summary>Substituição tributária sem CEST <span>{{ alertas.st_sem_cest|length }}</span></summary>
+    <p class="aviso-explica">Produto com substituição tributária precisa do CEST na nota fiscal da venda. No cadastro do produto, o sistema sugere o CEST a partir do NCM.</p>
+    <table><tbody>
+      {% for i in alertas.st_sem_cest %}<tr><td>{% include "estoque/_aviso_produto.html" with acao="cadastro" %}</td><td class="aviso-situacao">Falta o CEST</td><td class="aviso-acoes">{% include "estoque/_aviso_acoes.html" with acoes="cadastro" %}</td></tr>{% endfor %}
+    </tbody></table>
+  </details>
+  {% endif %}
+</div>
+{% endblock %}

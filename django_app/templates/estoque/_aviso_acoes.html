@@ -1,0 +1,5 @@
+{# Botões de um aviso. acoes: palavras entre "repor", "baixa", "validade", "cadastro". #}
+{% if "repor" in acoes %}<a href="{% url 'estoque:entrada_manual' %}?insumo={{ i.pk }}&amp;voltar=avisos" class="btn-primary btn">Repor</a>{% endif %}
+{% if "baixa" in acoes and i.qtd > 0 %}<a href="{% url 'estoque:saida_nova' %}?insumo={{ i.pk }}&amp;tipo=perda_validade&amp;voltar=avisos" class="btn-danger btn">Dar baixa</a>{% endif %}
+{% if "validade" in acoes and papel_ativo == "admin" %}<a href="{% url 'estoque:editar' i.pk %}" class="btn-secondary btn">Atualizar validade</a>{% endif %}
+{% if "cadastro" in acoes %}{% if papel_ativo == "admin" %}<a href="{% url 'estoque:editar' i.pk %}" class="btn-secondary btn">Corrigir cadastro</a>{% else %}<small style="color:var(--muted);">Peça ao administrador</small>{% endif %}{% endif %}

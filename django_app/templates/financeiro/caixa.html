@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% load formatos %}
+{% block title %}Financeiro — Vettro{% endblock %}
+{% block content %}
+<div class="card" x-data="{ aba: '{{ aba_inicial }}', formAberto: {{ form_aberto|yesno:'true,false' }} }">
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
+    <div>
+      <h2 style="margin:0;">Financeiro</h2>
+      <p style="color:var(--muted); margin:4px 0 0;">{{ inicio|date:"d/m/Y" }} a {{ fim|date:"d/m/Y" }}</p>
+    </div>
+    <form method="get" class="caixa-periodo">
+      <input type="hidden" name="aba" :value="aba" value="{{ aba_inicial }}">
+      <div><label for="caixa_mes">Mês</label><input id="caixa_mes" type="month" name="mes" value="{{ mes }}" onchange="this.form.de.value=''; this.form.ate.value=''; this.form.submit()"></div>
+      <div><label for="caixa_de">De</label><input id="caixa_de" type="date" name="de" value="{% if not mes %}{{ inicio|date:'Y-m-d' }}{% endif %}"></div>
+      <div><label for="caixa_ate">Até</label><input id="caixa_ate" type="date" name="ate" value="{% if not mes %}{{ fim|date:'Y-m-d' }}{% endif %}"></div>
+      <button type="submit" class="btn-secondary btn">Filtrar</button>
+    </form>
+  </div>
+
+  <nav class="subnav" aria-label="Financeiro">
+    <a href="?aba=resumo" @click.prevent="aba = 'resumo'" :class="aba === 'resumo' && 'ativa'">Resumo</a>
+    <a href="?aba=entradas" @click.prevent="aba = 'entradas'" :class="aba === 'entradas' && 'ativa'">Entradas ({{ entradas|length }})</a>
+    <a href="?aba=saidas" @click.prevent="aba = 'saidas'" :class="aba === 'saidas' && 'ativa'">Saídas ({{ qtd_saidas }})</a>
+  </nav>
+
+  {# ---------------------------------------------------------------- Resumo #}
+  <section x-show="aba === 'resumo'"{% if aba_inicial != "resumo" %} x-cloak{% endif %}>
+    <div class="caixa-totais">
+      <div class="caixa-total entrada"><span>Entradas</span><strong>{{ total_entradas|moeda }}</strong></div>
+      <div class="caixa-total saida"><span>Saídas</span><strong>{{ total_saidas|moeda }}</strong></div>
+      <div class="caixa-total {% if saldo < 0 %}negativo{% else %}saldo{% endif %}"><span>Saldo do período</span><strong>{{ saldo|moeda }}</strong></div>
+    </div>
+    <div class="caixa-colunas">
+      <div>
+        <div class="section-title">Entradas por forma de pagamento</div>
+        {% if por_forma %}
+        <table><tbody>
+          {% for forma, valor in por_forma %}<tr><td>{{ forma }}</td><td style="text-align:right;">{{ valor|moeda }}</td></tr>{% endfor %}
+        </tbody></table>
+        {% else %}<div class="empty">Nenhuma entrada no período.</div>{% endif %}
+      </div>
+      <div>
+        <div class="section-title">Saídas por categoria</div>
+        {% if por_categoria %}
+        <table><tbody>
+          {% for categoria, valor in por_categoria %}<tr><td>{{ categoria }}</td><td style="text-align:right;">{{ valor|moeda }}</td></tr>{% endfor %}
+        </tbody></table>
+        {% else %}<div class="empty">Nenhuma saída no período.</div>{% endif %}
+      </div>
+    </div>
+  </section>
+
+  {# ---------------------------------------------------------------- Entradas #}
+  <section x-show="aba === 'entradas'"{% if aba_inicial != "entradas" %} x-cloak{% endif %}>
+    <p style="color:var(--muted); font-size:.85rem; margin-top:0;">
+      Entram sozinhas: pagamentos recebidos na recepção, vendas de balcão pagas e baixas manuais de cobrança. Vendas canceladas não contam.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Data</th><th>Origem</th><th>Descrição</th><th>Cliente</th><th>Forma</th><th style="text-align:right;">Valor</th><th></th></tr></thead>
+        <tbody>
+          {% for e in entradas %}
+          <tr>
+            <td style="white-space:nowrap;">{{ e.quando|date:"d/m/Y H:i" }}</td>
+            <td>{{ e.origem }}</td>
+            <td>{{ e.descricao }}</td>
+            <td>{{ e.pessoa|default:"—" }}</td>
+            <td>{{ e.forma }}</td>
+            <td style="text-align:right; white-space:nowrap;">{{ e.valor|moeda }}</td>
+            <td>{% if e.link %}<a href="{{ e.link }}" class="btn-secondary btn">Ver</a>{% endif %}</td>
+          </tr>
+          {% empty %}<tr><td colspan="7" class="empty">Nenhuma entrada no período.</td></tr>
+          {% endfor %}
+        </tbody>
+        {% if entradas %}<tfoot><tr><th colspan="5">Total</th><th style="text-align:right;">{{ total_entradas|moeda }}</th><th></th></tr></tfoot>{% endif %}
+      </table>
+    </div>
+  </section>
+
+  {# ---------------------------------------------------------------- Saídas #}
+  <section x-show="aba === 'saidas'"{% if aba_inicial != "saidas" %} x-cloak{% endif %}>
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+      <div class="section-title" style="margin:0;">Saídas do período: {{ total_saidas|moeda }}</div>
+      <button type="button" class="btn-primary btn" x-show="!formAberto" @click="formAberto = true">Nova saída</button>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="form-novo" x-show="formAberto"{% if not form_aberto %} x-cloak{% endif %}
+          action="{% if editando %}{% url 'caixa:despesa_editar' editando.pk %}{% else %}{% url 'caixa:despesa_nova' %}{% endif %}">
+      {% csrf_token %}
+      <input type="hidden" name="voltar" value="{% url 'caixa:painel' %}?{% if periodo_query %}{{ periodo_query }}&amp;{% endif %}aba=saidas">
+      <div class="section-title" style="margin-top:0;">{% if editando %}Editar saída{% else %}Nova saída{% endif %}</div>
+      {% if despesa_form.errors %}<p class="login-error">{% for campo, erros in despesa_form.errors.items %}{{ erros|join:", " }} {% endfor %}</p>{% endif %}
+      <div class="form-grid">
+        <div><label for="id_data">Data do pagamento</label>{{ despesa_form.data }}</div>
+        <div><label for="id_valor">Valor</label>{{ despesa_form.valor }}</div>
+        <div class="full"><label for="id_descricao">Descrição</label>{{ despesa_form.descricao }}</div>
+        <div><label for="id_categoria">Categoria</label>{{ despesa_form.categoria }}</div>
+        <div><label for="id_forma">Forma de pagamento</label>{{ despesa_form.forma }}</div>
+        <div class="full"><label for="id_observacao">Observação (opcional)</label>{{ despesa_form.observacao }}</div>
+        <div class="full">
+          <label for="id_comprovante">Comprovante (opcional)</label>
+          {% if editando.comprovante %}<p style="margin:0 0 6px;">Atual: <a href="{% url 'caixa:comprovante' editando.pk %}" target="_blank">{{ editando.comprovante_nome|default:"comprovante" }}</a></p>{% endif %}
+          <input id="id_comprovante" type="file" name="comprovante" accept="application/pdf,image/png,image/jpeg">
+          <small style="color:var(--muted);">PDF, PNG ou JPG, até 10 MB.</small>
+        </div>
+      </div>
+      <div style="margin-top:12px; display:flex; gap:10px;">
+        <button type="submit" class="btn-primary btn">Salvar</button>
+        {% if editando %}<a href="?{% if periodo_query %}{{ periodo_query }}&amp;{% endif %}aba=saidas" class="btn-secondary btn">Cancelar</a>{% else %}<button type="button" class="btn-secondary btn" @click="formAberto = false">Cancelar</button>{% endif %}
+      </div>
+    </form>
+
+    <div class="section-title">Reposição de estoque <small style="color:var(--muted); text-transform:none; letter-spacing:0;">(automática: notas de compra em XML e entradas manuais do Estoque, pelo custo lançado)</small></div>
+    <div class="table-wrap" style="margin-bottom:18px;">
+      <table>
+        <thead><tr><th>Data</th><th>Compra</th><th>Fornecedor / detalhe</th><th style="text-align:right;">Valor</th><th></th></tr></thead>
+        <tbody>
+          {% for r in reposicoes %}
+          <tr>
+            <td style="white-space:nowrap;">{{ r.data|date:"d/m/Y" }}</td>
+            <td>{{ r.descricao }}</td>
+            <td>{{ r.detalhe|default:"—"|truncatechars:70 }}</td>
+            <td style="text-align:right; white-space:nowrap;">{{ r.valor|moeda }}{% if r.sem_custo %}<br><small style="color:var(--c-atencao-texto);">item sem custo lançado</small>{% endif %}</td>
+            <td style="white-space:nowrap;">
+              <form method="post" action="{% url 'caixa:reposicao_alternar' %}" style="display:inline;">
+                {% csrf_token %}<input type="hidden" name="chave" value="{{ r.chave }}">
+                <input type="hidden" name="voltar" value="{% url 'caixa:painel' %}?{% if periodo_query %}{{ periodo_query }}&amp;{% endif %}aba=saidas">
+                <button type="submit" class="btn-secondary btn" data-confirm="Tirar esta entrada das saídas? Use para estoque inicial, doação ou brinde (não foi compra paga).">Não é compra</button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}<tr><td colspan="5" class="empty">Nenhuma reposição de estoque no período.</td></tr>
+          {% endfor %}
+        </tbody>
+        {% if reposicoes %}<tfoot><tr><th colspan="3">Total da reposição</th><th style="text-align:right;">{{ total_reposicoes|moeda }}</th><th></th></tr></tfoot>{% endif %}
+      </table>
+    </div>
+    {% if reposicoes_ignoradas %}
+    <details style="margin:-8px 0 18px;">
+      <summary style="cursor:pointer; color:var(--muted); font-size:.88rem;">Entradas de estoque que não contam como saída ({{ reposicoes_ignoradas|length }})</summary>
+      <div class="table-wrap" style="margin-top:8px;">
+        <table><tbody>
+          {% for r in reposicoes_ignoradas %}
+          <tr>
+            <td style="white-space:nowrap;">{{ r.data|date:"d/m/Y" }}</td><td>{{ r.descricao }}</td><td style="text-align:right;">{{ r.valor|moeda }}</td>
+            <td><form method="post" action="{% url 'caixa:reposicao_alternar' %}">
+              {% csrf_token %}<input type="hidden" name="chave" value="{{ r.chave }}"><input type="hidden" name="contar" value="1">
+              <input type="hidden" name="voltar" value="{% url 'caixa:painel' %}?{% if periodo_query %}{{ periodo_query }}&amp;{% endif %}aba=saidas">
+              <button type="submit" class="btn-secondary btn">Contar como saída</button>
+            </form></td>
+          </tr>
+          {% endfor %}
+        </tbody></table>
+      </div>
+    </details>
+    {% endif %}
+
+    <div class="section-title">Despesas lançadas</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Forma</th><th style="text-align:right;">Valor</th><th>Ações</th></tr></thead>
+        <tbody>
+          {% for d in saidas %}
+          <tr>
+            <td style="white-space:nowrap;">{{ d.data|date:"d/m/Y" }}</td>
+            <td>{{ d.descricao }}{% if d.observacao %}<br><small style="color:var(--muted);">{{ d.observacao|truncatechars:80 }}</small>{% endif %}</td>
+            <td>{{ d.get_categoria_display }}</td>
+            <td>{{ d.get_forma_display }}</td>
+            <td style="text-align:right; white-space:nowrap;">{{ d.valor|moeda }}</td>
+            <td style="white-space:nowrap;">
+              {% if d.comprovante %}<a href="{% url 'caixa:comprovante' d.pk %}" target="_blank" class="btn-secondary btn">Comprovante</a>{% endif %}
+              <a href="{% url 'caixa:despesa_editar' d.pk %}?{{ periodo_query }}" class="btn-secondary btn">Editar</a>
+              <form method="post" action="{% url 'caixa:despesa_excluir' d.pk %}" style="display:inline;">
+                {% csrf_token %}<input type="hidden" name="voltar" value="{% url 'caixa:painel' %}?{% if periodo_query %}{{ periodo_query }}&amp;{% endif %}aba=saidas">
+                <button type="submit" class="btn-danger btn" data-confirm="Excluir a saída {{ d.descricao }}?">Excluir</button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}<tr><td colspan="6" class="empty">Nenhuma despesa lançada no período.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

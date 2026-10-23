@@ -1,10 +1,10 @@
-{# Situação do pagamento na maquininha. Enquanto pendente, consulta de novo a cada 2s (HTMX). #}
+{% load formatos %}{# Situação do pagamento na maquininha. Enquanto pendente, consulta de novo a cada 2s (HTMX). #}
 {% if transacao.status == "pendente" %}
 <div hx-get="{% url 'vendas:pagamento_status' venda.pk %}" hx-trigger="every 2s" hx-target="#pagamento-status" hx-swap="innerHTML"
      style="padding:16px; border:1.5px solid var(--primary); background:var(--c-neutro);">
   <p style="margin:0 0 6px; font-size:1.15rem;"><strong>Aguardando o cliente pagar na maquininha...</strong></p>
   <p style="margin:0 0 12px; color:var(--muted);">
-    R$ {{ transacao.valor }} · {{ transacao.get_forma_display }}{% if transacao.parcelas > 1 %} em {{ transacao.parcelas }}x{% endif %}.
+    {{ transacao.valor|moeda }} · {{ transacao.get_forma_display }}{% if transacao.parcelas > 1 %} em {{ transacao.parcelas }}x{% endif %}.
     A tela atualiza sozinha quando a maquininha responder.
   </p>
   <form method="post" action="{% url 'vendas:pagamento_cancelar' venda.pk %}">

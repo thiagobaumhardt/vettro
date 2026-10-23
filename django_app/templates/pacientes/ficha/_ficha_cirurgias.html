@@ -1,4 +1,4 @@
-{% if erro %}<div class="login-error" style="margin-bottom:14px;">{{ erro }}</div>{% endif %}
+{% load formatos %}{% if erro %}<div class="login-error" style="margin-bottom:14px;">{{ erro }}</div>{% endif %}
 
 <div class="card" style="box-shadow:none; border:1px solid var(--border); margin-bottom:18px;"
      x-data="totalBoxCirurgia({{ categorias_json|default:'[]' }}, {{ insumos_json|default:'[]' }})">
@@ -13,7 +13,7 @@
         <select x-model="tipoCirurgia" @change="escolherTipo()">
           <option value="">Selecione o tipo de cirurgia...</option>
           <template x-for="c in categorias" :key="c.id">
-            <option :value="c.id" x-text="c.nome + ' — R$ ' + parseFloat(c.valor).toFixed(2)"></option>
+            <option :value="c.id" x-text="c.nome + ' — ' + brl(c.valor)"></option>
           </template>
         </select>
         <input type="hidden" name="categoria_ids" :value="tipoCirurgia" :disabled="!tipoCirurgia">
@@ -33,7 +33,7 @@
 
     <div class="total-box" style="border:1.5px solid var(--primary); padding:12px 16px; margin-top:14px; display:flex; justify-content:space-between; align-items:center;">
       <span>Total estimado</span>
-      <strong x-text="'R$ ' + total().toFixed(2)"></strong>
+      <strong x-text="brl(total())"></strong>
     </div>
 
     <div style="margin-top:14px;"><button type="submit" class="btn-primary btn">Finalizar atendimento</button></div>
@@ -46,7 +46,7 @@
   <summary style="cursor:pointer; display:flex; justify-content:space-between;">
     <span>{{ c.data|date:"d/m/Y" }} · {{ c.proc }}
     </span>
-    <strong>R$ {{ c.total }}</strong>
+    <strong>{{ c.total|moeda }}</strong>
   </summary>
   <div class="form-grid" style="margin-top:10px;">
     {% if c.clinica %}<div><label>Clínica</label>{{ c.clinica }}</div>{% endif %}
@@ -55,7 +55,7 @@
     <div class="full"><label>Pós-operatório</label>{{ c.pos_op|default:"—" }}</div>
   </div>
   <div style="margin-top:8px;">
-    {% for item in c.procedimentos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }}{% if item.qtd and item.qtd != "1" %} ×{{ item.qtd|floatformat:"-3" }}{% if item.unidade and item.unidade != "un." %} {{ item.unidade }}{% endif %}{% endif %} · R$ {{ item.subtotal|default:item.valor }}</span>{% endfor %}
+    {% for item in c.procedimentos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }}{% if item.qtd and item.qtd != "1" %} ×{{ item.qtd|floatformat:"-3" }}{% if item.unidade and item.unidade != "un." %} {{ item.unidade }}{% endif %}{% endif %} · {{ item.subtotal|default:item.valor|moeda }}</span>{% endfor %}
     {% for item in c.insumos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }} ×{{ item.qtd|floatformat:"-3" }}{% if item.unidade and item.unidade != "un." %} {{ item.unidade }}{% endif %}</span>{% endfor %}
   </div>
   <form method="post" hx-post="{% url 'pacientes:cirurgia_excluir' paciente.pk c.pk %}" hx-target="#ficha-conteudo" style="margin-top:8px;">

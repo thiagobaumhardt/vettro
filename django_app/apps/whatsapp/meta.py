@@ -80,21 +80,48 @@ def listar_modelos(waba_id: str, token: str) -> list:
     return [m for m in dados.get("data", []) if m.get("language") == IDIOMA]
 
 
-def criar_modelo(waba_id: str, token: str, modelo) -> dict:
-    return _chamar("POST", f"{waba_id}/message_templates", token, json=modelo.payload_criacao())
+def subir_exemplo(token: str, conteudo: bytes, tipo: str, nome: str) -> str:
+    """Envia a imagem de exemplo que a Meta exige pra aprovar um template com
+    cabeçalho de imagem (Resumable Upload API, no app do Vettro) e devolve o
+    handle que vai em `example.header_handle`."""
+    if not settings.META_APP_ID:
+        raise ErroMeta("META_APP_ID não configurado — necessário para criar o modelo com imagem.")
+    sessao = _chamar("POST", f"{settings.META_APP_ID}/uploads", params={
+        "file_name": nome, "file_length": len(conteudo), "file_type": tipo, "access_token": token,
+    })
+    try:
+        resposta = requests.post(_url(sessao["id"]), headers={"Authorization": f"OAuth {token}", "file_offset": "0"},
+                                 data=conteudo, timeout=30)
+        handle = resposta.json().get("h", "")
+    except (requests.RequestException, ValueError, KeyError) as exc:
+        raise ErroMeta("Falha ao enviar a imagem de exemplo para a Meta.") from exc
+    if not handle:
+        raise ErroMeta("A Meta não aceitou a imagem de exemplo do modelo.")
+    return handle
 
 
-def enviar_modelo(phone_number_id: str, token: str, numero: str, modelo, parametros) -> str:
+def subir_midia(phone_number_id: str, token: str, conteudo: bytes, tipo: str, nome: str) -> str:
+    """Envia a imagem de um aviso pra Meta (fica lá 30 dias) e devolve o id —
+    uma vez por aviso, reaproveitado pra todos os tutores."""
+    dados = _chamar("POST", f"{phone_number_id}/media", token, data={"messaging_product": "whatsapp", "type": tipo},
+                    files={"file": (nome, conteudo, tipo)})
+    if not dados.get("id"):
+        raise ErroMeta("A Meta não devolveu o id da imagem.")
+    return dados["id"]
+
+
+def criar_modelo(waba_id: str, token: str, modelo, handle_exemplo: str = "") -> dict:
+    return _chamar("POST", f"{waba_id}/message_templates", token, json=modelo.payload_criacao(handle_exemplo))
+
+
+def enviar_modelo(phone_number_id: str, token: str, numero: str, modelo, parametros, imagem_id: str = "") -> str:
+    componentes = [{"type": "body", "parameters": [{"type": "text", "text": p} for p in parametros]}]
+    if imagem_id:
+        componentes.insert(0, {"type": "header", "parameters": [{"type": "image", "image": {"id": imagem_id}}]})
     dados = _chamar("POST", f"{phone_number_id}/messages", token, json={
         "messaging_product": "whatsapp",
         "to": numero,
         "type": "template",
-        "template": {
-            "name": modelo.nome,
-            "language": {"code": IDIOMA},
-            "components": [
-                {"type": "body", "parameters": [{"type": "text", "text": p} for p in parametros]},
-            ],
-        },
+        "template": {"name": modelo.nome, "language": {"code": IDIOMA}, "components": componentes},
     })
     return ((dados.get("messages") or [{}])[0]).get("id", "")

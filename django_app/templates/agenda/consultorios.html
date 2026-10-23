@@ -2,47 +2,78 @@
 {% block title %}Consultórios — Vettro{% endblock %}
 {% block content %}
 
-<div class="card">
-  <div class="section-title">Novo Consultório</div>
-  <form method="post" action="{% url 'agenda:consultorio_novo' %}">
+<div style="margin-bottom:12px;"><a href="{% url 'agenda:calendario' %}" class="btn-secondary btn">← Agenda</a></div>
+
+<div class="card" x-data="{ novo: {% if request.GET.novo %}true{% else %}false{% endif %} }"{% if request.GET.novo %} x-init="$nextTick(() => $refs.novoNome.querySelector('input').focus())"{% endif %}>
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+    <div class="section-title" style="margin:0;">Consultórios e locais</div>
+    <button type="button" class="btn-primary btn" x-show="!novo" @click="novo = true; $nextTick(() => $refs.novoNome.querySelector('input').focus())">Novo consultório/local</button>
+  </div>
+
+  <form method="post" action="{% url 'agenda:consultorio_novo' %}" x-show="novo"{% if not request.GET.novo %} x-cloak{% endif %} @keydown.escape="novo = false"
+        style="border:1px solid var(--border-2); padding:14px; margin-bottom:16px;">
     {% csrf_token %}
+    <div class="section-title" style="margin-top:0;">Novo consultório/local</div>
     <div class="form-grid">
-      <div>
+      <div x-ref="novoNome">
         <label>Nome</label>{{ consultorio_form.nome }}
         <p style="font-size:.8rem; color:var(--muted); margin:4px 0 0;">{{ consultorio_form.nome.help_text }}</p>
       </div>
       <div><label>Endereço (opcional)</label>{{ consultorio_form.endereco }}</div>
       <div><label style="display:flex; align-items:center; gap:8px;">{{ consultorio_form.ativo }} Ativo</label></div>
     </div>
-    <div style="margin-top:12px;"><button type="submit" class="btn-primary btn">Salvar</button></div>
+    <div style="margin-top:12px; display:flex; gap:8px;">
+      <button type="submit" class="btn-primary btn">Salvar</button>
+      <button type="button" class="btn-secondary btn" @click="novo = false">Cancelar</button>
+    </div>
   </form>
-</div>
 
-<div class="card">
-  <div class="section-title">Consultórios cadastrados</div>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Nome</th><th>Endereço</th><th>Status</th><th>Ações</th></tr></thead>
-      <tbody>
-        {% for c in consultorios %}
-        <tr>
+      {# Um tbody por consultório: a linha vira formulário ao clicar em Editar. #}
+      {% for c in consultorios %}
+      <tbody x-data="{ editando: false }">
+        <tr x-show="!editando">
           <td>{{ c.nome }}</td><td>{{ c.endereco|default:"—" }}</td>
           <td>{% if c.ativo %}<span class="badge badge-vet">Ativo</span>{% else %}<span class="badge" style="background:var(--c-alerta);color:var(--c-alerta-texto);">Inativo</span>{% endif %}</td>
-          <td>
+          <td style="white-space:nowrap;">
+            <button type="button" class="btn-secondary btn" @click="editando = true; $nextTick(() => $refs.nome.focus())">Editar</button>
             <form method="post" action="{% url 'agenda:consultorio_excluir' c.pk %}" style="display:inline;">
               {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir o consultório {{ c.nome }}?">Excluir</button>
             </form>
           </td>
         </tr>
-        {% empty %}<tr><td colspan="4" class="empty">Nenhum consultório cadastrado.</td></tr>
-        {% endfor %}
+        <tr x-show="editando" x-cloak>
+          <td colspan="4">
+            <form method="post" action="{% url 'agenda:consultorio_editar' c.pk %}" @keydown.escape="editando = false">
+              {% csrf_token %}
+              <div class="form-grid">
+                <div><label>Nome</label><input type="text" name="nome" value="{{ c.nome }}" maxlength="150" required x-ref="nome"></div>
+                <div><label>Endereço (opcional)</label><input type="text" name="endereco" value="{{ c.endereco }}" maxlength="200"></div>
+                <div><label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" name="ativo"{% if c.ativo %} checked{% endif %}> Ativo</label></div>
+              </div>
+              <div style="margin-top:10px; display:flex; gap:8px;">
+                <button type="submit" class="btn-primary btn">Salvar</button>
+                <button type="button" class="btn-secondary btn" @click="editando = false">Cancelar</button>
+              </div>
+            </form>
+          </td>
+        </tr>
       </tbody>
+      {% empty %}
+      <tbody><tr><td colspan="4" class="empty">Nenhum consultório cadastrado.</td></tr></tbody>
+      {% endfor %}
     </table>
   </div>
 </div>
 
-<div class="card">
-  <div class="section-title">Fechar agenda</div>
+<div class="card" id="fechar-agenda" x-data="{ aberto: {% if request.GET.fechar or bloqueio_form.errors %}true{% else %}false{% endif %} }">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+    <div class="section-title" style="margin:0;">Fechar agenda</div>
+    <button type="button" class="btn-danger btn" x-show="!aberto" @click="aberto = true">Fechar agenda</button>
+  </div>
+  <div x-show="aberto"{% if not request.GET.fechar and not bloqueio_form.errors %} x-cloak{% endif %}>
   <p style="color:var(--muted);">Bloqueia novos agendamentos — da clínica inteira ou de um consultório (almoço, folga, imprevisto) — por dia inteiro, turno ou horário específico, uma vez só ou repetindo toda semana. Ação restrita ao admin da clínica.</p>
   <form method="post" action="{% url 'agenda:bloqueio_novo' %}">
     {% csrf_token %}
@@ -59,8 +90,12 @@
       <div><label>Dia da semana <small style="color:var(--muted);">(se recorrente)</small></label>{{ bloqueio_form.dia_semana }}</div>
       <div class="full"><label>Motivo</label>{{ bloqueio_form.motivo }}</div>
     </div>
-    <div style="margin-top:12px;"><button type="submit" class="btn-danger btn">Fechar agenda</button></div>
+    <div style="margin-top:12px; display:flex; gap:10px;">
+      <button type="submit" class="btn-danger btn">Fechar agenda</button>
+      <button type="button" class="btn-secondary btn" @click="aberto = false">Cancelar</button>
+    </div>
   </form>
+  </div>
 </div>
 
 <div class="card">

@@ -262,6 +262,9 @@ class MovimentoEstoque(models.Model):
     nota_fiscal_chave = models.CharField(max_length=44, blank=True)
     nota_fiscal_numero = models.CharField(max_length=20, blank=True)
     observacao = models.CharField(max_length=300, blank=True)
+    # Entrada SD1 que NÃO foi compra paga (estoque inicial, doação, brinde):
+    # não aparece como saída de dinheiro em Financeiro (apps.financeiro.caixa).
+    fora_do_financeiro = models.BooleanField(default=False)
 
     # Sem FK — Usuario vive no schema public, tenant não pode ter FK cruzando
     # schema (mesmo motivo do AuditLog, ver §3 do plano).

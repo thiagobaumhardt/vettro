@@ -28,6 +28,10 @@ def iniciar_tef_venda(venda, *, usuario=None, terminal_codigo: str = "") -> Tran
         raise TEFError("Esta venda não está aguardando pagamento.")
     if venda.transacoes_tef.filter(status="pendente").exists():
         raise TEFError("Já há uma cobrança aguardando na maquininha — conclua ou cancele antes.")
+    if not terminal_codigo:
+        from apps.core.models import ConfiguracaoClinica
+
+        terminal_codigo = ConfiguracaoClinica.atual().tef_terminal_token
     transacao = TransacaoTEF.objects.create(
         venda=venda, valor=venda.total, forma=venda.forma_pagamento, parcelas=venda.parcelas,
         status="pendente", terminal_codigo=terminal_codigo,
@@ -62,13 +66,27 @@ def cancelar_tef(transacao: TransacaoTEF) -> TransacaoTEF:
     if transacao.status not in ("pendente", "aprovado"):
         return transacao
     era_aprovada = transacao.status == "aprovado"
-    resultado = get_tef_backend().cancelar(transacao)
+    try:
+        resultado = get_tef_backend().cancelar(transacao)
+    except Exception as exc:
+        raise TEFError(f"Não foi possível falar com a maquininha: {exc}") from exc
     if resultado.status in ("cancelado", "estornado"):
         transacao.status = "estornado" if era_aprovada else "cancelado"
-        transacao.save(update_fields=["status", "atualizado_em"])
+        transacao.id_estorno = resultado.id_estorno
+        transacao.save(update_fields=["status", "id_estorno", "atualizado_em"])
     else:
         raise TEFError(resultado.mensagem_erro or "A maquininha não confirmou o cancelamento.")
     return transacao
+
+
+def vincular_terminal(terminal_codigo: str) -> None:
+    """Liga a maquininha da clínica ao Vettro (Vero: apiDeviceLink com o CNPJ da clínica)."""
+    from apps.core.models import ConfiguracaoClinica
+
+    try:
+        get_tef_backend().vincular_terminal(documento=ConfiguracaoClinica.atual().cnpj or "", terminal_codigo=terminal_codigo)
+    except Exception as exc:
+        raise TEFError(str(exc)) from exc
 
 
 def registrar_nota_fiscal_pendente(cobranca, tipo: str) -> NotaFiscalEmitida:

@@ -7,15 +7,24 @@ variáveis não ficam coladas umas nas outras, exemplo obrigatório pra cada
 variável, e o valor da variável não pode ter quebra de linha/tab nem mais de
 4 espaços seguidos (ver `limpar_parametro`).
 
+O aviso pode levar uma imagem: é outro template (`vettro_aviso_imagem`),
+com cabeçalho IMAGE. A Meta exige uma imagem de exemplo pra aprovar o
+template (EXEMPLO_IMAGEM); a imagem de verdade vai em cada envio.
+
+Negrito/itálico/tachado são a formatação do próprio WhatsApp (*texto*,
+_texto_, ~texto~) e funcionam dentro das variáveis.
+
 Categoria define o preço (Brasil, 2026): UTILITY ~US$0,007 por mensagem,
 MARKETING ~US$0,06. Lembrete de agenda/vacina/retorno é UTILITY; o aviso
 livre do menu Lembretes é MARKETING (texto escolhido pela clínica — campanha,
 promoção — a Meta recategoriza se enviar como utility)."""
 import re
 from dataclasses import dataclass
+from pathlib import Path
 
 IDIOMA = "pt_BR"
 RODAPE = "Para não receber mais, responda SAIR."
+EXEMPLO_IMAGEM = Path(__file__).resolve().parent / "exemplo_aviso.png"
 
 
 @dataclass(frozen=True)
@@ -25,6 +34,7 @@ class Modelo:
     categoria: str
     corpo: str
     exemplo: tuple
+    cabecalho: str = ""  # "IMAGE" = mensagem com imagem no topo
 
     def renderizar(self, parametros) -> str:
         texto = self.corpo
@@ -32,16 +42,15 @@ class Modelo:
             texto = texto.replace(f"{{{{{i}}}}}", str(valor))
         return texto
 
-    def payload_criacao(self) -> dict:
-        return {
-            "name": self.nome,
-            "language": IDIOMA,
-            "category": self.categoria,
-            "components": [
-                {"type": "BODY", "text": self.corpo, "example": {"body_text": [list(self.exemplo)]}},
-                {"type": "FOOTER", "text": RODAPE},
-            ],
-        }
+    def payload_criacao(self, handle_exemplo: str = "") -> dict:
+        """`handle_exemplo`: imagem de exemplo já enviada à Meta (meta.subir_exemplo)."""
+        componentes = [
+            {"type": "BODY", "text": self.corpo, "example": {"body_text": [list(self.exemplo)]}},
+            {"type": "FOOTER", "text": RODAPE},
+        ]
+        if self.cabecalho:
+            componentes.insert(0, {"type": "HEADER", "format": self.cabecalho, "example": {"header_handle": [handle_exemplo]}})
+        return {"name": self.nome, "language": IDIOMA, "category": self.categoria, "components": componentes}
 
 
 AGENDAMENTO = Modelo(
@@ -76,7 +85,16 @@ AVISO = Modelo(
     exemplo=("Ana", "Clínica Lume", "A campanha de vacinação antirrábica começa segunda-feira."),
 )
 
-MODELOS = {m.nome: m for m in (AGENDAMENTO, VACINA, RETORNO, AVISO)}
+AVISO_IMAGEM = Modelo(
+    nome="vettro_aviso_imagem",
+    rotulo="Aviso com imagem (menu Lembretes)",
+    categoria="MARKETING",
+    corpo=AVISO.corpo,
+    exemplo=AVISO.exemplo,
+    cabecalho="IMAGE",
+)
+
+MODELOS = {m.nome: m for m in (AGENDAMENTO, VACINA, RETORNO, AVISO, AVISO_IMAGEM)}
 
 
 def limpar_parametro(valor) -> str:

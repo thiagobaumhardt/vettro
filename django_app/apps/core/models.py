@@ -1,5 +1,8 @@
+import os
+import uuid
 from datetime import time
 
+from django.core.validators import FileExtensionValidator
 from django.db import models
 
 from .storage import TenantFileSystemStorage
@@ -10,10 +13,12 @@ class ConfiguracaoClinica(models.Model):
     """Dados da clínica usados em documentos impressos (orçamento). Vive no
     schema da clínica (1 linha só — ver `atual()`), editável pelo admin DA
     CLÍNICA em ⚙️ Clínica — diferente de plataforma.Clinica, que é da
-    plataforma. Dados fiscais (CNPJ/IE/certificado) seguem fora de escopo."""
+    plataforma. Inclui os dados fiscais e o certificado A1 (cifrado) da NFS-e."""
 
     razao_social = models.CharField("Razão social", max_length=200, blank=True)
     cnpj = models.CharField("CNPJ", max_length=18, blank=True)
+    # Vai como IE do emitente na NFC-e (RS: 10 dígitos, ex. 015/0197055).
+    inscricao_estadual = models.CharField("Inscrição estadual", max_length=20, blank=True)
     telefone = models.CharField(max_length=20, blank=True)
     email = models.EmailField(blank=True)
     # Nomes iguais aos do Tutor pra reaproveitar a busca de CEP (tutores:cep_lookup).
@@ -51,6 +56,28 @@ class ConfiguracaoClinica(models.Model):
     nfse_codigo_municipal = models.CharField(
         "Código municipal", max_length=20, blank=True, help_text="Só se a prefeitura exigir um código próprio.",
     )
+    # NFS-e direto no Emissor Nacional (apps.pagamentos.nfse_nacional). Com
+    # certificado cadastrado a NFS-e vai pro Emissor Nacional; sem ele, simulação.
+    codigo_municipio_ibge = models.CharField(
+        "Código IBGE do município", max_length=7, blank=True, help_text="Preenchido pelo CEP (Cachoeira do Sul/RS = 4303004).",
+    )
+    inscricao_municipal = models.CharField("Inscrição municipal", max_length=15, blank=True)
+    NFSE_AMBIENTE_CHOICES = [("homologacao", "Homologação (teste, sem valor fiscal)"), ("producao", "Produção (nota real)")]
+    nfse_ambiente = models.CharField("Ambiente da NFS-e", max_length=12, choices=NFSE_AMBIENTE_CHOICES, default="homologacao")
+    nfse_serie = models.CharField("Série da DPS", max_length=5, default="1")
+    nfse_ultimo_dps = models.PositiveBigIntegerField("Último número de DPS", default=0)
+    nfse_aliquota_simples = models.DecimalField(
+        "Alíquota aproximada do Simples (%)", max_digits=4, decimal_places=2, null=True, blank=True,
+        help_text="Percentual aproximado dos tributos no Simples Nacional, informado na nota. Varia com o faturamento — o contador passa todo mês.",
+    )
+    # Certificado A1 (.pfx) e senha cifrados (mesma cifra dos tokens do WhatsApp) —
+    # quem tem os dois assina nota em nome da clínica.
+    certificado_cifrado = models.TextField(blank=True)
+    certificado_senha_cifrada = models.TextField(blank=True)
+    certificado_titular = models.CharField(max_length=200, blank=True)
+    certificado_validade = models.DateTimeField(null=True, blank=True)
+    # Maquininha integrada (TEF): Vero = token que o app Vero Cliente PDV mostra ao abrir.
+    tef_terminal_token = models.CharField("Token da maquininha", max_length=40, blank=True)
 
     validade_orcamento_dias = models.PositiveSmallIntegerField(
         "Validade padrão do orçamento (dias)", default=15,
@@ -79,6 +106,28 @@ class ConfiguracaoClinica(models.Model):
         cidade = "/".join(filter(None, [self.cidade, self.uf.upper()]))
         partes = [rua, self.complemento, self.bairro, cidade, f"CEP {self.cep}" if self.cep else ""]
         return " - ".join(p for p in partes if p)
+
+    @property
+    def tem_certificado(self) -> bool:
+        return bool(self.certificado_cifrado)
+
+    def certificado(self) -> tuple[bytes, str]:
+        """(.pfx, senha) decifrados; (b"", "") sem certificado."""
+        import base64
+
+        from apps.whatsapp import cripto
+
+        pfx = cripto.decifrar(self.certificado_cifrado)
+        return (base64.b64decode(pfx) if pfx else b""), cripto.decifrar(self.certificado_senha_cifrada)
+
+    def guardar_certificado(self, pfx: bytes, senha: str, *, titular: str, validade) -> None:
+        import base64
+
+        from apps.whatsapp import cripto
+
+        self.certificado_cifrado = cripto.cifrar(base64.b64encode(pfx).decode()) if pfx else ""
+        self.certificado_senha_cifrada = cripto.cifrar(senha) if pfx else ""
+        self.certificado_titular, self.certificado_validade = (titular, validade) if pfx else ("", None)
 
     @classmethod
     def atual(cls) -> "ConfiguracaoClinica":
@@ -138,3 +187,49 @@ class PerfilProfissional(models.Model):
             usuario_id=usuario.id, defaults={"nome_completo": getattr(usuario, "nome", "")},
         )
         return perfil
+
+
+def _caminho_documento_empresa(instancia, nome):
+    # Nome aleatório no disco: o arquivo não é servido por /media/ (ver
+    # core:documento_empresa); o nome original fica em `nome_arquivo`.
+    return f"empresa/{uuid.uuid4().hex}{os.path.splitext(nome)[1].lower()}"
+
+
+class DocumentoEmpresa(models.Model):
+    """Documentos da própria clínica (contrato social, cartão CNPJ...), em
+    Clínica → Documentos da empresa. Têm CPF e endereço das sócias: só o
+    admin abre, por uma view protegida — nunca por link público de /media/."""
+
+    TIPO_CHOICES = [
+        ("contrato_social", "Contrato social"),
+        ("cartao_cnpj", "Cartão CNPJ"),
+        ("inscricao_estadual", "Inscrição estadual"),
+        ("outro", "Outro"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    descricao = models.CharField("Descrição", max_length=150, blank=True)
+    arquivo = models.FileField(
+        upload_to=_caminho_documento_empresa, storage=TenantFileSystemStorage(),
+        validators=[TamanhoArquivoValidator(10 * 1024 * 1024, "Documento"),
+                    FileExtensionValidator(["pdf", "png", "jpg", "jpeg"])],
+    )
+    nome_arquivo = models.CharField(max_length=200)
+    enviado_por_nome = models.CharField(max_length=150, blank=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["tipo", "-criado_em"]
+        verbose_name = "Documento da empresa"
+        verbose_name_plural = "Documentos da empresa"
+
+    def __str__(self):
+        return self.descricao or self.get_tipo_display()
+
+    @property
+    def tamanho_mb(self) -> str:
+        try:
+            return f"{self.arquivo.size / (1024 * 1024):.1f} MB"
+        except (ValueError, OSError):
+            return "—"

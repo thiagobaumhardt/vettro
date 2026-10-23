@@ -1,9 +1,9 @@
-{# Bloco do resumo de saídas: barras proporcionais ao custo. Parâmetros: titulo, linhas. #}
+{% load formatos %}{# Bloco do resumo de saídas: barras proporcionais ao custo. Parâmetros: titulo, linhas. #}
 <div class="card">
   <div class="section-title">{{ titulo }}</div>
   {% for g in linhas|slice:":10" %}
   <div class="barra-linha">
-    <div class="barra-rotulo"><span>{{ g.nome }}</span><strong>R$ {{ g.custo|floatformat:2 }}</strong></div>
+    <div class="barra-rotulo"><span>{{ g.nome }}</span><strong>{{ g.custo|moeda }}</strong></div>
     <div class="barra"><i style="width:{{ g.percentual }}%;"></i></div>
     <small>{{ g.quantidade|floatformat:"-3" }} unid. · {{ g.vezes }} lançamento{{ g.vezes|pluralize }}</small>
   </div>

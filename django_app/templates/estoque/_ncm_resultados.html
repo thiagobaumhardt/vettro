@@ -1,0 +1,12 @@
+{# Resultados da busca de NCM (cadastro do produto). Clicar preenche o NCM e busca o CEST. #}
+{% if resultados %}
+<div class="ncm-resultados">
+  {% for r in resultados %}
+  <button type="button" class="ncm-opcao" onclick="escolherNcm('{{ r.codigo }}')">
+    <strong>{{ r.formatado }}</strong> <span>{{ r.descricao }}</span>
+  </button>
+  {% endfor %}
+</div>
+{% elif termo|length >= 2 %}
+<p class="ncm-vazio">Nada encontrado para "{{ termo }}". Tente outra palavra (ex.: "alimentos", "medicamentos") ou o número.</p>
+{% endif %}

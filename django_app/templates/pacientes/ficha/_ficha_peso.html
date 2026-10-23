@@ -1,15 +1,24 @@
+<div x-data="{ aberto: {% if erro %}true{% else %}false{% endif %} }">
 {% if erro %}<div class="login-error" style="margin-bottom:14px;">{{ erro }}</div>{% endif %}
 
-<div class="card" style="box-shadow:none; border:1px solid var(--border); margin-bottom:18px;">
-  <div class="section-title">Nova pesagem</div>
+<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+  <div class="section-title" style="margin:0;">Pesagens</div>
+  <button type="button" class="btn-primary btn" x-show="!aberto" @click="aberto = true">Nova pesagem</button>
+</div>
+
+<div class="form-novo" x-show="aberto"{% if not erro %} x-cloak{% endif %}>
+  <div class="section-title" style="margin-top:0;">Nova pesagem</div>
   <form hx-post="{% url 'pacientes:pesagem_criar' paciente.pk %}" hx-target="#ficha-conteudo" hx-swap="innerHTML">
     {% csrf_token %}
     <div class="form-grid">
-      <div><label>Peso (kg)</label><input type="text" name="peso" inputmode="decimal" placeholder="Ex.: 12,5" required autofocus></div>
+      <div><label>Peso (kg)</label><input type="text" name="peso" inputmode="decimal" placeholder="Ex.: 12,5" required x-effect="aberto && $nextTick(() => $el.focus())"></div>
       <div><label>Data da pesagem</label><input type="date" name="data" value="{{ hoje|date:'Y-m-d' }}" max="{{ hoje|date:'Y-m-d' }}"></div>
       <div class="full"><label>Observação (opcional)</label><input type="text" name="obs" maxlength="200" placeholder="Ex.: em jejum, pós-cirurgia..."></div>
     </div>
-    <div style="margin-top:12px;"><button type="submit" class="btn-primary btn">Registrar peso</button></div>
+    <div style="margin-top:12px; display:flex; gap:10px;">
+      <button type="submit" class="btn-primary btn">Registrar peso</button>
+      <button type="button" class="btn-secondary btn" @click="aberto = false">Cancelar</button>
+    </div>
   </form>
 </div>
 
@@ -43,7 +52,7 @@
       <tr>
         <td>{{ p.data|date:"d/m/Y" }}{% if forloop.first %} <span class="badge badge-vet">Atual</span>{% endif %}</td>
         <td style="text-align:right;"><strong>{{ p.peso }} kg</strong></td>
-        <td style="text-align:right;">{% if p.variacao is None %}—{% elif p.variacao > 0 %}<span style="color:var(--terroso);">+{{ p.variacao }} kg</span>{% elif p.variacao < 0 %}<span style="color:var(--verde-oliva);">{{ p.variacao }} kg</span>{% else %}0{% endif %}</td>
+        <td style="text-align:right;">{% if p.variacao is None %}—{% elif p.variacao > 0 %}<span style="color:var(--terroso);">+{{ p.variacao }} kg</span>{% elif p.variacao < 0 %}<span style="color:var(--texto-2);">{{ p.variacao }} kg</span>{% else %}0{% endif %}</td>
         <td>{{ p.obs|default:"—" }}</td>
         <td>{{ p.usuario_nome|default:"—" }}</td>
         <td style="text-align:right;">
@@ -56,3 +65,4 @@
   </table>
 </div>
 {% else %}<div class="empty">Nenhuma pesagem registrada ainda.</div>{% endif %}
+</div>

@@ -41,6 +41,8 @@ class TransacaoTEF(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     # Id da cobrança no provedor (pra consultar/cancelar); sandbox = "SANDBOX-...".
     id_externo = models.CharField(max_length=80, blank=True)
+    # Requisição de estorno aberta na maquininha (Vero: o operador conclui no terminal).
+    id_estorno = models.CharField(max_length=80, blank=True)
 
     adquirente = models.CharField("Adquirente/banco", max_length=60, blank=True)
     terminal_codigo = models.CharField("Código de terminal", max_length=30, blank=True)
@@ -97,7 +99,11 @@ class NotaFiscalEmitida(models.Model):
     # não há conta Focus NFe — ver apps.pagamentos.notas.
     simulacao = models.BooleanField(default=False)
     numero = models.CharField(max_length=20, blank=True)
-    chave_acesso = models.CharField(max_length=44, blank=True)
+    # 44 dígitos na NFC-e, 50 na NFS-e Nacional.
+    chave_acesso = models.CharField(max_length=50, blank=True)
+    # NFS-e Nacional: Id da DPS enviada e ainda sem resposta — a próxima
+    # tentativa consulta essa DPS antes de mandar outra (não duplica a nota).
+    id_dps = models.CharField(max_length=45, blank=True)
     # Snapshot do que foi enviado ao emissor (prestador, tomador, itens, totais).
     dados = models.JSONField(default=dict, blank=True)
     valor_total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -120,3 +126,11 @@ class NotaFiscalEmitida(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} {self.numero or '(sem número)'}"
+
+    @property
+    def aviso_sem_valor(self) -> str:
+        """"SIMULAÇÃO" (emissor de teste do Vettro), "HOMOLOGAÇÃO" (Emissor
+        Nacional de teste) ou "" (nota real)."""
+        if not self.simulacao:
+            return ""
+        return "HOMOLOGAÇÃO" if self.dados.get("emissor", {}).get("ambiente") == "homologacao" else "SIMULAÇÃO"

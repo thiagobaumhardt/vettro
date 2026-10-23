@@ -379,7 +379,9 @@ def consultorios_lista(request):
     return render(request, "agenda/consultorios.html", {
         "consultorios": Consultorio.objects.all(),
         "consultorio_form": ConsultorioForm(),
-        "bloqueio_form": BloqueioForm(clinica_id=request.session.get("clinica_id")),
+        # Botão "Fechar agenda" da Agenda manda ?fechar=<dia que estava na tela>.
+        "bloqueio_form": BloqueioForm(clinica_id=request.session.get("clinica_id"),
+                                      initial={"data_inicio": request.GET.get("fechar") or date.today()}),
         "bloqueios": BloqueioAgenda.objects.filter(
             Q(data_fim__gte=date.today()) | Q(data_fim__isnull=True)
         ).select_related("consultorio"),

@@ -47,7 +47,7 @@
             <td><input type="text" name="item_descricao" x-model="item.descricao" maxlength="200" required></td>
             <td><input type="number" name="item_qtd" x-model="item.qtd" min="0.001" step="any" required></td>
             <td><input type="number" name="item_valor" x-model="item.valor" min="0" step="0.01" required></td>
-            <td style="text-align:right;" x-text="'R$ ' + subtotal(item).toFixed(2)"></td>
+            <td style="text-align:right;" x-text="brl(subtotal(item))"></td>
             <td><button type="button" class="btn-danger btn" @click="itens.splice(i, 1)" >Remover</button></td>
           </tr>
         </template>
@@ -58,7 +58,7 @@
 
   <div class="total-box" style="border:1.5px solid var(--primary); padding:12px 16px; margin-top:14px; display:flex; justify-content:space-between; align-items:center;">
     <span>Total do orçamento</span>
-    <strong x-text="'R$ ' + total().toFixed(2)"></strong>
+    <strong x-text="brl(total())"></strong>
   </div>
 
   <div style="margin-top:12px;"><label>Observações (saem no PDF)</label><textarea name="obs" rows="3" x-model="obs"></textarea></div>

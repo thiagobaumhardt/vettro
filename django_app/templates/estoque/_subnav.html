@@ -1,6 +1,8 @@
-{# Abas do módulo Estoque. Parâmetro: aba (produtos|saidas|inventario|analise|etiquetas). #}
+{# Abas do módulo Estoque. Parâmetro: aba (produtos|avisos|saidas|inventario|analise|etiquetas). #}
+{% load estoque_avisos %}{% total_avisos_estoque as n_avisos %}
 <nav class="subnav" aria-label="Estoque">
   <a href="{% url 'estoque:lista' %}" class="{% if not aba or aba == 'produtos' %}ativa{% endif %}">Produtos</a>
+  <a href="{% url 'estoque:avisos' %}" class="{% if aba == 'avisos' %}ativa{% endif %}">Avisos{% if n_avisos %} <span class="subnav-contador">{{ n_avisos }}</span>{% endif %}</a>
   <a href="{% url 'estoque:saidas' %}" class="{% if aba == 'saidas' %}ativa{% endif %}">Saídas</a>
   <a href="{% url 'estoque:inventarios' %}" class="{% if aba == 'inventario' %}ativa{% endif %}">Inventário</a>
   {% if papel_ativo == "admin" %}

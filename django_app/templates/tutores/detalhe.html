@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load formatos %}
 {% block title %}{{ tutor.nome }} — Vettro{% endblock %}
 {% block content %}
 <a href="{% url 'tutores:lista' %}" class="btn-secondary btn" style="margin-bottom:12px; display:inline-block;">← Voltar</a>
@@ -9,7 +10,7 @@
       <h2 style="margin:0;">{{ tutor.nome }}</h2>
       {% if valor_a_pagar is not None %}
         {% if valor_a_pagar > 0 %}
-          <span class="badge" style="background:var(--c-alerta); font-size:0.95rem;">A pagar: R$ {{ valor_a_pagar|floatformat:2 }}</span>
+          <span class="badge" style="background:var(--c-alerta); font-size:0.95rem;">A pagar: {{ valor_a_pagar|moeda }}</span>
         {% else %}
           <span class="badge" style="background:var(--c-ok); font-size:0.95rem;">Nada a pagar</span>
         {% endif %}
@@ -52,7 +53,7 @@
 <div class="card" x-show="aba === 'financeiro'" x-cloak>
   <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
     <div class="section-title" style="margin:0;">Financeiro — cobranças de cada atendimento</div>
-    {% if valor_a_pagar and pode_receber %}<a href="{% url 'recepcao:receber_tutor' tutor.pk %}" class="btn-primary btn">Receber pagamento (R$ {{ valor_a_pagar|floatformat:2 }})</a>{% endif %}
+    {% if valor_a_pagar and pode_receber %}<a href="{% url 'recepcao:receber_tutor' tutor.pk %}" class="btn-primary btn">Receber pagamento ({{ valor_a_pagar|moeda }})</a>{% endif %}
   </div>
   {% if cobrancas %}
   <div class="table-wrap">
@@ -65,7 +66,7 @@
           <td>{{ c.paciente.nome }}</td>
           <td>{{ c.obs|default:"Cobrança manual" }}
             <br>{% for item in c.servicos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }}</span>{% endfor %}{% for item in c.insumos %}<span class="badge" style="background:var(--c-neutro);">{{ item.nome }} ×{{ item.qtd|floatformat:"-3" }}</span>{% endfor %}</td>
-          <td style="text-align:right; white-space:nowrap;">{% if c.status == "pago" and c.desconto_valor %}<s style="color:var(--muted);">R$ {{ c.total }}</s><br>R$ {{ c.valor_pago }}{% else %}R$ {{ c.total }}{% endif %}</td>
+          <td style="text-align:right; white-space:nowrap;">{% if c.status == "pago" and c.desconto_valor %}<s style="color:var(--muted);">{{ c.total|moeda }}</s><br>{{ c.valor_pago|moeda }}{% else %}{{ c.total|moeda }}{% endif %}</td>
           <td>{% if c.status == "pago" %}<span class="badge badge-vet">Pago</span>{% else %}<span class="badge" style="background:var(--c-aviso); color:var(--c-atencao-texto);">Pendente</span>{% endif %}</td>
           <td><small>{% if c.status == "pago" %}{{ c.pago_em|date:"d/m/Y H:i" }}{% if c.recebimento %}<br>{{ c.recebimento.formas_texto }}{% endif %}{% else %}—{% endif %}</small></td>
           <td>{% if c.recebimento_id and pode_receber %}<a href="{% url 'recepcao:recibo' c.recebimento_id %}" class="btn-secondary btn">Recibo e nota</a>{% endif %}</td>

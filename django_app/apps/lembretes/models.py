@@ -1,6 +1,10 @@
 import uuid
 
+from django.core.validators import FileExtensionValidator
 from django.db import models
+
+from apps.core.storage import TenantFileSystemStorage
+from apps.core.validators import TamanhoArquivoValidator
 
 
 class Lembrete(models.Model):
@@ -10,6 +14,11 @@ class Lembrete(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     texto = models.TextField()
+    # Imagem opcional no topo da mensagem (template vettro_aviso_imagem).
+    imagem = models.ImageField(
+        upload_to="lembretes/", storage=TenantFileSystemStorage(), null=True, blank=True,
+        validators=[TamanhoArquivoValidator(5 * 1024 * 1024, "Imagem"), FileExtensionValidator(["jpg", "jpeg", "png"])],
+    )
     # Sem FK — Usuario vive no schema public (mesmo motivo do AuditLog).
     usuario_id = models.UUIDField(null=True, blank=True)
     usuario_nome = models.CharField(max_length=150, blank=True)

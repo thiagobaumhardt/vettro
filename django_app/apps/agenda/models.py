@@ -53,18 +53,21 @@ class BloqueioAgenda(models.Model):
     TURNO_TARDE = "tarde"
     TURNO_NOITE = "noite"
     TURNO_HORARIO = "horario"
+    # Manhã = abertura até 12h; tarde = 12h até o fechamento da clínica (o
+    # formulário mostra a faixa real, ex.: "Tarde (12h–19h)"). "Noite" saiu
+    # (2026-10): com a clínica aberta até 19h, a tarde fixa até 18h deixava a
+    # última hora de fora. Fica só pra ler bloqueio antigo.
     TURNO_CHOICES = [
         (TURNO_DIA_INTEIRO, "Dia inteiro"),
         (TURNO_MANHA, "Manhã (até 12h)"),
-        (TURNO_TARDE, "Tarde (12h–18h)"),
-        (TURNO_NOITE, "Noite (a partir das 18h)"),
+        (TURNO_TARDE, "Tarde (a partir das 12h)"),
         (TURNO_HORARIO, "Horário específico"),
     ]
     # Faixas de horário de cada turno, usadas pra saber se um agendamento
     # (com hora marcada) cai dentro do turno bloqueado.
     FAIXAS_HORARIO = {
         TURNO_MANHA: (time(0, 0), time(11, 59, 59)),
-        TURNO_TARDE: (time(12, 0), time(17, 59, 59)),
+        TURNO_TARDE: (time(12, 0), time(23, 59, 59)),
         TURNO_NOITE: (time(18, 0), time(23, 59, 59)),
     }
 

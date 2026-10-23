@@ -2,3 +2,4 @@
 <span hx-swap-oob="true" id="campo-bairro"><input type="text" id="id_bairro" name="bairro" value="{{ dados.bairro|default:'' }}"></span>
 <span hx-swap-oob="true" id="campo-cidade"><input type="text" id="id_cidade" name="cidade" value="{{ dados.localidade|default:'' }}"></span>
 <span hx-swap-oob="true" id="campo-uf"><input type="text" id="id_uf" name="uf" maxlength="2" value="{{ dados.uf|default:'' }}"></span>
+{% if request.GET.com_ibge %}<span hx-swap-oob="true" id="campo-ibge"><input type="text" id="id_codigo_municipio_ibge" name="codigo_municipio_ibge" maxlength="7" value="{{ dados.ibge|default:'' }}"></span>{% endif %}

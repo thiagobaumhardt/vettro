@@ -1,4 +1,4 @@
-<div id="atendimentos-grid">
+{% load formatos %}<div id="atendimentos-grid">
   <p style="color:var(--muted); margin:0 0 8px;">{{ pagina.paginator.count }} atendimento{{ pagina.paginator.count|pluralize }} · mais recentes primeiro</p>
   {% if pagina.object_list %}
   <div class="table-wrap">
@@ -11,8 +11,10 @@
       </thead>
       <tbody>
         {% for a in pagina.object_list %}
-        <tr>
-          <td><strong>{{ a.numero }}</strong></td>
+        {# Clicar na linha (ou em Ver) abre o atendimento completo na Ficha do paciente. #}
+        {% if a.paciente_id %}{% url 'pacientes:registro' a.paciente_id 'atendimento' a.pk as url_ver %}{% else %}{% firstof "" as url_ver %}{% endif %}
+        <tr{% if url_ver %} class="linha-clicavel" onclick="if (!event.target.closest('a, button, form')) window.location = '{{ url_ver }}'"{% endif %}>
+          <td>{% if url_ver %}<a href="{{ url_ver }}"><strong>{{ a.numero }}</strong></a>{% else %}<strong>{{ a.numero }}</strong>{% endif %}</td>
           <td style="white-space:nowrap;">{{ a.data|date:"d/m/Y" }} {{ a.hora|time:"H:i" }}</td>
           <td>
             {{ a.get_tipo_display }}
@@ -23,14 +25,15 @@
             {% if a.paciente_id %}<a href="{% url 'pacientes:ficha' a.paciente_id %}">{{ a.pac_nome }}</a>{% else %}{{ a.pac_nome }}{% endif %}
           </td>
           <td>{{ a.tutor_nome|default:"—" }}{% if a.tutor_tel %}<br><small style="color:var(--muted);">{{ a.tutor_tel }}</small>{% endif %}</td>
-          <td style="text-align:right; white-space:nowrap;">R$ {{ a.total }}</td>
+          <td style="text-align:right; white-space:nowrap;">{{ a.total|moeda }}</td>
           <td>{% with st=a.status_pagamento %}
             {% if st == "pago" %}<span class="badge badge-vet">Pago</span>
             {% elif st == "pendente" %}<span class="badge" style="background:var(--c-aviso); color:var(--c-atencao-texto);">Pendente</span>
             {% else %}<small style="color:var(--muted);">Sem cobrança</small>{% endif %}
           {% endwith %}</td>
-          <td>
-            <form method="post" action="{% url 'atendimentos:excluir' a.pk %}">
+          <td style="white-space:nowrap;">
+            {% if url_ver %}<a href="{{ url_ver }}" class="btn-secondary btn">Ver</a>{% endif %}
+            <form method="post" action="{% url 'atendimentos:excluir' a.pk %}" style="display:inline;">
               {% csrf_token %}<button type="submit" class="btn-danger btn" data-confirm="Excluir o atendimento {{ a.numero }}? Os insumos voltam ao estoque.">Excluir</button>
             </form>
           </td>

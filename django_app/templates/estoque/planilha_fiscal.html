@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Planilha fiscal — Vettro{% endblock %}
+{% block content %}
+{% include "estoque/_subnav.html" with aba="produtos" %}
+
+<div class="card">
+  <h2 style="margin-top:0;">Planilha fiscal para o contador</h2>
+  <p style="color:var(--muted); margin-top:-4px;">
+    Para o contador conferir de uma vez os dados fiscais de todos os produtos (NCM, CEST, substituição tributária, PIS/COFINS monofásico e origem).
+  </p>
+  <ol class="planilha-passos">
+    <li><strong>Baixe a planilha</strong> e mande para o contador. Ela abre no Excel.
+      <div style="margin-top:6px;"><a href="{% url 'estoque:planilha_fiscal_csv' %}" class="btn-primary btn">Baixar planilha fiscal</a></div>
+    </li>
+    <li><strong>O contador corrige</strong> as colunas NCM, CEST, Substituição tributária (Sim/Não), PIS/COFINS monofásico (Sim/Não) e Origem (0 a 8). As outras colunas são só para leitura.</li>
+    <li><strong>Importe de volta</strong> o arquivo salvo como CSV:
+      <form method="post" enctype="multipart/form-data" style="margin-top:6px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        {% csrf_token %}
+        <input type="file" name="arquivo" accept=".csv,text/csv" required>
+        <button type="submit" class="btn-primary btn">Importar correções</button>
+      </form>
+    </li>
+  </ol>
+</div>
+
+{% if resultado %}
+<div class="card">
+  <div class="section-title">Resultado da importação</div>
+  <p style="margin-top:0;">{{ resultado.alterados|length }} produto{{ resultado.alterados|length|pluralize }} atualizado{{ resultado.alterados|length|pluralize }}
+    · {{ resultado.sem_mudanca }} sem mudança · {{ resultado.erros|length }} com erro</p>
+  {% if resultado.alterados %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Código</th><th>Produto</th><th>O que mudou</th></tr></thead>
+    <tbody>{% for codigo, nome, campos in resultado.alterados %}<tr><td>{{ codigo }}</td><td>{{ nome }}</td><td>{{ campos|join:", " }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% endif %}
+  {% if resultado.erros %}
+  <div class="section-title" style="margin-top:14px;">Linhas não importadas</div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Linha</th><th>Código</th><th>Motivo</th></tr></thead>
+    <tbody>{% for linha, codigo, motivo in resultado.erros %}<tr><td>{{ linha }}</td><td>{{ codigo }}</td><td>{{ motivo }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
