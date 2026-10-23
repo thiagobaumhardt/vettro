@@ -15,8 +15,8 @@
       <tbody>
         {% for g in fila %}
         <tr>
-          <td><strong>{{ g.nome }}</strong></td>
-          <td>{{ g.pacientes|join:", " }}</td>
+          <td><strong>{% if g.tutor and "tutores" in secoes_permitidas %}<a href="{% url 'tutores:detalhe' g.tutor.pk %}?aba=cobrancas">{{ g.nome }}</a>{% else %}{{ g.nome }}{% endif %}</strong></td>
+          <td>{% for p in g.pacientes_obj %}{% if "pacientes" in secoes_permitidas %}<a href="{% url 'pacientes:ficha' p.pk %}">{{ p.nome }}</a>{% else %}{{ p.nome }}{% endif %}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</td>
           <td>{% for c in g.cobrancas %}{{ c.obs|default:"Cobrança manual"|truncatechars:40 }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
           <td style="white-space:nowrap;">{{ g.desde|date:"d/m H:i" }}</td>
           <td style="text-align:right; white-space:nowrap;"><strong>{{ g.total|moeda }}</strong></td>

@@ -25,12 +25,13 @@ def pendentes_por_tutor() -> list[dict]:
         tutor = c.paciente.tutor if c.paciente_id else None
         chave = f"t{tutor.pk}" if tutor else f"c{c.pk}"
         g = grupos.setdefault(chave, {"tutor": tutor, "nome": tutor.nome if tutor else (c.tutor_nome or "Sem tutor"),
-                                      "cobrancas": [], "total": Decimal("0"), "pacientes": [], "desde": c.criado_em,
+                                      "cobrancas": [], "total": Decimal("0"), "pacientes": [], "pacientes_obj": [], "desde": c.criado_em,
                                       "cobranca_unica": None if tutor else c})
         g["cobrancas"].append(c)
         g["total"] += c.total
         if c.paciente_id and c.paciente.nome not in g["pacientes"]:
             g["pacientes"].append(c.paciente.nome)
+            g["pacientes_obj"].append(c.paciente)  # pros links da fila (Ficha do paciente)
     return list(grupos.values())
 
 
